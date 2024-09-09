@@ -1,3 +1,5 @@
+import { readFileSync } from "fs";
+import path from "path";
 import * as vscode from "vscode";
 
 export function activate(context: vscode.ExtensionContext) {
@@ -8,23 +10,30 @@ export function activate(context: vscode.ExtensionContext) {
 			if (panel !== null) {
 				panel.reveal();
 			} else {
+				const distDirectory = vscode.Uri.joinPath(context.extensionUri, "dist");
 				panel = vscode.window.createWebviewPanel(
 					"memviz",
 					"Memviz",
 					vscode.ViewColumn.Beside, // Show to the side of the editor.
 					{
-						localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, "dist")],
+						localResourceRoots: [
+							distDirectory,
+							vscode.Uri.joinPath(context.extensionUri, "static"),
+						],
 						enableScripts: true
 					}
 				);
-				const scriptPath = vscode.Uri.joinPath(context.extensionUri, "dist", "visualizer.js");
-				const scriptSrc = panel.webview.asWebviewUri(scriptPath);
+				const htmlPath = vscode.Uri.file(path.join(context.extensionPath, "static", "index.html")).fsPath;
+				const html = new TextDecoder("UTF-8").decode(readFileSync(htmlPath));
 
-				panel.webview.html = getWebviewContent(scriptSrc);
+				const scriptPath = vscode.Uri.joinPath(distDirectory, "memviz-glue.js");
+				const scriptSrc = panel.webview.asWebviewUri(scriptPath).toString();
+
+				panel.webview.html = html.replaceAll("$SCRIPT", scriptSrc);
+				panel.webview.postMessage({ command: "refactor" });
 				panel.onDidDispose(
 					() => {
 						panel = null;
-						console.log("Panel closing");
 					},
 					null,
 					context.subscriptions
@@ -32,20 +41,6 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		})
 	);
-}
-
-function getWebviewContent(scriptSrc: vscode.Uri) {
-	return `<!DOCTYPE html>
-  <html lang="en">
-  <head>
-	  <meta charset="UTF-8">
-	  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	  <title>Memviz</title>
-  </head>
-  <body>
-	  <script type="text/javascript" src="${scriptSrc}"></script>
-  </body>
-  </html>`;
 }
 
 export function deactivate() { }
