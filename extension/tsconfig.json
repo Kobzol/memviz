@@ -1,0 +1,13 @@
+{
+	"extends": "../ts-base.json",
+	"compilerOptions": {
+		"module": "Node16",
+		"target": "ES2022",
+		"lib": [
+			"ES2022"
+		],
+		"noEmit": true,
+		"sourceMap": true,
+		"rootDir": "src",
+	}
+}

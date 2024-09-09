@@ -1,0 +1,43 @@
+{
+  "name": "memviz",
+  "displayName": "memviz",
+  "description": "Memory visualizer",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "memviz.open",
+        "category": "memviz",
+        "title": "Open Memviz"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "check": "tsc",
+    "build": "npm run check && npm run lint && node esbuild.js --production",
+    "package": "vsce package --no-dependencies",
+    "lint": "eslint src",
+    "watch": "node esbuild.js --watch",
+    "watch:extension": "npm run watch"
+  },
+  "devDependencies": {
+    "@types/node": "20.x",
+    "@types/vscode": "^1.93.0",
+    "@typescript-eslint/eslint-plugin": "^8.3.0",
+    "@typescript-eslint/parser": "^8.3.0",
+    "@vscode/vsce": "^3.1.0",
+    "esbuild": "^0.23.1",
+    "eslint": "^9.9.1",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.5.4"
+  }
+}

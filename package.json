@@ -1,0 +1,10 @@
+{
+    "name": "memviz-workspace",
+    "workspaces": [
+        "process-def",
+        "extension"
+    ],
+    "scripts": {
+        "package": "npm run build --prefix process-def && npm run package --prefix extension"
+    }
+}
