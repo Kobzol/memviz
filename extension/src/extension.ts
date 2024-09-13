@@ -10,6 +10,9 @@ export function activate(context: vscode.ExtensionContext) {
 	const trackerDisposable = vscode.debug.registerDebugAdapterTrackerFactory("cppdbg", {
 		createDebugAdapterTracker(session: vscode.DebugSession) {
 			return {
+				onWillReceiveMessage(message) {
+					// console.log("RECEIVED message:", message);
+				},
 				onDidSendMessage: async (message) => {
 					if (ctx === null) {
 						return;
@@ -37,6 +40,15 @@ export function activate(context: vscode.ExtensionContext) {
 			context.subscriptions
 		);
 		ctx = new Context(panel, session);
+		panel.webview.onDidReceiveMessage(
+			message => {
+				if (ctx !== null) {
+					ctx.handleWebviewMessage(message);
+				}
+			},
+			undefined,
+			context.subscriptions
+		);
 	});
 	context.subscriptions.push(startDisposable);
 
@@ -74,18 +86,6 @@ function createPanel(context: vscode.ExtensionContext): vscode.WebviewPanel {
 
 	panel.webview.html = html.replaceAll("$SCRIPT", scriptSrc).replaceAll("$CSPSOURCE", panel.webview.cspSource);
 	return panel;
-}
-
-function configureCallbacks(context: vscode.ExtensionContext, panel: vscode.WebviewPanel) {
-	// panel.webview.postMessage({ command: "refactor" });
-
-	// panel.webview.onDidReceiveMessage(
-	// 	message => {
-	// 		console.log("Extension received message: ", message);
-	// 	},
-	// 	undefined,
-	// 	context.subscriptions
-	// );
 }
 
 export function deactivate() { }

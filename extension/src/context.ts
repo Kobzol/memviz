@@ -1,31 +1,50 @@
 import * as vscode from "vscode";
 
-import { DebugProtocol } from '@vscode/debugprotocol';
+import { DebugProtocol } from "@vscode/debugprotocol";
 import { ExtractBody } from "./utils";
+import { MemvizMsg } from "../../memviz-glue";
 
 export class Context {
-    constructor(private panel: vscode.WebviewPanel, private session: vscode.DebugSession) {
+    constructor(private panel: vscode.WebviewPanel, private session: vscode.DebugSession) {}
 
-    }
-
-    dispose() {
+    public dispose() {
         this.panel.dispose();
     }
 
-    async handleDebugMessage(message: any) {
+    public async handleDebugMessage(message: any) {
         const event = message["event"];
         if (event === "stopped") {
-            console.log("Program stopped, figuring out its state");
-            // TODO: transform type to extract `body` key
-            const response: ExtractBody<DebugProtocol.ThreadsResponse> = await this.session.customRequest("threads");
-            let a: DebugProtocol.ThreadsResponse;
-            const thread = response.threads[0];
-            const stackTrace: ExtractBody<DebugProtocol.StackTraceResponse> = await this.session.customRequest("stackTrace");
-            const stackFrames = stackTrace.stackFrames;
-
-            console.log("RESPONSE:", response);
-        } else {
-            // console.log(`Debug event: ${event}`);
+            await this.visualizeState();
         }
+    }
+
+    public handleWebviewMessage(message: any) {
+        console.log("Webview message:", message);
+    }
+
+    async visualizeState() {
+        console.log("Program stopped, figuring out its state");
+        const response: ExtractBody<DebugProtocol.ThreadsResponse> = await this.session.customRequest("threads");
+
+        const thread = response.threads[0];
+        const stackTrace: ExtractBody<DebugProtocol.StackTraceResponse> = await this.session.customRequest("stackTrace", {
+            threadId: thread.id
+        });
+        const stackFrames = stackTrace.stackFrames;
+        this.sendMemvizMessage({
+            kind: "visualize-state",
+            state: {
+                threads: [{
+                    frames: stackFrames.map(frame => ({
+                        id: frame.id,
+                        name: frame.name
+                    }))
+                }]
+            }
+        });
+    }
+
+    sendMemvizMessage(msg: MemvizMsg) {
+        this.panel.webview.postMessage(msg);
     }
 }

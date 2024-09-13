@@ -1,13 +1,5 @@
-export interface Message {
-    kind: string;
-}
+import { glueMemviz } from "./glue";
 
-const vscode = acquireVsCodeApi();
+export { MemvizMsg } from "./messages";
 
-window.addEventListener("message", (event: MessageEvent<any>) => {
-    const message: Message = event.data;
-    console.log("Received message", message);
-    // vscode.postMessage({
-    // message
-    // });
-});
+glueMemviz();
