@@ -2,31 +2,49 @@ import { readFileSync } from "fs";
 import path from "path";
 import * as vscode from "vscode";
 
+import { Context } from "./context";
+
 export function activate(context: vscode.ExtensionContext) {
-	let panel: vscode.WebviewPanel | null = null;
+	let ctx: Context | null = null;
 
-	const startDisposable = vscode.debug.onDidStartDebugSession(() => {
-		if (panel !== null) {
-			panel.reveal();
-		} else {
-			console.log("Opening memviz");
-
-			panel = createPanel(context);
-			panel.onDidDispose(
-				() => {
-					panel = null;
+	const trackerDisposable = vscode.debug.registerDebugAdapterTrackerFactory("cppdbg", {
+		createDebugAdapterTracker(session: vscode.DebugSession) {
+			return {
+				onDidSendMessage: async (message) => {
+					if (ctx === null) {
+						return;
+					}
+					await ctx.handleDebugMessage(message);
 				},
-				null,
-				context.subscriptions
-			);
+			};
 		}
+	});
+	context.subscriptions.push(trackerDisposable);
+
+	const startDisposable = vscode.debug.onDidStartDebugSession(session => {
+		if (ctx !== null) {
+			ctx.dispose();
+		}
+		console.log("Opening memviz");
+
+		const panel = createPanel(context);
+		panel.onDidDispose(
+			() => {
+				console.log("Closing memviz (panel closed)");
+				ctx = null;
+			},
+			null,
+			context.subscriptions
+		);
+		ctx = new Context(panel, session);
 	});
 	context.subscriptions.push(startDisposable);
 
 	const endDisposable = vscode.debug.onDidTerminateDebugSession(() => {
-		console.log("Closing memviz");
-		if (panel !== null) {
-			panel.dispose();
+		console.log("Closing memviz (debug session terminated)");
+		if (ctx !== null) {
+			ctx.dispose();
+			ctx = null;
 		}
 	});
 	context.subscriptions.push(endDisposable);
@@ -55,15 +73,19 @@ function createPanel(context: vscode.ExtensionContext): vscode.WebviewPanel {
 	const scriptSrc = panel.webview.asWebviewUri(scriptPath).toString();
 
 	panel.webview.html = html.replaceAll("$SCRIPT", scriptSrc).replaceAll("$CSPSOURCE", panel.webview.cspSource);
-	panel.webview.onDidReceiveMessage(
-		message => {
-			console.log("Extension received message: ", message);
-		},
-		undefined,
-		context.subscriptions
-	);
-	panel.webview.postMessage({ command: "refactor" });
 	return panel;
+}
+
+function configureCallbacks(context: vscode.ExtensionContext, panel: vscode.WebviewPanel) {
+	// panel.webview.postMessage({ command: "refactor" });
+
+	// panel.webview.onDidReceiveMessage(
+	// 	message => {
+	// 		console.log("Extension received message: ", message);
+	// 	},
+	// 	undefined,
+	// 	context.subscriptions
+	// );
 }
 
 export function deactivate() { }
