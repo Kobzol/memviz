@@ -1,5 +1,5 @@
 import { glueMemviz } from "./glue";
 
-export { MemvizMsg } from "./messages";
+export { ExtensionToMemvizMsg } from "./messages";
 
 glueMemviz();

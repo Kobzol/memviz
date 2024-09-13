@@ -2,49 +2,58 @@ import * as vscode from "vscode";
 
 import { DebugProtocol } from "@vscode/debugprotocol";
 import { ExtractBody } from "./utils";
-import { MemvizMsg } from "../../memviz-glue";
+import { ExtensionToMemvizMsg } from "../../memviz-glue";
+import { ExtensionToMemvizResponse, MemvizToExtensionMsg } from "memviz-glue/dist/messages";
 
 export class Context {
     constructor(private panel: vscode.WebviewPanel, private session: vscode.DebugSession) {}
 
-    public dispose() {
+    dispose() {
         this.panel.dispose();
     }
 
-    public async handleDebugMessage(message: any) {
+    async handleDebugMessage(message: any) {
         const event = message["event"];
         if (event === "stopped") {
-            await this.visualizeState();
+            await this.onProgramStopped();
         }
     }
 
-    public handleWebviewMessage(message: any) {
-        console.log("Webview message:", message);
+    async handleWebviewMessage(message: MemvizToExtensionMsg) {
+        if (message.kind === "get-stack-trace") {
+            const response: ExtractBody<DebugProtocol.StackTraceResponse> = await this.session.customRequest("stackTrace", {
+                threadId: message.threadId
+            });
+            this.sendMemvizResponse({
+                kind: "get-stack-trace",
+                requestId: message.requestId,
+                data: {
+                    stackTrace: {
+                        frames: response.stackFrames.map(frame => ({
+                            id: frame.id,
+                            name: frame.name
+                        }))
+                    }
+                }
+            });
+        }
     }
 
-    async visualizeState() {
-        console.log("Program stopped, figuring out its state");
+    private async onProgramStopped() {
         const response: ExtractBody<DebugProtocol.ThreadsResponse> = await this.session.customRequest("threads");
-
-        const thread = response.threads[0];
-        const stackTrace: ExtractBody<DebugProtocol.StackTraceResponse> = await this.session.customRequest("stackTrace", {
-            threadId: thread.id
-        });
-        const stackFrames = stackTrace.stackFrames;
-        this.sendMemvizMessage({
+        this.sendMemvizEvent({
             kind: "visualize-state",
             state: {
-                threads: [{
-                    frames: stackFrames.map(frame => ({
-                        id: frame.id,
-                        name: frame.name
-                    }))
-                }]
+                threads: response.threads.map(t => t.id)
             }
         });
     }
 
-    sendMemvizMessage(msg: MemvizMsg) {
+    private sendMemvizEvent(msg: ExtensionToMemvizMsg) {
         this.panel.webview.postMessage(msg);
+    }
+
+    private sendMemvizResponse(response: ExtensionToMemvizResponse) {
+        this.panel.webview.postMessage(response);
     }
 }
