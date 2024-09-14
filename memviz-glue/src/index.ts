@@ -4,7 +4,23 @@ import { Memviz } from "./visualization";
 
 export { ExtensionToMemvizMsg } from "./messages";
 
-// runMemvizInVsCode();
+// function runMemvizInVsCode() {
+//   const vscode = acquireVsCodeApi();
+//   const resolver = new VsCodeResolver(vscode);
+//   const memviz = new Memviz(document.getElementById("app")!);
+
+//   window.addEventListener(
+//     "message",
+//     (event: MessageEvent<ExtensionToMemvizMsg>) => {
+//       const message = event.data;
+//       if (message.kind === "visualize-state") {
+//         memviz.showState(message.state, resolver);
+//       } else {
+//         resolver.handleMessage(message);
+//       }
+//     },
+//   );
+// }
 
 function runMemVizTest() {
   const root = document.getElementById("app")!;
