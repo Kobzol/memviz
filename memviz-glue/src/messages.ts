@@ -1,20 +1,20 @@
-import { ProcessState, StackTrace, ThreadId } from "./process/memory";
+import type { ProcessState, StackTrace, ThreadId } from "./process/memory";
 
 // Events from the extension
 export interface VisualizeStateEvent {
-    kind: "visualize-state";
-    state: ProcessState;
+  kind: "visualize-state";
+  state: ProcessState;
 }
 
 export type ExtensionEvent = VisualizeStateEvent;
 
 // Responses to requests to the extension
 export interface GetStackTraceRes {
-    kind: "get-stack-trace";
-    requestId: RequestId;
-    data: {
-        stackTrace: StackTrace;
-    }
+  kind: "get-stack-trace";
+  requestId: RequestId;
+  data: {
+    stackTrace: StackTrace;
+  };
 }
 
 export type ExtensionToMemvizResponse = GetStackTraceRes;
@@ -26,11 +26,11 @@ export type ExtensionToMemvizMsg = ExtensionEvent | ExtensionToMemvizResponse;
 export type RequestId = number;
 
 export interface GetStackTraceReq {
-    kind: "get-stack-trace";
-    requestId: RequestId;
-    threadId: ThreadId;
-} 
+  kind: "get-stack-trace";
+  requestId: RequestId;
+  threadId: ThreadId;
+}
 
-type MemvizToExtensionReq = GetStackTraceReq; 
+type MemvizToExtensionReq = GetStackTraceReq;
 
 export type MemvizToExtensionMsg = MemvizToExtensionReq;

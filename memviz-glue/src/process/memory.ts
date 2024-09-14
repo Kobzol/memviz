@@ -1,14 +1,14 @@
 export type ThreadId = number;
 
 export interface ProcessState {
-    threads: ThreadId[];
+  threads: ThreadId[];
 }
 
 export interface StackTrace {
-    frames: StackFrame[];
+  frames: StackFrame[];
 }
 
 export interface StackFrame {
-    id: number;
-    name: string;
+  id: number;
+  name: string;
 }

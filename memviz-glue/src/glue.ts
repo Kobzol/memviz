@@ -1,23 +1,21 @@
-import { ExtensionToMemvizMsg } from "./messages";
-import { ProcessState } from "./process/memory";
-import { ProcessResolver } from "./process/resolver/resolver";
+import type { ExtensionToMemvizMsg } from "./messages";
 import { VsCodeResolver } from "./process/resolver/vscode";
+import { Memviz } from "./visualization";
 
-export function glueMemviz() {
-    const vscode = acquireVsCodeApi();
-    const resolver = new VsCodeResolver(vscode);
+export function runMemvizInVsCode() {
+  const vscode = acquireVsCodeApi();
+  const resolver = new VsCodeResolver(vscode);
+  const memviz = new Memviz(document.getElementById("app")!);
 
-    window.addEventListener("message", (event: MessageEvent<ExtensionToMemvizMsg>) => {
-        const message = event.data;
-        if (message.kind === "visualize-state") {
-            visualize(message.state, resolver);
-        } else {
-            resolver.handleMessage(message);
-        }
-    });
-}
-
-async function visualize(state: ProcessState, resolver: ProcessResolver) {
-    const stackTrace = await resolver.getStackTrace(state.threads[0]);
-    console.log("GOT STACKTRACE:", stackTrace);
+  window.addEventListener(
+    "message",
+    (event: MessageEvent<ExtensionToMemvizMsg>) => {
+      const message = event.data;
+      if (message.kind === "visualize-state") {
+        memviz.showState(message.state, resolver);
+      } else {
+        resolver.handleMessage(message);
+      }
+    },
+  );
 }
