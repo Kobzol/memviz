@@ -4,13 +4,17 @@
   "description": "",
   "main": "./dist/index.js",
   "scripts": {
-    "build": "node esbuild.js --production",
+    "check": "biome check --write",
+    "lint": "biome lint",
+    "build": "npm run check && node esbuild.js --production",
+    "fmt": "biome format --write",
     "watch:esbuild": "node esbuild.js --watch",
     "watch:ts": "tsc --watch",
     "watch:memviz-glue": "npm-run-all -p watch:esbuild watch:ts",
     "watch": "npm run watch:memviz-glue"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.9.0",
     "@types/vscode-webview": "^1.57.5",
     "esbuild": "^0.23.1",
     "npm-run-all": "^4.1.5",
