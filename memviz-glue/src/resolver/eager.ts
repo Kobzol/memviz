@@ -1,4 +1,4 @@
-import type { StackTrace, ThreadId } from "../memory";
+import type { FrameId, Place, StackTrace, ThreadId } from "process-def/src";
 import type { ProcessResolver } from "./resolver";
 
 export interface FullThreadState {
@@ -21,5 +21,9 @@ export class EagerResolver implements ProcessResolver {
 
   getStackTrace(threadId: ThreadId): Promise<StackTrace> {
     return Promise.resolve(this.processState[threadId].stackTrace);
+  }
+
+  getVariables(frameId: FrameId): Promise<Place[]> {
+    throw new Error("Method not implemented.");
   }
 }

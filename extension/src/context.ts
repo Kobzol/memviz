@@ -3,10 +3,13 @@ import type * as vscode from "vscode";
 import type { DebugProtocol } from "@vscode/debugprotocol";
 import type {
   ExtensionToMemvizResponse,
+  GetStackTraceReq,
+  GetVariablesReq,
   MemvizToExtensionMsg,
-} from "memviz-glue/dist/messages";
-import type { ExtensionToMemvizMsg } from "../../memviz-glue";
+} from "memviz-glue";
+import type { ExtensionToMemvizMsg } from "memviz-glue";
 import type { ExtractBody } from "./utils";
+import { PlaceKind } from "process-def";
 
 export class Context {
   constructor(
@@ -29,22 +32,49 @@ export class Context {
   /// It asks DAP for information and sends responses back to the webview.
   async handleWebviewMessage(message: MemvizToExtensionMsg) {
     if (message.kind === "get-stack-trace") {
-      const response: ExtractBody<DebugProtocol.StackTraceResponse> =
-        await this.session.customRequest("stackTrace", {
-          threadId: message.threadId,
-        });
-      this.sendMemvizResponse({
-        kind: "get-stack-trace",
-        requestId: message.requestId,
-        data: {
-          stackTrace: {
-            frames: response.stackFrames.map((frame) => ({
-              id: frame.id,
-              name: frame.name,
-            })),
-          },
-        },
+      this.getStackTraceRequest(message);
+    } else if (message.kind === "get-variables") {
+      this.getVariablesRequest(message);
+    }
+  }
+
+  private async getStackTraceRequest(message: GetStackTraceReq) {
+    const response: ExtractBody<DebugProtocol.StackTraceResponse> =
+      await this.session.customRequest("stackTrace", {
+        threadId: message.threadId,
       });
+    this.sendMemvizResponse({
+      kind: "get-stack-trace",
+      requestId: message.requestId,
+      data: {
+        stackTrace: {
+          frames: response.stackFrames.map((frame) => ({
+            id: frame.id,
+            name: frame.name,
+            instruction_pointer: frame.instructionPointerReference!,
+          })),
+        },
+      },
+    });
+  }
+
+  private async getVariablesRequest(message: GetVariablesReq) {
+    const response: ExtractBody<DebugProtocol.ScopesResponse> =
+      await this.session.customRequest("scopes", {
+        frameId: message.frameId,
+      });
+    const places = [];
+    for (const scope of response.scopes) {
+      let kind = PlaceKind.Variable;
+      if (scope.presentationHint === "arguments") {
+        kind = PlaceKind.Parameter;
+      } else continue;
+
+      const res: ExtractBody<DebugProtocol.VariablesResponse> =
+        await this.session.customRequest("variables", {
+          variablesReference: scope.variablesReference,
+        });
+      console.log(res);
     }
   }
 

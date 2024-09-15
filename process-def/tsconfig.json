@@ -1,0 +1,13 @@
+{
+  "extends": "../ts-base.json",
+  "compilerOptions": {
+    "moduleResolution": "node",
+    "target": "ES2015",
+    "lib": ["ES2015"],
+    "sourceMap": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": true
+  }
+}

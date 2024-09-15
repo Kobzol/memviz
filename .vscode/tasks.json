@@ -7,7 +7,8 @@
             "label": "watch",
             "dependsOn": [
                 "compile-extension",
-                "compile-memviz-glue"
+                "compile-memviz-glue",
+                "compile-process-def"
             ],
             "presentation": {
                 "reveal": "never"
@@ -42,6 +43,21 @@
             "problemMatcher": "$esbuild-watch",
             "isBackground": true,
             "label": "compile-memviz-glue",
+            "presentation": {
+                "group": "watch",
+                "reveal": "never"
+            }
+        },
+        {
+            "type": "npm",
+            "script": "watch:process-def",
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/process-def"
+            },
+            "problemMatcher": "$tsc-watch",
+            "isBackground": true,
+            "label": "process-def",
             "presentation": {
                 "group": "watch",
                 "reveal": "never"

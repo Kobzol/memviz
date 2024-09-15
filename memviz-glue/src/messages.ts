@@ -1,4 +1,10 @@
-import type { ProcessState, StackTrace, ThreadId } from "./process/memory";
+import type {
+  FrameId,
+  Place,
+  ProcessState,
+  StackTrace,
+  ThreadId,
+} from "process-def/src";
 
 // Events from the extension
 export interface VisualizeStateEvent {
@@ -17,7 +23,15 @@ export interface GetStackTraceRes {
   };
 }
 
-export type ExtensionToMemvizResponse = GetStackTraceRes;
+export interface GetVariablesRes {
+  kind: "get-variables";
+  requestId: RequestId;
+  data: {
+    places: Place[];
+  };
+}
+
+export type ExtensionToMemvizResponse = GetStackTraceRes | GetVariablesRes;
 
 // Any message from the extension
 export type ExtensionToMemvizMsg = ExtensionEvent | ExtensionToMemvizResponse;
@@ -31,6 +45,12 @@ export interface GetStackTraceReq {
   threadId: ThreadId;
 }
 
-type MemvizToExtensionReq = GetStackTraceReq;
+export interface GetVariablesReq {
+  kind: "get-variables";
+  requestId: RequestId;
+  frameId: FrameId;
+}
+
+type MemvizToExtensionReq = GetStackTraceReq | GetVariablesReq;
 
 export type MemvizToExtensionMsg = MemvizToExtensionReq;

@@ -1,8 +1,8 @@
 {
   "name": "memviz-workspace",
-  "workspaces": ["memviz-glue", "extension"],
+  "workspaces": ["extension", "memviz-glue", "process-def"],
   "scripts": {
     "check": "biome check --write",
-    "package": "npm run build --prefix memviz-glue && npm run package --prefix extension"
+    "package": "npm run build --prefix process-def && npm run build --prefix memviz-glue && npm run package --prefix extension"
   }
 }

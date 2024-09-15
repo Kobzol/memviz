@@ -1,0 +1,14 @@
+{
+  "name": "process-def",
+  "version": "0.0.1",
+  "description": "",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "watch:process-def": "npm run watch"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}

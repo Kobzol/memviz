@@ -1,6 +1,6 @@
 import createPanZoom from "panzoom";
-import type { ProcessState, StackTrace } from "../process/memory";
-import type { ProcessResolver } from "../process/resolver/resolver";
+import type { ProcessState, StackTrace } from "process-def";
+import type { ProcessResolver } from "../resolver/resolver";
 import { createRoot } from "react-dom/client";
 import * as React from "react";
 import { createStore, Provider, useAtomValue } from "jotai";

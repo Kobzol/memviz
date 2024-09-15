@@ -1,7 +1,7 @@
 import { atom } from "jotai";
-import type { ProcessState } from "../process/memory";
-import { EagerResolver } from "../process/resolver/eager";
-import type { ProcessResolver } from "../process/resolver/resolver";
+import type { ProcessState } from "process-def";
+import { EagerResolver } from "../resolver/eager";
+import type { ProcessResolver } from "../resolver/resolver";
 
 export interface UIState {
   processState: Readonly<ProcessState>;

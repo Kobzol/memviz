@@ -1,11 +1,15 @@
 import type { WebviewApi } from "vscode-webview";
 import type {
   ExtensionToMemvizResponse,
+  GetStackTraceRes,
+  GetVariablesRes,
   MemvizToExtensionMsg,
   RequestId,
-} from "../../messages";
-import type { StackTrace, ThreadId } from "../memory";
+} from "../messages";
+import type { FrameId, Place, StackTrace, ThreadId } from "process-def";
 import type { ProcessResolver } from "./resolver";
+
+type ExtractData<T extends { data: unknown }> = T["data"];
 
 export class VsCodeResolver implements ProcessResolver {
   private requestId: RequestId = 0;
@@ -26,22 +30,40 @@ export class VsCodeResolver implements ProcessResolver {
   }
 
   async getStackTrace(threadId: ThreadId): Promise<StackTrace> {
-    const [id, promise] = this.prepareRequest<StackTrace>();
+    const [id, promise] = this.prepareRequest<GetStackTraceRes>();
 
     this.sendMessage({
       kind: "get-stack-trace",
       requestId: id,
       threadId,
     });
-    return await promise;
+    const res = await promise;
+    return res.stackTrace;
   }
 
-  private prepareRequest<T>(): [RequestId, Promise<T>] {
+  async getVariables(frameId: FrameId): Promise<Place[]> {
+    const [id, promise] = this.prepareRequest<GetVariablesRes>();
+
+    this.sendMessage({
+      kind: "get-variables",
+      requestId: id,
+      frameId,
+    });
+    const res = await promise;
+    return res.places;
+  }
+
+  private prepareRequest<ResponseType extends { data: unknown }>(): [
+    RequestId,
+    Promise<ExtractData<ResponseType>>,
+  ] {
     const id = this.requestId;
     this.requestId++;
-    const promise = new Promise<T>((resolve, _reject) => {
-      this.requestMap.set(id, resolve as (_data: unknown) => void);
-    });
+    const promise = new Promise<ExtractData<ResponseType>>(
+      (resolve, _reject) => {
+        this.requestMap.set(id, resolve as (_data: unknown) => void);
+      },
+    );
     return [id, promise];
   }
 
