@@ -1,5 +1,5 @@
-import * as React from "react";
 import type { StackFrame, StackTrace } from "process-def";
+import * as React from "react";
 
 /*display: flex;
       flex-direction: column; */

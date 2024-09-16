@@ -1,9 +1,9 @@
+import { Provider, createStore, useAtomValue } from "jotai";
 import createPanZoom from "panzoom";
 import type { ProcessState, StackTrace } from "process-def";
-import type { ProcessResolver } from "../resolver/resolver";
-import { createRoot } from "react-dom/client";
 import * as React from "react";
-import { createStore, Provider, useAtomValue } from "jotai";
+import { createRoot } from "react-dom/client";
+import type { ProcessResolver } from "../resolver/resolver";
 import { StackTraceComponent } from "./components/stackTrace";
 import { rootStateAtom } from "./state";
 import { useAsyncFn } from "./utils";

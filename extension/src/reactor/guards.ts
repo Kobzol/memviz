@@ -30,6 +30,30 @@ export function isSetFunctionBreakpointsResponse(
   return isResponse(message) && message.command === "setFunctionBreakpoints";
 }
 
+export function isSetBreakpointsRequest(
+  message: DebugProtocol.ProtocolMessage,
+): message is DebugProtocol.SetBreakpointsRequest {
+  return isRequest(message) && message.command === "setBreakpoints";
+}
+
+export function isNextRequest(
+  message: DebugProtocol.ProtocolMessage,
+): message is DebugProtocol.NextRequest {
+  return isRequest(message) && message.command === "next";
+}
+
+export function isStepInRequest(
+  message: DebugProtocol.ProtocolMessage,
+): message is DebugProtocol.StepInRequest {
+  return isRequest(message) && message.command === "stepIn";
+}
+
+export function isStepOutRequest(
+  message: DebugProtocol.ProtocolMessage,
+): message is DebugProtocol.StepOutRequest {
+  return isRequest(message) && message.command === "stepOut";
+}
+
 export function isStoppedEvent(
   message: DebugProtocol.ProtocolMessage,
 ): message is DebugProtocol.StoppedEvent {

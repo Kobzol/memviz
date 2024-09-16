@@ -12,7 +12,9 @@
   "contributes": {},
   "scripts": {
     "vscode:prepublish": "npm run build",
-    "check": "tsc",
+    "check:biome": "biome check --write",
+    "check:tsc": "tsc",
+    "check": "npm run check:biome && npm run check:tsc",
     "build": "npm run check && node esbuild.js --production",
     "package": "vsce package --no-dependencies",
     "watch": "node esbuild.js --watch",

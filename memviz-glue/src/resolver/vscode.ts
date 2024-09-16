@@ -1,3 +1,4 @@
+import type { FrameId, Place, StackTrace, ThreadId } from "process-def";
 import type { WebviewApi } from "vscode-webview";
 import type {
   ExtensionToMemvizResponse,
@@ -9,7 +10,6 @@ import type {
   MemvizToExtensionReq,
   RequestId,
 } from "../messages";
-import type { FrameId, Place, StackTrace, ThreadId } from "process-def";
 import type { ProcessResolver } from "./resolver";
 
 type ExtractData<T extends { data: unknown }> = T["data"];

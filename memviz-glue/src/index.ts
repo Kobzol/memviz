@@ -1,5 +1,5 @@
-import type { ExtensionToMemvizMsg } from "./messages";
 import type { ProcessState } from "process-def";
+import type { ExtensionToMemvizMsg } from "./messages";
 import { EagerResolver } from "./resolver/eager";
 import { VsCodeResolver } from "./resolver/vscode";
 import { Memviz } from "./visualization";

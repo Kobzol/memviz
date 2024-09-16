@@ -1,8 +1,8 @@
 import type { DebugProtocol } from "@vscode/debugprotocol";
 import {
-  PlaceKind,
   type FrameId,
   type Place,
+  PlaceKind,
   type ThreadId,
 } from "process-def";
 import type { DebugSession } from "vscode";
@@ -10,6 +10,17 @@ import type { ExtractBody } from "./utils";
 
 export class DebuggerSession {
   constructor(private session: DebugSession) {}
+
+  async setBreakpoints(
+    source: DebugProtocol.Source,
+    breakpoints: DebugProtocol.SourceBreakpoint[],
+  ): Promise<ExtractBody<DebugProtocol.SetBreakpointsResponse>> {
+    const args: DebugProtocol.SetBreakpointsArguments = {
+      source,
+      breakpoints,
+    };
+    return await this.session.customRequest("setBreakpoints", args);
+  }
 
   async setFunctionBreakpoints(
     breakpoints: DebugProtocol.FunctionBreakpoint[],
@@ -53,6 +64,25 @@ export class DebuggerSession {
       threadId,
     };
     return await this.session.customRequest("continue", args);
+  }
+
+  async goto(threadId: ThreadId, gotoTargetId: number) {
+    const args: DebugProtocol.GotoArguments = {
+      threadId,
+      targetId: gotoTargetId,
+    };
+    return await this.session.customRequest("goto", args);
+  }
+
+  async getGotoTargets(
+    source: DebugProtocol.Source,
+    line: number,
+  ): Promise<ExtractBody<DebugProtocol.GotoTargetsResponse>> {
+    const args: DebugProtocol.GotoTargetsArguments = {
+      source,
+      line,
+    };
+    return await this.session.customRequest("gotoTargets", args);
   }
 
   async getThreads(): Promise<ExtractBody<DebugProtocol.ThreadsResponse>> {
@@ -116,7 +146,6 @@ export class DebuggerSession {
 
   async getPlaces(frameId: FrameId): Promise<Place[]> {
     const response = await this.getScopes(frameId);
-    console.log(response);
 
     const places: Place[] = [];
     for (const scope of response.scopes) {
@@ -128,7 +157,6 @@ export class DebuggerSession {
       }
 
       const res = await this.getVariables(scope.variablesReference);
-      console.log(res.variables);
       for (const variable of res.variables) {
         places.push({
           kind,

@@ -4,7 +4,9 @@
   "description": "",
   "main": "./dist/index.js",
   "scripts": {
-    "check": "biome check --write",
+    "check:biome": "biome check --write",
+    "check:tsc": "tsc",
+    "check": "npm run check:biome && npm run check:tsc",
     "lint": "biome lint",
     "build": "npm run check && node esbuild.js --production",
     "fmt": "biome format --write",

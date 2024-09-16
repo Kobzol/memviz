@@ -4,6 +4,9 @@
   "description": "",
   "main": "./dist/index.js",
   "scripts": {
+    "check:biome": "biome check --write",
+    "check:tsc": "tsc --noEmit",
+    "check": "npm run check:biome && npm run check:tsc",
     "build": "tsc",
     "watch": "npm run watch",
     "watch:process-def": "tsc --watch"

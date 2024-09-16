@@ -2,8 +2,8 @@ import { readFileSync } from "fs";
 import path from "path";
 import * as vscode from "vscode";
 
-import { Reactor } from "./reactor";
 import type { DebugProtocol } from "@vscode/debugprotocol";
+import { Reactor } from "./reactor";
 import { DebuggerSession } from "./session";
 
 export function activate(context: vscode.ExtensionContext) {

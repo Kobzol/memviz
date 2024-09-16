@@ -8,15 +8,19 @@ import type {
   GetVariablesReq,
   MemvizToExtensionMsg,
 } from "memviz-glue";
+import type { FrameId } from "process-def";
 import type { DebuggerSession } from "../session";
 import {
-  isRequest,
+  isNextRequest,
+  isSetBreakpointsRequest,
   isSetFunctionBreakpointsRequest,
   isSetFunctionBreakpointsResponse,
+  isStepInRequest,
+  isStepOutRequest,
   isStoppedEvent,
 } from "./guards";
-import type { FrameId } from "process-def";
 import type { Status } from "./handlers";
+import { BreakpointMap, type Location } from "./locations";
 
 enum StepState {
   Idle = "idle",
@@ -28,17 +32,18 @@ export class Reactor {
   private status: Status = {
     kind: "waiting-for-set-function-breakpoints",
   };
+
+  // Breakpoint management
   private stepState = StepState.Idle;
-  private counter = 0;
+  private breakpointMap = new BreakpointMap();
+  // Last location where the process was stopped by a client action
+  private lastClientLocation: Location | null = null;
+  private waitingForFakeBreakpoint = false;
 
   constructor(
     private panel: vscode.WebviewPanel,
     private session: DebuggerSession,
   ) {}
-
-  dispose() {
-    this.panel.dispose();
-  }
 
   async handleMessageFromClient(message: DebugProtocol.ProtocolMessage) {
     // The client sends setFunctionBreakpoints at the very beginning of the debug session.
@@ -49,12 +54,22 @@ export class Reactor {
         name: "main",
       });
     }
-    if (isRequest(message)) {
-      const command = message.command;
-      if (command === "next" || command === "stepIn" || command === "stepOut") {
-        console.log("CLIENT PERFORMING STEP");
-        this.stepState = StepState.ClientStepInProgress;
-      }
+
+    // Save the most recent client breakpoints for a given source file
+    if (isSetBreakpointsRequest(message) && !this.waitingForFakeBreakpoint) {
+      this.breakpointMap.setSourceBreakpoints(
+        message.arguments.source,
+        message.arguments.breakpoints ?? [],
+      );
+    }
+
+    // The client requested a step, take note of it
+    if (
+      isNextRequest(message) ||
+      isStepInRequest(message) ||
+      isStepOutRequest(message)
+    ) {
+      this.stepState = StepState.ClientStepInProgress;
     }
   }
 
@@ -72,20 +87,35 @@ export class Reactor {
     } else if (this.status.kind === "initialized") {
       if (isStoppedEvent(message)) {
         const reason = message.body.reason;
-        console.log(
-          "STOPPED",
-          reason,
-          "STEP STATE",
-          this.stepState,
-          "SOURCE",
-          `${message.body.source.path}:${message.body.line}`,
-        );
-        // This should be an exception within a memory allocation function
-        if (reason === "exception") {
+        const stopLocation: Location = {
+          source: (message.body as any).source as DebugProtocol.Source,
+          line: (message.body as any).line,
+        };
+        // console.log(
+        //   "STOPPED",
+        //   reason,
+        //   "STEP STATE",
+        //   this.stepState,
+        //   "SOURCE",
+        //   `${stopLocation.source.path}:${stopLocation.line}`,
+        // );
+        // The program has stopped at a "fake" breakpoint created by us
+        if (reason === "breakpoint" && this.waitingForFakeBreakpoint) {
+          this.waitingForFakeBreakpoint = false;
+          // Delete the fake breakpoint
+          const breakpoints = this.breakpointMap.getSourceBreakpoints(
+            stopLocation.source,
+          );
+          await this.session.setBreakpoints(stopLocation.source, breakpoints);
+          this.stepState = StepState.Idle;
+          this.lastClientLocation = stopLocation;
+        } else if (reason === "exception") {
+          // This should be an exception within a memory allocation function
           // Ignore the event in VSCode
           // This needs to be done before the first await!
           // So that it is synchronous w.r.t. VSCode event handling
           ignoreMessage(message);
+
           const [threadId, frameId] =
             await this.session.getCurrentThreadAndFrameId();
 
@@ -94,31 +124,48 @@ export class Reactor {
           this.stepState = StepState.ReactorStepInProgress;
           await this.handleMemoryAllocationBreakpoint(frameId);
 
-          // TODO: handle nested malloc calls. How to continue to end up back
-          // when the user was?
           if (clientStepInProgress) {
-            console.log("RESETTING TO CLIENT STEP");
+            // In this case, we need to continue with the previously requested step
+            // from the client. We do that by creating a temporary fake breakpoint
+            // set to the next line after the last stopped client location.
+            // Once that breakpoint is hit, we remove it.
             this.stepState = StepState.ClientStepInProgress;
-            await this.session.next(threadId);
+            if (this.lastClientLocation === null) {
+              // This should not happen
+              await this.session.next(threadId);
+            } else {
+              const breakpoints = this.breakpointMap.getSourceBreakpoints(
+                this.lastClientLocation.source,
+              );
+              const withFakeBreakpoint = [
+                ...breakpoints,
+                {
+                  line: this.lastClientLocation.line + 1,
+                },
+              ];
+              this.waitingForFakeBreakpoint = true;
+              const source = this.lastClientLocation.source;
+              await this.session.setBreakpoints(source, withFakeBreakpoint);
+              await this.session.continue(threadId);
+            }
           } else {
-            console.log("RESETTING TO CLIENT IDLE, CONTINUING");
             this.stepState = StepState.Idle;
             await this.session.continue(threadId);
           }
-        } else if (reason === "step") {
-          if (this.stepState === StepState.ReactorStepInProgress) {
-            console.log("FINISHED CUSTOM STEP, IGNORING");
-            ignoreMessage(message);
-          } else if (this.stepState === StepState.ClientStepInProgress) {
-            console.log("FINISHED CLIENT STEP, RESETTING TO IDLE");
-            this.stepState = StepState.Idle;
-          }
+        } else if (
+          reason === "step" &&
+          this.stepState === StepState.ReactorStepInProgress
+        ) {
+          ignoreMessage(message);
         } else if (
           reason === "step" ||
           reason === "breakpoint" ||
           reason === "pause"
         ) {
-          // await this.sendVisualizeStateEvent();
+          this.stepState = StepState.Idle;
+          this.lastClientLocation = stopLocation;
+
+          await this.sendVisualizeStateEvent();
         }
       }
     }
@@ -154,9 +201,7 @@ export class Reactor {
     }
 
     // We need to change the status BEFORE starting the asynchronous continue
-    this.status = {
-      kind: "initialized",
-    };
+    this.status = { kind: "initialized" };
     await this.session.continue(threadId);
   }
 
@@ -213,6 +258,10 @@ export class Reactor {
     }
   }
 
+  dispose() {
+    this.panel.dispose();
+  }
+
   private async performStackTraceRequest(message: GetStackTraceReq) {
     const response = await this.session.getStackTrace(message.threadId);
     this.sendMemvizResponse({
@@ -252,7 +301,7 @@ export class Reactor {
   }
 
   private sendMemvizEvent(msg: ExtensionToMemvizMsg) {
-    console.log("Sending memviz event", msg);
+    // console.log("Sending memviz event", msg);
     this.panel.webview.postMessage(msg);
   }
 
