@@ -2,6 +2,7 @@
   "name": "memviz",
   "displayName": "memviz",
   "description": "Memory visualizer",
+  "repository": "https://github.com/Kobzol/memviz",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.93.0"
