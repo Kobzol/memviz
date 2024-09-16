@@ -9,6 +9,10 @@ import { DebuggerSession } from "./session";
 export function activate(context: vscode.ExtensionContext) {
   let handler: Reactor | null = null;
 
+  const gdbScriptPath = vscode.Uri.file(
+    path.join(context.extensionPath, "static", "gdb_script.py"),
+  ).fsPath;
+
   const trackerDisposable = vscode.debug.registerDebugAdapterTrackerFactory(
     "cppdbg",
     {
@@ -49,7 +53,7 @@ export function activate(context: vscode.ExtensionContext) {
       null,
       context.subscriptions,
     );
-    handler = new Reactor(panel, new DebuggerSession(session));
+    handler = new Reactor(panel, new DebuggerSession(session), gdbScriptPath);
     panel.webview.onDidReceiveMessage(
       (message) => {
         if (handler !== null) {

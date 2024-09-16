@@ -43,13 +43,17 @@ export class Reactor {
   constructor(
     private panel: vscode.WebviewPanel,
     private session: DebuggerSession,
+    private gdbScriptPath: string,
   ) {}
 
   async handleMessageFromClient(message: DebugProtocol.ProtocolMessage) {
     // The client sends setFunctionBreakpoints at the very beginning of the debug session.
     // Add main to the list, so that we can perform some basic initialization at the start
     // of the debugged program.
-    if (isSetFunctionBreakpointsRequest(message)) {
+    if (
+      isSetFunctionBreakpointsRequest(message) &&
+      this.status.kind === "waiting-for-set-function-breakpoints"
+    ) {
       message.arguments.breakpoints.push({
         name: "main",
       });
@@ -82,6 +86,20 @@ export class Reactor {
       if (isStoppedEvent(message)) {
         // TODO: this skips breakpoint set at the beginning of main set by a user
         ignoreMessage(message);
+
+        const [_, frameId] = await this.session.getCurrentThreadAndFrameId();
+
+        const loadResult = await this.session.evaluate(
+          `source ${this.gdbScriptPath}`,
+          frameId,
+        );
+        console.assert(loadResult.result.trim() === "");
+        const result = await this.session.evaluate(
+          `py print(serialize_type(parse_type("int")))`,
+          frameId,
+        );
+        const res = JSON.parse(result.result);
+
         await this.handleMainBreakpointEvent();
       }
     } else if (this.status.kind === "initialized") {
@@ -177,10 +195,8 @@ export class Reactor {
     // The last breakpoint is the one we artificially created
     const breakpoints = message.body.breakpoints;
     console.assert(breakpoints.length > 0);
-    const breakpoint = breakpoints[breakpoints.length - 1];
     this.status = {
       kind: "waiting-for-main-breakpoint",
-      mainBreakpointId: breakpoint.id ?? null,
     };
   }
 
@@ -197,7 +213,7 @@ export class Reactor {
     // Ideally, we should do this through breakpoint IDs, but the cppdbg adapter does not
     // seem to send them.
     for (const allocFn of MEM_ALLOC_FNS) {
-      await this.session.evaluate(`-exec break ${allocFn}`, frameId);
+      await this.session.evaluate(`break ${allocFn}`, frameId);
     }
 
     // We need to change the status BEFORE starting the asynchronous continue
@@ -207,7 +223,7 @@ export class Reactor {
 
   private async handleMemoryAllocationBreakpoint(frameId: FrameId) {
     const result = await this.session.evaluate(
-      "-exec py print(gdb.selected_frame().name())",
+      "py print(gdb.selected_frame().name())",
     );
     const fnName = result.result.trimEnd();
     const args = await this.session.getCurrentFnArgs(frameId);
@@ -218,7 +234,8 @@ export class Reactor {
       fnName.endsWith("realloc");
 
     if (isAlloc) {
-      const address = await this.session.finishCurrentFnAndGetReturnValue();
+      const address =
+        await this.session.finishCurrentFnAndGetReturnValue(frameId);
       let size = Number.parseInt(args[0]);
       if (fnName.endsWith("malloc")) {
         console.assert(args.length === 1);

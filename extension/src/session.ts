@@ -31,12 +31,13 @@ export class DebuggerSession {
     return await this.session.customRequest("setFunctionBreakpoints", args);
   }
 
+  // `py print(serialize_type(parse_type("int")))`
   async evaluate(
     expression: string,
     frameId?: FrameId,
   ): Promise<ExtractBody<DebugProtocol.EvaluateResponse>> {
     const args: DebugProtocol.EvaluateArguments = {
-      expression,
+      expression: `-exec ${expression}`,
       frameId,
       context: "repl",
     };
@@ -97,7 +98,7 @@ export class DebuggerSession {
   }
 
   async getCurrentFnArgs(frameId: FrameId): Promise<string[]> {
-    const result = await this.evaluate("-exec info args", frameId);
+    const result = await this.evaluate("info args", frameId);
     const args = [];
     for (let arg of result.result.split("\n")) {
       arg = arg.trim();
@@ -109,11 +110,11 @@ export class DebuggerSession {
     return args;
   }
 
-  async finishCurrentFnAndGetReturnValue(): Promise<string> {
+  async finishCurrentFnAndGetReturnValue(frameId: FrameId): Promise<string> {
     // Finish the current function
-    await this.evaluate("-exec finish");
+    await this.evaluate("finish", frameId);
     // Get last saved value
-    const result = await this.evaluate(`-exec printf "%p",$`);
+    const result = await this.evaluate(`printf "%p",$`);
     return result.result.trim();
   }
 
@@ -157,11 +158,18 @@ export class DebuggerSession {
       }
 
       const res = await this.getVariables(scope.variablesReference);
+
       for (const variable of res.variables) {
+        // Get the address of the variable
+        const result = await this.evaluate(
+          `printf "%p",&${variable.evaluateName ?? variable.name}`,
+          frameId,
+        );
+        const address = result.result.trim();
         places.push({
           kind,
           name: variable.name,
-          address: variable.memoryReference ?? null,
+          address,
           type: variable.type ?? null,
           simpleValue: variable.value,
         });

@@ -19,8 +19,9 @@ export class EagerResolver implements ProcessResolver {
     private processState: { [threadId: ThreadId]: FullThreadState },
   ) {}
 
-  getStackTrace(threadId: ThreadId): Promise<StackTrace> {
-    return Promise.resolve(this.processState[threadId].stackTrace);
+  async getStackTrace(threadId: ThreadId): Promise<StackTrace> {
+    // return this.processState[threadId].stackTrace;
+    return { frames: [] };
   }
 
   getVariables(frameId: FrameId): Promise<Place[]> {

@@ -32,7 +32,7 @@ function runMemvizInVsCode() {
 
         // memviz.showState(message.state, resolver);
       } else {
-        resolver.handleMessage(message);
+        // resolver.handleMessage(message);
       }
     },
   );

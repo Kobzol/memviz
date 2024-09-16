@@ -1,6 +1,5 @@
 interface WaitingForMainBreakpoint {
   kind: "waiting-for-main-breakpoint";
-  mainBreakpointId: number | null;
 }
 
 interface WaitingForSetFunctionBreakpointsResponse {
