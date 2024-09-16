@@ -1,9 +1,12 @@
 import type { WebviewApi } from "vscode-webview";
 import type {
   ExtensionToMemvizResponse,
+  GetStackTraceReq,
   GetStackTraceRes,
+  GetVariablesReq,
   GetVariablesRes,
   MemvizToExtensionMsg,
+  MemvizToExtensionReq,
   RequestId,
 } from "../messages";
 import type { FrameId, Place, StackTrace, ThreadId } from "process-def";
@@ -30,41 +33,38 @@ export class VsCodeResolver implements ProcessResolver {
   }
 
   async getStackTrace(threadId: ThreadId): Promise<StackTrace> {
-    const [id, promise] = this.prepareRequest<GetStackTraceRes>();
-
-    this.sendMessage({
+    const res = await this.sendRequest<GetStackTraceReq, GetStackTraceRes>({
       kind: "get-stack-trace",
-      requestId: id,
       threadId,
     });
-    const res = await promise;
     return res.stackTrace;
   }
 
   async getVariables(frameId: FrameId): Promise<Place[]> {
-    const [id, promise] = this.prepareRequest<GetVariablesRes>();
-
-    this.sendMessage({
+    const res = await this.sendRequest<GetVariablesReq, GetVariablesRes>({
       kind: "get-variables",
-      requestId: id,
       frameId,
     });
-    const res = await promise;
     return res.places;
   }
 
-  private prepareRequest<ResponseType extends { data: unknown }>(): [
-    RequestId,
-    Promise<ExtractData<ResponseType>>,
-  ] {
-    const id = this.requestId;
+  private sendRequest<
+    RequestType extends MemvizToExtensionReq,
+    ResponseType extends { data: unknown },
+  >(
+    request: Omit<RequestType, "requestId">,
+  ): Promise<ExtractData<ResponseType>> {
+    const requestId = this.requestId;
     this.requestId++;
+
+    this.sendMessage({ ...request, requestId } as RequestType);
+
     const promise = new Promise<ExtractData<ResponseType>>(
       (resolve, _reject) => {
-        this.requestMap.set(id, resolve as (_data: unknown) => void);
+        this.requestMap.set(requestId, resolve as (_data: unknown) => void);
       },
     );
-    return [id, promise];
+    return promise;
   }
 
   private sendMessage(msg: MemvizToExtensionMsg) {

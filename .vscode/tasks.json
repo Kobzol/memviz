@@ -57,7 +57,7 @@
             },
             "problemMatcher": "$tsc-watch",
             "isBackground": true,
-            "label": "process-def",
+            "label": "compile-process-def",
             "presentation": {
                 "group": "watch",
                 "reveal": "never"

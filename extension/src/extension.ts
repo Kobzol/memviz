@@ -2,24 +2,31 @@ import { readFileSync } from "fs";
 import path from "path";
 import * as vscode from "vscode";
 
-import { Context } from "./context";
+import { Reactor } from "./reactor";
+import type { DebugProtocol } from "@vscode/debugprotocol";
+import { DebuggerSession } from "./session";
 
 export function activate(context: vscode.ExtensionContext) {
-  let ctx: Context | null = null;
+  let handler: Reactor | null = null;
 
   const trackerDisposable = vscode.debug.registerDebugAdapterTrackerFactory(
     "cppdbg",
     {
       createDebugAdapterTracker(session: vscode.DebugSession) {
         return {
-          onWillReceiveMessage(message) {
-            // console.log("RECEIVED message:", message);
-          },
-          onDidSendMessage: async (message) => {
-            if (ctx === null) {
+          onWillReceiveMessage: async (message: DebugProtocol.Request) => {
+            if (handler === null) {
               return;
             }
-            await ctx.handleDebugMessage(message);
+            await handler.handleMessageFromClient(message);
+          },
+          onDidSendMessage: (
+            message: DebugProtocol.Event | DebugProtocol.Response,
+          ) => {
+            if (handler === null) {
+              return;
+            }
+            handler.handleMessageToClient(message);
           },
         };
       },
@@ -28,8 +35,8 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(trackerDisposable);
 
   const startDisposable = vscode.debug.onDidStartDebugSession((session) => {
-    if (ctx !== null) {
-      ctx.dispose();
+    if (handler !== null) {
+      handler.dispose();
     }
     console.log("Opening memviz");
 
@@ -37,16 +44,16 @@ export function activate(context: vscode.ExtensionContext) {
     panel.onDidDispose(
       () => {
         console.log("Closing memviz (panel closed)");
-        ctx = null;
+        handler = null;
       },
       null,
       context.subscriptions,
     );
-    ctx = new Context(panel, session);
+    handler = new Reactor(panel, new DebuggerSession(session));
     panel.webview.onDidReceiveMessage(
       (message) => {
-        if (ctx !== null) {
-          ctx.handleWebviewMessage(message);
+        if (handler !== null) {
+          handler.handleWebviewMessage(message);
         }
       },
       undefined,
@@ -57,9 +64,9 @@ export function activate(context: vscode.ExtensionContext) {
 
   const endDisposable = vscode.debug.onDidTerminateDebugSession(() => {
     console.log("Closing memviz (debug session terminated)");
-    if (ctx !== null) {
-      ctx.dispose();
-      ctx = null;
+    if (handler !== null) {
+      handler.dispose();
+      handler = null;
     }
   });
   context.subscriptions.push(endDisposable);

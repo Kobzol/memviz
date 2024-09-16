@@ -1,3 +1,4 @@
+import type { Address } from "process-def";
 import type {
   FrameId,
   Place,
@@ -12,20 +13,36 @@ export interface VisualizeStateEvent {
   state: ProcessState;
 }
 
-export type ExtensionEvent = VisualizeStateEvent;
+export interface MemoryAllocatedEvent {
+  kind: "mem-allocated";
+  address: Address;
+  size: number;
+}
+
+export interface MemoryFreedEvent {
+  kind: "mem-freed";
+  address: Address;
+}
+
+export type ExtensionEvent =
+  | VisualizeStateEvent
+  | MemoryAllocatedEvent
+  | MemoryFreedEvent;
 
 // Responses to requests to the extension
-export interface GetStackTraceRes {
-  kind: "get-stack-trace";
+interface Response {
   requestId: RequestId;
+}
+
+export interface GetStackTraceRes extends Response {
+  kind: "get-stack-trace";
   data: {
     stackTrace: StackTrace;
   };
 }
 
-export interface GetVariablesRes {
+export interface GetVariablesRes extends Response {
   kind: "get-variables";
-  requestId: RequestId;
   data: {
     places: Place[];
   };
@@ -39,18 +56,20 @@ export type ExtensionToMemvizMsg = ExtensionEvent | ExtensionToMemvizResponse;
 // Requests to the extension
 export type RequestId = number;
 
-export interface GetStackTraceReq {
-  kind: "get-stack-trace";
+interface Request {
   requestId: RequestId;
+}
+
+export interface GetStackTraceReq extends Request {
+  kind: "get-stack-trace";
   threadId: ThreadId;
 }
 
-export interface GetVariablesReq {
+export interface GetVariablesReq extends Request {
   kind: "get-variables";
-  requestId: RequestId;
   frameId: FrameId;
 }
 
-type MemvizToExtensionReq = GetStackTraceReq | GetVariablesReq;
+export type MemvizToExtensionReq = GetStackTraceReq | GetVariablesReq;
 
 export type MemvizToExtensionMsg = MemvizToExtensionReq;

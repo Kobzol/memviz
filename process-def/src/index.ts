@@ -17,14 +17,19 @@ export interface StackFrame {
 }
 
 export type Address = string;
+export type Type = string;
 
 export enum PlaceKind {
-  Variable = 0,
-  Parameter = 1,
+  Variable = "variable",
+  Parameter = "parameter",
 }
 
 export interface Place {
   kind: PlaceKind;
+  name: string;
+  address: Address | null;
+  type: Type | null;
+  simpleValue: string;
 }
 
 // TODO: https://microsoft.github.io/debug-adapter-protocol/specification#Requests_ReadMemory
