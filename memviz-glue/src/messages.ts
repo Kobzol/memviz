@@ -40,14 +40,26 @@ export interface GetStackTraceRes extends Response {
   };
 }
 
-export interface GetVariablesRes extends Response {
+export interface GetPlacesRes extends Response {
   kind: "get-variables";
   data: {
     places: Place[];
   };
 }
 
-export type ExtensionToMemvizResponse = GetStackTraceRes | GetVariablesRes;
+type Base64Data = string;
+
+export interface ReadMemoryRes extends Response {
+  kind: "read-memory";
+  data: {
+    data: Base64Data;
+  };
+}
+
+export type ExtensionToMemvizResponse =
+  | GetStackTraceRes
+  | GetPlacesRes
+  | ReadMemoryRes;
 
 // Any message from the extension
 export type ExtensionToMemvizMsg = ExtensionEvent | ExtensionToMemvizResponse;
@@ -64,11 +76,20 @@ export interface GetStackTraceReq extends Request {
   threadId: ThreadId;
 }
 
-export interface GetVariablesReq extends Request {
+export interface GetPlacesReq extends Request {
   kind: "get-variables";
   frameIndex: number;
 }
 
-export type MemvizToExtensionReq = GetStackTraceReq | GetVariablesReq;
+export interface ReadMemoryReq extends Request {
+  kind: "read-memory";
+  address: string;
+  size: number;
+}
+
+export type MemvizToExtensionReq =
+  | GetStackTraceReq
+  | GetPlacesReq
+  | ReadMemoryReq;
 
 export type MemvizToExtensionMsg = MemvizToExtensionReq;

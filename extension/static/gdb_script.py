@@ -1,3 +1,4 @@
+from collections import defaultdict
 import contextlib
 import json
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
@@ -205,18 +206,29 @@ def activate_frame(index: int):
         frame.select()
 
 
-def get_frame_places(frame_index: int) -> PlaceList:
+def get_frame_places(frame_index: int = 0) -> PlaceList:
     interner = TypeInterner()
+    places = []
+    seen_names = {}
+
     with activate_frame(frame_index) as frame:
         block = frame.block()
+        while block is not None and not block.is_static:
+            for symbol in block:
+                name = symbol.name
+                name_record = seen_names.get(name)
+                if name_record is not None:
+                    name += f" ({name_record + 1})"
+                    seen_names[name] = name_record + 1
+                else:
+                    seen_names[name] = 0
 
-        places = []
-        for symbol in block:
-            ty = make_type(symbol.type, interner)
-            value = symbol.value(frame)
-            is_param = symbol.is_argument
-            places.append(Place(name=symbol.name, address=str(value.address), type=ty, param=is_param))
-        return PlaceList(places=places, types=interner.get_types())
+                ty = make_type(symbol.type, interner)
+                value = symbol.value(frame)
+                is_param = symbol.is_argument
+                places.append(Place(name=name, address=str(value.address), type=ty, param=is_param))
+            block = block.superblock
+    return PlaceList(places=places, types=interner.get_types())
 
 
 # TODO: simple value

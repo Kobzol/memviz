@@ -4,13 +4,16 @@ import type {
   ExtensionToMemvizResponse,
   GetStackTraceReq,
   GetStackTraceRes,
-  GetVariablesReq,
-  GetVariablesRes,
+  GetPlacesReq,
+  GetPlacesRes,
   MemvizToExtensionMsg,
   MemvizToExtensionReq,
   RequestId,
+  ReadMemoryRes,
+  ReadMemoryReq,
 } from "../messages";
 import type { ProcessResolver } from "./resolver";
+import { decodeBase64 } from "../utils";
 
 type ExtractData<T extends { data: unknown }> = T["data"];
 
@@ -41,11 +44,20 @@ export class VsCodeResolver implements ProcessResolver {
   }
 
   async getPlaces(frameIndex: number): Promise<Place[]> {
-    const res = await this.sendRequest<GetVariablesReq, GetVariablesRes>({
+    const res = await this.sendRequest<GetPlacesReq, GetPlacesRes>({
       kind: "get-variables",
       frameIndex,
     });
     return res.places;
+  }
+
+  async readMemory(address: string, size: number): Promise<Uint8Array> {
+    const res = await this.sendRequest<ReadMemoryReq, ReadMemoryRes>({
+      kind: "read-memory",
+      address,
+      size,
+    });
+    return await decodeBase64(res.data);
   }
 
   private sendRequest<

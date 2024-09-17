@@ -1,27 +1,24 @@
 interface TyBase {
   name: string;
+  size: number;
 }
 
 interface TyBool extends TyBase {
   kind: "bool";
-  size: number;
 }
 
 interface TyInt extends TyBase {
   kind: "int";
-  size: number;
   signed: boolean;
 }
 
 interface TyFloat extends TyBase {
   kind: "float";
-  size: number;
 }
 
 interface TyPtr extends TyBase {
   kind: "ptr";
   target: Type;
-  size: number;
 }
 
 interface StructField {
@@ -33,7 +30,6 @@ interface StructField {
 interface TyStruct extends TyBase {
   kind: "struct";
   fields: StructField[];
-  size: number;
 }
 
 interface TyArray extends TyBase {
@@ -44,7 +40,6 @@ interface TyArray extends TyBase {
 
 interface TyUnknown extends TyBase {
   kind: "unknown";
-  size: number;
 }
 
 interface TyInvalid extends TyBase {

@@ -46,6 +46,14 @@ export class DebuggerSession {
     return await this.session.customRequest("evaluate", args);
   }
 
+  async readMemory(address: string, size: number) {
+    const args: DebugProtocol.ReadMemoryArguments = {
+      memoryReference: address,
+      count: size,
+    };
+    return await this.session.customRequest("readMemory", args);
+  }
+
   async next(threadId: ThreadId) {
     const args: DebugProtocol.NextArguments = {
       threadId,
@@ -151,7 +159,6 @@ export class DebuggerSession {
     return await this.session.customRequest("variables", args);
   }
 
-  // TODO: unintern places
   async getPlaces(frameIndex: number): Promise<Place[]> {
     const placeResponse = await this.pythonEvaluate<PlaceList>(
       `get_frame_places(${frameIndex})`,

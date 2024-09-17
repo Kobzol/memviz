@@ -21,6 +21,7 @@ import {
 } from "./guards";
 import type { Status } from "./handlers";
 import { BreakpointMap, type Location } from "./locations";
+import type { ReadMemoryReq } from "memviz-glue/dist/messages";
 
 enum StepState {
   Idle = "idle",
@@ -265,9 +266,11 @@ export class Reactor {
   /// It asks DAP for information and sends responses back to the webview.
   async handleWebviewMessage(message: MemvizToExtensionMsg) {
     if (message.kind === "get-stack-trace") {
-      this.performStackTraceRequest(message);
+      this.performGetStackTraceRequest(message);
     } else if (message.kind === "get-variables") {
-      this.performVariablesRequest(message);
+      this.performGetPlacesRequest(message);
+    } else if (message.kind === "read-memory") {
+      this.performReadMemoryRequest(message);
     }
   }
 
@@ -275,7 +278,7 @@ export class Reactor {
     this.panel.dispose();
   }
 
-  private async performStackTraceRequest(message: GetStackTraceReq) {
+  private async performGetStackTraceRequest(message: GetStackTraceReq) {
     const frames = await this.session.getStackTrace(message.threadId);
     this.sendMemvizResponse({
       kind: "get-stack-trace",
@@ -288,7 +291,7 @@ export class Reactor {
     });
   }
 
-  private async performVariablesRequest(message: GetVariablesReq) {
+  private async performGetPlacesRequest(message: GetVariablesReq) {
     const places = await this.session.getPlaces(message.frameIndex);
 
     this.sendMemvizResponse({
@@ -296,6 +299,17 @@ export class Reactor {
       requestId: message.requestId,
       data: {
         places,
+      },
+    });
+  }
+
+  private async performReadMemoryRequest(message: ReadMemoryReq) {
+    const result = await this.session.readMemory(message.address, message.size);
+    this.sendMemvizResponse({
+      kind: "read-memory",
+      requestId: message.requestId,
+      data: {
+        data: result.data,
       },
     });
   }
