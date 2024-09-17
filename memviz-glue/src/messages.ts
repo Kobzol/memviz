@@ -1,11 +1,10 @@
-import type { Address } from "process-def";
 import type {
-  FrameId,
+  Address,
   Place,
   ProcessState,
   StackTrace,
   ThreadId,
-} from "process-def/src";
+} from "process-def";
 
 // Events from the extension
 export interface VisualizeStateEvent {
@@ -67,7 +66,7 @@ export interface GetStackTraceReq extends Request {
 
 export interface GetVariablesReq extends Request {
   kind: "get-variables";
-  frameId: FrameId;
+  frameIndex: number;
 }
 
 export type MemvizToExtensionReq = GetStackTraceReq | GetVariablesReq;

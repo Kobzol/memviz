@@ -89,17 +89,13 @@ export class Reactor {
 
         const [_, frameId] = await this.session.getCurrentThreadAndFrameId();
 
+        // TODO: check if we're using GDB
+        // Load helper GDB Python script
         const loadResult = await this.session.evaluate(
           `source ${this.gdbScriptPath}`,
           frameId,
         );
         console.assert(loadResult.result.trim() === "");
-        const result = await this.session.evaluate(
-          `py print(serialize_type(parse_type("int")))`,
-          frameId,
-        );
-        const res = JSON.parse(result.result);
-
         await this.handleMainBreakpointEvent();
       }
     } else if (this.status.kind === "initialized") {
@@ -280,24 +276,21 @@ export class Reactor {
   }
 
   private async performStackTraceRequest(message: GetStackTraceReq) {
-    const response = await this.session.getStackTrace(message.threadId);
+    const frames = await this.session.getStackTrace(message.threadId);
     this.sendMemvizResponse({
       kind: "get-stack-trace",
       requestId: message.requestId,
       data: {
         stackTrace: {
-          frames: response.stackFrames.map((frame) => ({
-            id: frame.id,
-            name: frame.name,
-            instruction_pointer: frame.instructionPointerReference!,
-          })),
+          frames,
         },
       },
     });
   }
 
   private async performVariablesRequest(message: GetVariablesReq) {
-    const places = await this.session.getPlaces(message.frameId);
+    const places = await this.session.getPlaces(message.frameIndex);
+
     this.sendMemvizResponse({
       kind: "get-variables",
       requestId: message.requestId,
@@ -317,13 +310,13 @@ export class Reactor {
     });
   }
 
-  private sendMemvizEvent(msg: ExtensionToMemvizMsg) {
+  private async sendMemvizEvent(msg: ExtensionToMemvizMsg) {
     // console.log("Sending memviz event", msg);
-    this.panel.webview.postMessage(msg);
+    await this.panel.webview.postMessage(msg);
   }
 
-  private sendMemvizResponse(response: ExtensionToMemvizResponse) {
-    this.panel.webview.postMessage(response);
+  private async sendMemvizResponse(response: ExtensionToMemvizResponse) {
+    await this.panel.webview.postMessage(response);
   }
 }
 

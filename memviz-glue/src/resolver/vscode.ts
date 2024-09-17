@@ -1,4 +1,4 @@
-import type { FrameId, Place, StackTrace, ThreadId } from "process-def";
+import type { Place, StackTrace, ThreadId } from "process-def";
 import type { WebviewApi } from "vscode-webview";
 import type {
   ExtensionToMemvizResponse,
@@ -40,10 +40,10 @@ export class VsCodeResolver implements ProcessResolver {
     return res.stackTrace;
   }
 
-  async getVariables(frameId: FrameId): Promise<Place[]> {
+  async getPlaces(frameIndex: number): Promise<Place[]> {
     const res = await this.sendRequest<GetVariablesReq, GetVariablesRes>({
       kind: "get-variables",
-      frameId,
+      frameIndex,
     });
     return res.places;
   }

@@ -24,7 +24,7 @@ export class EagerResolver implements ProcessResolver {
     return { frames: [] };
   }
 
-  getVariables(frameId: FrameId): Promise<Place[]> {
+  getPlaces(frameId: FrameId): Promise<Place[]> {
     throw new Error("Method not implemented.");
   }
 }

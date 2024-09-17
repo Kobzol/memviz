@@ -1,8 +1,10 @@
 import type { DebugProtocol } from "@vscode/debugprotocol";
 import {
+  PlaceKind,
+  type Type,
   type FrameId,
   type Place,
-  PlaceKind,
+  type StackFrame,
   type ThreadId,
 } from "process-def";
 import type { DebugSession } from "vscode";
@@ -31,11 +33,11 @@ export class DebuggerSession {
     return await this.session.customRequest("setFunctionBreakpoints", args);
   }
 
-  // `py print(serialize_type(parse_type("int")))`
   async evaluate(
     expression: string,
     frameId?: FrameId,
   ): Promise<ExtractBody<DebugProtocol.EvaluateResponse>> {
+    // console.log(`Evaluating ${expression}`);
     const args: DebugProtocol.EvaluateArguments = {
       expression: `-exec ${expression}`,
       frameId,
@@ -94,7 +96,7 @@ export class DebuggerSession {
     const threads = await this.getThreads();
     const threadId = threads.threads[0].id;
     const stackFrame = await this.getStackTrace(threadId);
-    return [threadId, stackFrame.stackFrames[0].id];
+    return [threadId, stackFrame[0].id];
   }
 
   async getCurrentFnArgs(frameId: FrameId): Promise<string[]> {
@@ -118,13 +120,17 @@ export class DebuggerSession {
     return result.result.trim();
   }
 
-  async getStackTrace(
-    threadId: ThreadId,
-  ): Promise<ExtractBody<DebugProtocol.StackTraceResponse>> {
+  async getStackTrace(threadId: ThreadId): Promise<StackFrame[]> {
     const args: DebugProtocol.StackTraceArguments = {
       threadId,
     };
-    return await this.session.customRequest("stackTrace", args);
+    const response: ExtractBody<DebugProtocol.StackTraceResponse> =
+      await this.session.customRequest("stackTrace", args);
+    return response.stackFrames.map((frame, index) => ({
+      id: frame.id,
+      index,
+      name: frame.name,
+    }));
   }
 
   async getScopes(
@@ -145,36 +151,49 @@ export class DebuggerSession {
     return await this.session.customRequest("variables", args);
   }
 
-  async getPlaces(frameId: FrameId): Promise<Place[]> {
-    const response = await this.getScopes(frameId);
+  async getPlaces(frameIndex: number): Promise<Place[]> {
+    const placeResponse = await this.pythonEvaluate<{
+      places: {
+        name: string;
+        address: string;
+        type: Type;
+        param: boolean;
+      }[];
+    }>(`get_frame_places(${frameIndex})`);
 
     const places: Place[] = [];
-    for (const scope of response.scopes) {
-      let kind = PlaceKind.Variable;
-      if (scope.presentationHint === "arguments") {
-        kind = PlaceKind.Parameter;
-      } else if (scope.presentationHint !== "locals") {
-        continue;
-      }
-
-      const res = await this.getVariables(scope.variablesReference);
-
-      for (const variable of res.variables) {
-        // Get the address of the variable
-        const result = await this.evaluate(
-          `printf "%p",&${variable.evaluateName ?? variable.name}`,
-          frameId,
-        );
-        const address = result.result.trim();
-        places.push({
-          kind,
-          name: variable.name,
-          address,
-          type: variable.type ?? null,
-          simpleValue: variable.value,
-        });
-      }
+    for (const place of placeResponse.places) {
+      places.push({
+        kind: place.param ? PlaceKind.Parameter : PlaceKind.Variable,
+        name: place.name,
+        address: place.address,
+        type: place.type,
+      });
     }
     return places;
   }
+
+  private async pythonEvaluate<T>(command: string): Promise<T> {
+    const gdbResult = await this.evaluate(
+      `py print(try_run(lambda: ${command}))`,
+    );
+    let pyResult: PyResult<T>;
+    try {
+      pyResult = JSON.parse(gdbResult.result);
+    } catch (err) {
+      throw new Error(
+        `Python command ${command} returned non-JSON response:\n${gdbResult.result.trim()}`,
+      );
+    }
+    if (!pyResult.ok) {
+      throw new Error(`Python command ${command} failed:\n${pyResult.error}`);
+    }
+    return pyResult.value as T;
+  }
+}
+
+interface PyResult<T> {
+  ok: boolean;
+  value: T | null;
+  error: string | null;
 }

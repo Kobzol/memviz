@@ -1,5 +1,6 @@
+import contextlib
 import json
-from typing import List, Optional, Union
+from typing import Any, Callable, List, Optional, Union
 import gdb
 from gdb import types
 import dataclasses
@@ -96,6 +97,42 @@ class TyInvalid(Ty):
 Ty = Union[TyBool, TyInt, TyFloat, TyPtr, TyStruct, TyArray, TyUnknown, TyInvalid]
 
 
+@dataclasses.dataclass
+class Place:
+    name: str
+    address: str
+    type: Ty
+    param: bool
+
+
+@dataclasses.dataclass
+class PlaceList:
+    places: List[Place]
+
+
+@dataclasses.dataclass
+class Result:
+    ok: bool
+    value: Optional[Any] = None
+    error: Optional[str] = None
+
+    @staticmethod
+    def make_ok(value: Any) -> "Result":
+        return Result(ok=True, value=value)
+
+    @staticmethod
+    def make_error(error: Any) -> "Result":
+        return Result(ok=False, error=error)
+
+
+def try_run(fn: Callable) -> Result:
+    try:
+        result = fn()
+        return dataclass_to_json(Result.make_ok(result))
+    except BaseException as e:
+        return dataclass_to_json(Result.make_error(str(e)))
+
+
 def make_type(ty: gdb.Type, typename: Optional[str] = None):
     ty = ty.unqualified()
     size = ty.sizeof
@@ -126,18 +163,13 @@ def make_type(ty: gdb.Type, typename: Optional[str] = None):
                 offset_bits=field.bitpos
             )
             fields.append(field)
-        return TyStruct(name=name, fields=fields)
+        return TyStruct(name=name, fields=fields, size=size)
     elif ty.code == gdb.TYPE_CODE_ARRAY:
         inner_type = make_type(ty.target())
         element_count = ty.sizeof // inner_type.get_size()
         return TyArray(name=name, type=inner_type, element_count=element_count)
     else:
         return TyUnknown(name=name, size=size)
-
-
-def serialize_type(ty: Ty) -> str:
-    data = dataclasses.asdict(ty)
-    return json.dumps(data) 
 
 
 def parse_type(typename: str):
@@ -151,3 +183,47 @@ def parse_type(typename: str):
 def type_of_val(value: str):
     val = gdb.parse_and_eval(value)
     return make_type(val.type)
+
+
+@contextlib.contextmanager
+def activate_frame(index: int):
+    """
+    Temporarily select frame with the given index.
+    The topmost stack frame has index 0.
+    """
+    frame = gdb.selected_frame()
+
+    current_frame = gdb.newest_frame()
+    current_index = 0
+    while current_index < index:
+        current_frame = current_frame.older()
+        if current_frame is None:
+            raise Exception(f"Frame {index} not found")
+        current_index += 1
+    try:
+        current_frame.select()
+        yield current_frame
+    finally:
+        frame.select()
+
+
+def get_frame_places(frame_index: int) -> PlaceList:
+    with activate_frame(frame_index) as frame:
+        block = frame.block()
+
+        places = []
+        for symbol in block:
+            ty = make_type(symbol.type)
+            value = symbol.value(frame)
+            is_param = symbol.is_argument
+            places.append(Place(name=symbol.name, address=str(value.address), type=ty, param=is_param))
+        return PlaceList(places=places)
+
+
+def dataclass_to_json(value) -> str:
+    return json.dumps(dataclasses.asdict(value))
+
+
+# TODO: simple value
+# TODO: type caching
+# TODO: find if variable is initialized by its line

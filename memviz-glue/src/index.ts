@@ -26,13 +26,17 @@ function runMemvizInVsCode() {
         const stackTrace = await resolver.getStackTrace(
           message.state.threads[0],
         );
-        console.log(stackTrace);
-        const vars = await resolver.getVariables(stackTrace.frames[0].id);
+        const vars = await resolver.getPlaces(stackTrace.frames[0].index);
         console.log(vars);
 
         // memviz.showState(message.state, resolver);
+      } else if (
+        message.kind === "mem-allocated" ||
+        message.kind === "mem-freed"
+      ) {
+        // TODO: handle memory allocation events
       } else {
-        // resolver.handleMessage(message);
+        resolver.handleMessage(message);
       }
     },
   );
