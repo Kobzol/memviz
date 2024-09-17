@@ -179,7 +179,7 @@ export class Reactor {
           this.stepState = StepState.Idle;
           this.lastClientLocation = stopLocation;
 
-          await this.sendVisualizeStateEvent();
+          await this.onThreadStopped();
         }
       }
     }
@@ -300,7 +300,7 @@ export class Reactor {
     });
   }
 
-  private async sendVisualizeStateEvent() {
+  private async onThreadStopped() {
     const response = await this.session.getThreads();
     this.sendMemvizEvent({
       kind: "visualize-state",

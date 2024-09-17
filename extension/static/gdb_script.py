@@ -1,94 +1,64 @@
 import contextlib
 import json
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import gdb
-from gdb import types
 import dataclasses
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class Ty:
     name: str
-
-    def get_size(self) -> int:
-        return 1
-
-
-@dataclasses.dataclass
-class TyBool(Ty):
     size: int
+
+
+@dataclasses.dataclass(frozen=True)
+class TyBool(Ty):
     kind: str = dataclasses.field(init=False, default="bool")
 
-    def get_size(self) -> int:
-        return self.size
 
-
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class TyInt(Ty):
     signed: bool
-    size: int
     kind: str = dataclasses.field(init=False, default="int")
 
-    def get_size(self) -> int:
-        return self.size
 
-
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class TyFloat(Ty):
-    size: int
     kind: str = dataclasses.field(init=False, default="float")
 
-    def get_size(self) -> int:
-        return self.size
 
-
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class TyPtr(Ty):
-    target: "Ty"
-    size: int
+    target: int
     kind: str = dataclasses.field(init=False, default="ptr")
 
-    def get_size(self) -> int:
-        return self.size
 
-
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class StructField:
     name: str
-    type: "Ty"
+    type: int
     offset_bits: int
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class TyStruct(Ty):
-    fields: List[StructField]
-    size: int
+    fields: Tuple[StructField]
     kind: str = dataclasses.field(init=False, default="struct")
 
-    def get_size(self) -> int:
-        return self.size
 
-
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class TyArray(Ty):
-    type: "Ty"
+    type: int
     element_count: int
     kind: str = dataclasses.field(init=False, default="array")
 
-    def get_size(self) -> int:
-        return self.type.get_size() * self.element_count
 
-
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class TyUnknown(Ty):
-    size: int
     kind: str = dataclasses.field(init=False, default="unknown")
 
-    def get_size(self) -> int:
-        return self.size
 
-
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class TyInvalid(Ty):
     error: str
     kind: str = dataclasses.field(init=False, default="invalid")
@@ -97,17 +67,18 @@ class TyInvalid(Ty):
 Ty = Union[TyBool, TyInt, TyFloat, TyPtr, TyStruct, TyArray, TyUnknown, TyInvalid]
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class Place:
     name: str
     address: str
-    type: Ty
+    type: int
     param: bool
 
 
 @dataclasses.dataclass
 class PlaceList:
     places: List[Place]
+    types: List[Ty]
 
 
 @dataclasses.dataclass
@@ -133,7 +104,33 @@ def try_run(fn: Callable) -> Result:
         return dataclass_to_json(Result.make_error(str(e)))
 
 
-def make_type(ty: gdb.Type, typename: Optional[str] = None):
+def dataclass_to_json(value) -> str:
+    return json.dumps(dataclasses.asdict(value))
+
+
+class TypeInterner:
+    def __init__(self):
+        self.cache: Dict[Any, Tuple[Ty, int]] = {}
+
+    def intern_type(self, type: Ty) -> int:
+        key = self.calculate_key(type)
+        entry = self.cache.get(key)
+        if entry is not None:
+            return entry[1]
+
+        index = len(self.cache)
+        self.cache[key] = (type, index)
+        return index
+
+    def get_types(self) -> List[Ty]:
+        types = sorted(self.cache.values(), key=lambda v: v[1])
+        return [ty for (ty, _) in types]
+
+    def calculate_key(self, ty: Ty) -> Any:
+        return ty
+
+
+def make_type(ty: gdb.Type, interner: TypeInterner, typename: Optional[str] = None) -> int:
     ty = ty.unqualified()
     size = ty.sizeof
     name = ty.name
@@ -141,48 +138,49 @@ def make_type(ty: gdb.Type, typename: Optional[str] = None):
         name = typename
 
     if ty.code == gdb.TYPE_CODE_BOOL:
-        return TyBool(name=name, size=size)
+        return interner.intern_type(TyBool(name=name, size=size))
     elif ty.code == gdb.TYPE_CODE_INT:
-        return TyInt(name=name, signed=ty.is_signed, size=size)
+        return interner.intern_type(TyInt(name=name, size=size, signed=ty.is_signed))
     elif ty.code == gdb.TYPE_CODE_FLT:
-        return TyFloat(name=name, size=size)
+        return interner.intern_type(TyFloat(name=name, size=size))
     elif ty.code == gdb.TYPE_CODE_PTR:
-        return TyPtr(name=name, target=make_type(ty.target()), size=size)
+        return interner.intern_type(TyPtr(name=name, size=size, target=make_type(ty.target())))
     elif ty.code == gdb.TYPE_CODE_TYPEDEF:
-        return make_type(ty.strip_typedefs(), typename=name)
+        return make_type(ty.strip_typedefs(), interner=interner, typename=name)
     elif ty.code == gdb.TYPE_CODE_STRUCT:
         fields = []
         for field in ty.fields():
             if field.type is None:
-                type = TyInvalid(name="unknown", error="Unknown field type")
+                type = interner.intern_type(TyInvalid(name="unknown", size=1, error="Unknown field type"))
             else:
-                type = make_type(field.type)
+                type = make_type(field.type, interner=interner)
             field = StructField(
                 name=field.name,
                 type=type,
                 offset_bits=field.bitpos
             )
             fields.append(field)
-        return TyStruct(name=name, fields=fields, size=size)
+        return interner.intern_type(TyStruct(name=name, size=size, fields=tuple(fields)))
     elif ty.code == gdb.TYPE_CODE_ARRAY:
-        inner_type = make_type(ty.target())
-        element_count = ty.sizeof // inner_type.get_size()
-        return TyArray(name=name, type=inner_type, element_count=element_count)
+        inner_type = ty.target()
+        element_count = ty.sizeof // inner_type.sizeof
+        inner_type = make_type(inner_type, interner=interner)
+        return interner.intern_type(TyArray(name=name, size=size, type=inner_type, element_count=element_count))
     else:
-        return TyUnknown(name=name, size=size)
+        return interner.intern_type(TyUnknown(name=name, size=size))
 
 
-def parse_type(typename: str):
-    try:
-        ty = gdb.lookup_type(typename)
-    except gdb.error as e:
-        return TyInvalid(name=typename, error=str(e))
-    return make_type(ty)
+# def parse_type(typename: str):
+#     try:
+#         ty = gdb.lookup_type(typename)
+#     except gdb.error as e:
+#         return TyInvalid(name=typename, error=str(e))
+#     return make_type(ty)
 
 
-def type_of_val(value: str):
-    val = gdb.parse_and_eval(value)
-    return make_type(val.type)
+# def type_of_val(value: str):
+#     val = gdb.parse_and_eval(value)
+#     return make_type(val.type)
 
 
 @contextlib.contextmanager
@@ -208,22 +206,18 @@ def activate_frame(index: int):
 
 
 def get_frame_places(frame_index: int) -> PlaceList:
+    interner = TypeInterner()
     with activate_frame(frame_index) as frame:
         block = frame.block()
 
         places = []
         for symbol in block:
-            ty = make_type(symbol.type)
+            ty = make_type(symbol.type, interner)
             value = symbol.value(frame)
             is_param = symbol.is_argument
             places.append(Place(name=symbol.name, address=str(value.address), type=ty, param=is_param))
-        return PlaceList(places=places)
-
-
-def dataclass_to_json(value) -> str:
-    return json.dumps(dataclasses.asdict(value))
+        return PlaceList(places=places, types=interner.get_types())
 
 
 # TODO: simple value
-# TODO: type caching
 # TODO: find if variable is initialized by its line
