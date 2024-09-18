@@ -19,6 +19,14 @@ export class BreakpointMap {
   // Source => lines
   private breakpointMap: Map<string, SourceWithBreakpoints> = new Map();
 
+  hasUserBreakpoint(location: Location): boolean {
+    const key = sourceHashKey(location.source);
+    const record = this.breakpointMap.get(key);
+    if (record === undefined) return false;
+
+    return record.locations.find((l) => l.line === location.line) !== undefined;
+  }
+
   setSourceBreakpoints(
     source: DebugProtocol.Source,
     breakpoints: DebugProtocol.SourceBreakpoint[],

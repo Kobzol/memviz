@@ -85,11 +85,17 @@ export class Reactor {
         this.handleSetFunctionBreakpointsResponse(message);
       }
     } else if (this.status.kind === "waiting-for-main-breakpoint") {
-      if (isStoppedEvent(message)) {
-        // TODO: this skips breakpoint set at the beginning of main set by a user
-        ignoreMessage(message);
+      if (isStoppedEvent(message) && message.body.reason === "breakpoint") {
+        const stopLocation = getStopLocation(message);
+        // If the user also has a breakpoint here, do not ignore it
+        const hasUserBreakpoint =
+          this.breakpointMap.hasUserBreakpoint(stopLocation);
+        if (!hasUserBreakpoint) {
+          ignoreMessage(message);
+        }
 
-        const [_, frameId] = await this.session.getCurrentThreadAndFrameId();
+        const [threadId, frameId] =
+          await this.session.getCurrentThreadAndFrameId();
 
         // TODO: check if we're using GDB
         // Load helper GDB Python script
@@ -98,15 +104,18 @@ export class Reactor {
           frameId,
         );
         console.assert(loadResult.result.trim() === "");
-        await this.handleMainBreakpointEvent();
+        await this.handleMainBreakpointEvent(frameId);
+
+        if (hasUserBreakpoint) {
+          await this.onThreadStopped(stopLocation);
+        } else {
+          await this.session.continue(threadId);
+        }
       }
     } else if (this.status.kind === "initialized") {
       if (isStoppedEvent(message)) {
         const reason = message.body.reason;
-        const stopLocation: Location = {
-          source: (message.body as any).source as DebugProtocol.Source,
-          line: (message.body as any).line,
-        };
+        const stopLocation = getStopLocation(message);
         // console.log(
         //   "STOPPED",
         //   reason,
@@ -178,10 +187,7 @@ export class Reactor {
           reason === "breakpoint" ||
           reason === "pause"
         ) {
-          this.stepState = StepState.Idle;
-          this.lastClientLocation = stopLocation;
-
-          await this.onThreadStopped();
+          await this.onThreadStopped(stopLocation);
         }
       }
     }
@@ -198,10 +204,9 @@ export class Reactor {
     };
   }
 
-  private async handleMainBreakpointEvent() {
+  private async handleMainBreakpointEvent(frameId: FrameId) {
     // The program has stopped at main
-    // Perform all initialization actions, and then resume the program
-    const [threadId, frameId] = await this.session.getCurrentThreadAndFrameId();
+    // Perform all initialization actions
 
     // Set breakpoint for known (g)libc memory allocation functions
     const MEM_ALLOC_FNS = ["malloc", "calloc", "realloc", "free"];
@@ -216,7 +221,6 @@ export class Reactor {
 
     // We need to change the status BEFORE starting the asynchronous continue
     this.status = { kind: "initialized" };
-    await this.session.continue(threadId);
   }
 
   private async handleMemoryAllocationBreakpoint(frameId: FrameId) {
@@ -316,7 +320,10 @@ export class Reactor {
     });
   }
 
-  private async onThreadStopped() {
+  private async onThreadStopped(stopLocation: Location) {
+    this.stepState = StepState.Idle;
+    this.lastClientLocation = stopLocation;
+
     const response = await this.session.getThreads();
     this.sendMemvizEvent({
       kind: "visualize-state",
@@ -340,4 +347,11 @@ export class Reactor {
 function ignoreMessage(message: DebugProtocol.Event) {
   // console.log("Ignoring message", message);
   message.type = "invalid";
+}
+
+function getStopLocation(event: DebugProtocol.StoppedEvent): Location {
+  return {
+    source: (event.body as any).source as DebugProtocol.Source,
+    line: (event.body as any).line,
+  };
 }
