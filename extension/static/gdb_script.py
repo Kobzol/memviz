@@ -234,8 +234,10 @@ def get_frame_places(frame_index: int = 0) -> PlaceList:
         current_line = sal.line
         block = frame.block()
         while block is not None:
-            # if block.is_static or block.is_global or not block.is_valid():
-                # break
+            if not block.is_valid():
+                break
+
+            is_local_block = not (block.is_global or block.is_static)
 
             for symbol in block:
                 if not (symbol.is_variable or symbol.is_argument or symbol.is_constant):
@@ -247,7 +249,7 @@ def get_frame_places(frame_index: int = 0) -> PlaceList:
                 name = symbol.name
                 is_shadowed = False
 
-                if symbol.is_variable:
+                if is_local_block and symbol.is_variable:
                     is_shadowed = name in seen_names
                     seen_names.add(name)
 
@@ -257,8 +259,10 @@ def get_frame_places(frame_index: int = 0) -> PlaceList:
                 elif is_shadowed:
                     # Shadowed variable
                     kind = "s"
-                else:
+                elif is_local_block:
                     kind = "v"
+                else:
+                    kind = "g"
 
                 ty = make_type(symbol.type, interner)
                 value = symbol.value(frame)

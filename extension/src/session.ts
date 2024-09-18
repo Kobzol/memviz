@@ -220,6 +220,7 @@ const PLACE_KIND_MAP: { [key: string]: PlaceKind } = {
   p: PlaceKind.Parameter,
   v: PlaceKind.Variable,
   s: PlaceKind.ShadowedVariable,
+  g: PlaceKind.GlobalVariable,
 };
 
 function deserializePlaces(placeList: PlaceList): Place[] {

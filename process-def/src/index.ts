@@ -28,6 +28,7 @@ export enum PlaceKind {
   Variable = "variable",
   ShadowedVariable = "shadowed",
   Parameter = "parameter",
+  GlobalVariable = "global",
 }
 
 export interface Place {
