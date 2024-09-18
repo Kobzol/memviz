@@ -50,7 +50,7 @@ export interface GetPlacesRes extends Response {
 export interface ReadMemoryRes extends Response {
   kind: "read-memory";
   data: {
-    data: Uint8Array;
+    data: ArrayBuffer;
   };
 }
 

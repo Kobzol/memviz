@@ -50,7 +50,7 @@ export class VsCodeResolver implements ProcessResolver {
     return res.places;
   }
 
-  async readMemory(address: string, size: number): Promise<Uint8Array> {
+  async readMemory(address: string, size: number): Promise<ArrayBuffer> {
     const res = await this.sendRequest<ReadMemoryReq, ReadMemoryRes>({
       kind: "read-memory",
       address,

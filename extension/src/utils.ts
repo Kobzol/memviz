@@ -11,8 +11,8 @@ export async function measureAsync<T>(
   return result;
 }
 
-export async function decodeBase64(base64Bytes: string): Promise<Uint8Array> {
+export async function decodeBase64(base64Bytes: string): Promise<ArrayBuffer> {
   const dataUrl = `data:application/octet-stream;base64,${base64Bytes}`;
   const res = await fetch(dataUrl);
-  return new Uint8Array(await res.arrayBuffer());
+  return await res.arrayBuffer();
 }

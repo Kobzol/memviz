@@ -1,7 +1,6 @@
-import type { FrameId, Place, StackTrace, ThreadId } from "process-def";
+import type { Place } from "process-def";
 
 export interface ProcessResolver {
-  getStackTrace(threadId: ThreadId): Promise<StackTrace>;
-  getPlaces(frameId: FrameId): Promise<Place[]>;
-  readMemory(address: string, size: number): Promise<unknown>;
+  getPlaces(frameIndex: number): Promise<Place[]>;
+  readMemory(address: string, size: number): Promise<ArrayBuffer>;
 }
