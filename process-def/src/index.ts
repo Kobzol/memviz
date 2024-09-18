@@ -34,6 +34,7 @@ export interface Place {
   name: string;
   address: Address;
   type: Type;
+  initialized: boolean;
 }
 
 // TODO: https://microsoft.github.io/debug-adapter-protocol/specification#Requests_ReadMemory

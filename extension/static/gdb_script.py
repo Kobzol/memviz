@@ -80,14 +80,17 @@ class Place:
     t: int
     # Parameter
     p: bool
+    # Initialized
+    i: bool
 
     @staticmethod
-    def create(name: str, address: str, type: int, parameter: bool) -> "Place":
+    def create(name: str, address: str, type: int, parameter: bool, init: bool) -> "Place":
         return Place(
             n=name,
             a=address,
             t=type,
-            p=parameter
+            p=parameter,
+            i=init
         )
 
 
@@ -227,9 +230,17 @@ def get_frame_places(frame_index: int = 0) -> PlaceList:
     seen_names = {}
 
     with activate_frame(frame_index) as frame:
+        sal = frame.find_sal()
+        current_line = sal.line
         block = frame.block()
         while block is not None and not block.is_static:
             for symbol in block:
+                if not (symbol.is_variable or symbol.is_argument):
+                    continue
+
+                # We use >= instead of > because multiple statements can be on the same line
+                # E.g. for (int i = 0; i < ...; i++)
+                init = current_line >= symbol.line
                 name = symbol.name
                 name_record = seen_names.get(name)
                 if name_record is not None:
@@ -245,7 +256,8 @@ def get_frame_places(frame_index: int = 0) -> PlaceList:
                     name=name,
                     address=str(value.address),
                     type=ty,
-                    parameter=is_param
+                    parameter=is_param,
+                    init=init
                 ))
             block = block.superblock
     return PlaceList(places=places, types=interner.get_types())

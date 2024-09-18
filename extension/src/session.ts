@@ -206,6 +206,8 @@ type PlaceWithInternedType = {
   t: number;
   // Param
   p: boolean;
+  // Initialized
+  i: boolean;
 };
 
 interface PlaceList {
@@ -227,6 +229,7 @@ function uninternPlaces(placeList: PlaceList): Place[] {
       name: place.n,
       address: place.a,
       type: types[place.t],
+      initialized: place.i,
     });
   }
   return places;

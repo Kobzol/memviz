@@ -3,12 +3,13 @@ import type { ExtensionToMemvizMsg } from "./messages";
 import { EagerResolver } from "./resolver/eager";
 import { VsCodeResolver } from "./resolver/vscode";
 import { Memviz } from "./visualization";
+import { measureAsync } from "./utils";
 
 export type {
   ExtensionToMemvizMsg,
   ExtensionToMemvizResponse,
   GetStackTraceReq,
-  GetVariablesReq,
+  GetPlacesReq as GetVariablesReq,
   MemvizToExtensionMsg,
 } from "./messages";
 export { PlaceKind } from "process-def";
@@ -23,11 +24,24 @@ function runMemvizInVsCode() {
     async (event: MessageEvent<ExtensionToMemvizMsg>) => {
       const message = event.data;
       if (message.kind === "visualize-state") {
-        const stackTrace = await resolver.getStackTrace(
-          message.state.threads[0],
-        );
-        const vars = await resolver.getPlaces(stackTrace.frames[0].index);
-        console.log(vars);
+        // const stackTrace = await resolver.getStackTrace(
+        //   message.state.threads[0],
+        // );
+
+        const vars = await measureAsync("getPlaces", async () => {
+          return await resolver.getPlaces(0);
+        });
+        const futures: any[] = [];
+        for (const variable of vars) {
+          futures.push(
+            resolver.readMemory(variable.address, variable.type.size),
+          );
+        }
+
+        // const data = await measureAsync("readMemory", async () => {
+        // return resolver.readMemory(vars[0].address, vars[0].type.size);
+        // });
+        // console.log(data);
 
         // memviz.showState(message.state, resolver);
       } else if (
