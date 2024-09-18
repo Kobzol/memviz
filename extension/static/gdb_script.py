@@ -78,18 +78,18 @@ class Place:
     a: str
     # Type
     t: int
-    # Parameter
-    p: bool
+    # Kind
+    k: str
     # Initialized
     i: bool
 
     @staticmethod
-    def create(name: str, address: str, type: int, parameter: bool, init: bool) -> "Place":
+    def create(name: str, address: str, type: int, kind: str, init: bool) -> "Place":
         return Place(
             n=name,
             a=address,
             t=type,
-            p=parameter,
+            k=kind,
             i=init
         )
 
@@ -227,37 +227,57 @@ def activate_frame(index: int):
 def get_frame_places(frame_index: int = 0) -> PlaceList:
     interner = TypeInterner()
     places = []
-    seen_names = {}
+    seen_names = set()
 
     with activate_frame(frame_index) as frame:
         sal = frame.find_sal()
         current_line = sal.line
         block = frame.block()
-        while block is not None and not block.is_static:
+        while block is not None:
+            # if block.is_static or block.is_global or not block.is_valid():
+                # break
+
             for symbol in block:
-                if not (symbol.is_variable or symbol.is_argument):
+                if not (symbol.is_variable or symbol.is_argument or symbol.is_constant):
                     continue
 
                 # We use >= instead of > because multiple statements can be on the same line
                 # E.g. for (int i = 0; i < ...; i++)
                 init = current_line >= symbol.line
                 name = symbol.name
-                name_record = seen_names.get(name)
-                if name_record is not None:
-                    name += f" ({name_record + 1})"
-                    seen_names[name] = name_record + 1
+                is_shadowed = False
+
+                if symbol.is_variable:
+                    is_shadowed = name in seen_names
+                    seen_names.add(name)
+
+                kind = None
+                if symbol.is_argument:
+                    kind = "p"
+                elif is_shadowed:
+                    # Shadowed variable
+                    kind = "s"
                 else:
-                    seen_names[name] = 0
+                    kind = "v"
 
                 ty = make_type(symbol.type, interner)
                 value = symbol.value(frame)
-                is_param = symbol.is_argument
-                places.append(Place.create(
+                address = value.address
+                if address is not None:
+                    address = address.format_string(
+                        raw=True,
+                        symbols=False
+                    )
+
+                place = Place.create(
                     name=name,
-                    address=str(value.address),
+                    address=address,
                     type=ty,
-                    parameter=is_param,
+                    kind=kind,
                     init=init
-                ))
+                )
+                places.append((place, symbol.line))
             block = block.superblock
+    places = sorted(places, key=lambda v: v[1])
+    places = [place for (place, _) in places]
     return PlaceList(places=places, types=interner.get_types())

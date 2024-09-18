@@ -6,6 +6,7 @@ import {
   type StackFrame,
   type ThreadId,
   PlaceKind,
+  type Address,
 } from "process-def";
 import type { DebugSession } from "vscode";
 import type { ExtractBody } from "./utils";
@@ -163,7 +164,7 @@ export class DebuggerSession {
     const placeResponse = await this.pythonEvaluate<PlaceList>(
       `get_frame_places(${frameIndex})`,
     );
-    return uninternPlaces(placeResponse);
+    return deserializePlaces(placeResponse);
   }
 
   private async pythonEvaluate<T>(command: string): Promise<T> {
@@ -201,11 +202,11 @@ type PlaceWithInternedType = {
   // Name
   n: string;
   // Address
-  a: string;
+  a: Address | null;
   // Interned type
   t: number;
-  // Param
-  p: boolean;
+  // Kind
+  k: string;
   // Initialized
   i: boolean;
 };
@@ -215,7 +216,13 @@ interface PlaceList {
   types: Type[];
 }
 
-function uninternPlaces(placeList: PlaceList): Place[] {
+const PLACE_KIND_MAP: { [key: string]: PlaceKind } = {
+  p: PlaceKind.Parameter,
+  v: PlaceKind.Variable,
+  s: PlaceKind.ShadowedVariable,
+};
+
+function deserializePlaces(placeList: PlaceList): Place[] {
   // Unintern types
   const types = placeList.types;
   for (const type of types) {
@@ -225,7 +232,7 @@ function uninternPlaces(placeList: PlaceList): Place[] {
   const places: Place[] = [];
   for (const place of placeList.places) {
     places.push({
-      kind: place.p ? PlaceKind.Parameter : PlaceKind.Variable,
+      kind: PLACE_KIND_MAP[place.k],
       name: place.n,
       address: place.a,
       type: types[place.t],
