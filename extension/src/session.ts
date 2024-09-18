@@ -6,7 +6,6 @@ import {
   type StackFrame,
   type ThreadId,
   PlaceKind,
-  type Address,
   type AddressRange,
 } from "process-def";
 import type { DebugSession } from "vscode";
@@ -54,9 +53,10 @@ export class DebuggerSession {
       frameId,
     );
     if (result !== null) {
+      const [start, end] = result;
       return {
-        start: result[0],
-        end: result[1],
+        start: BigInt(start),
+        end: BigInt(end),
       };
     }
     return null;
@@ -221,7 +221,7 @@ type PlaceWithInternedType = {
   // Name
   n: string;
   // Address
-  a: Address | null;
+  a: string | null;
   // Interned type
   t: number;
   // Kind
@@ -254,7 +254,7 @@ function deserializePlaces(placeList: PlaceList): Place[] {
     places.push({
       kind: PLACE_KIND_MAP[place.k],
       name: place.n,
-      address: place.a,
+      address: place.a === null ? null : BigInt(place.a),
       type: types[place.t],
       initialized: place.i,
     });

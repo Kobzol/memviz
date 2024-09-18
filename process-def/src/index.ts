@@ -23,7 +23,7 @@ export interface StackFrame {
   name: string;
 }
 
-export type Address = string;
+export type Address = bigint;
 
 export interface AddressRange {
   start: Address;
