@@ -145,7 +145,7 @@ def make_type(ty: gdb.Type, interner: TypeInterner, typename: Optional[str] = No
     elif ty.code == gdb.TYPE_CODE_FLT:
         return interner.intern_type(TyFloat(name=name, size=size))
     elif ty.code == gdb.TYPE_CODE_PTR:
-        return interner.intern_type(TyPtr(name=name, size=size, target=make_type(ty.target())))
+        return interner.intern_type(TyPtr(name=name, size=size, target=make_type(ty.target(), interner)))
     elif ty.code == gdb.TYPE_CODE_TYPEDEF:
         return make_type(ty.strip_typedefs(), interner=interner, typename=name)
     elif ty.code == gdb.TYPE_CODE_STRUCT:
@@ -229,7 +229,3 @@ def get_frame_places(frame_index: int = 0) -> PlaceList:
                 places.append(Place(name=name, address=str(value.address), type=ty, param=is_param))
             block = block.superblock
     return PlaceList(places=places, types=interner.get_types())
-
-
-# TODO: simple value
-# TODO: find if variable is initialized by its line
