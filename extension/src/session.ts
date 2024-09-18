@@ -7,6 +7,7 @@ import {
   type ThreadId,
   PlaceKind,
   type Address,
+  type AddressRange,
 } from "process-def";
 import type { DebugSession } from "vscode";
 import type { ExtractBody } from "./utils";
@@ -45,6 +46,20 @@ export class DebuggerSession {
       context: "repl",
     };
     return await this.session.customRequest("evaluate", args);
+  }
+
+  async getStackAddressRange(frameId: FrameId): Promise<AddressRange | null> {
+    const result = await this.pythonEvaluate<string[] | null>(
+      "get_stack_address_range()",
+      frameId,
+    );
+    if (result !== null) {
+      return {
+        start: result[0],
+        end: result[1],
+      };
+    }
+    return null;
   }
 
   async readMemory(address: string, size: number) {
@@ -167,10 +182,14 @@ export class DebuggerSession {
     return deserializePlaces(placeResponse);
   }
 
-  private async pythonEvaluate<T>(command: string): Promise<T> {
+  private async pythonEvaluate<T>(
+    command: string,
+    frameId?: FrameId,
+  ): Promise<T> {
     const start = performance.now();
     const gdbResult = await this.evaluate(
       `py print(try_run(lambda: ${command}))`,
+      frameId,
     );
     const duration = performance.now() - start;
     console.debug(

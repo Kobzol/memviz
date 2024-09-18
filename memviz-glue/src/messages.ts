@@ -7,8 +7,8 @@ import type {
 } from "process-def";
 
 // Events from the extension
-export interface VisualizeStateEvent {
-  kind: "visualize-state";
+export interface ProcessStoppedEvent {
+  kind: "process-stopped";
   state: ProcessState;
 }
 
@@ -24,7 +24,7 @@ export interface MemoryFreedEvent {
 }
 
 export type ExtensionEvent =
-  | VisualizeStateEvent
+  | ProcessStoppedEvent
   | MemoryAllocatedEvent
   | MemoryFreedEvent;
 

@@ -5,7 +5,8 @@ export type { Type } from "./type";
 export type ThreadId = number;
 
 export interface ProcessState {
-  threads: ThreadId[];
+  stackTrace: StackTrace;
+  stackAddressRange: AddressRange | null;
 }
 
 export interface StackTrace {
@@ -23,6 +24,11 @@ export interface StackFrame {
 }
 
 export type Address = string;
+
+export interface AddressRange {
+  start: Address;
+  end: Address;
+}
 
 export enum PlaceKind {
   Variable = "variable",

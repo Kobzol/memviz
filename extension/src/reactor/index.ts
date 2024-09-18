@@ -325,10 +325,18 @@ export class Reactor {
     this.lastClientLocation = stopLocation;
 
     const response = await this.session.getThreads();
+    const stackTrace = await this.session.getStackTrace(response.threads[0].id);
+    const stackAddressRange = await this.session.getStackAddressRange(
+      stackTrace[0].id,
+    );
+
     this.sendMemvizEvent({
-      kind: "visualize-state",
+      kind: "process-stopped",
       state: {
-        threads: response.threads.map((t) => t.id),
+        stackTrace: {
+          frames: stackTrace,
+        },
+        stackAddressRange,
       },
     });
   }
