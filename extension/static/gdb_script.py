@@ -68,12 +68,27 @@ class TyInvalid(Ty):
 Ty = Union[TyBool, TyInt, TyFloat, TyPtr, TyStruct, TyArray, TyUnknown, TyInvalid]
 
 
+# The names are intentionally shortened to reduce the amount of data
+# (de)serialized from/to JSON
 @dataclasses.dataclass(frozen=True)
 class Place:
-    name: str
-    address: str
-    type: int
-    param: bool
+    # Name
+    n: str
+    # Address
+    a: str
+    # Type
+    t: int
+    # Parameter
+    p: bool
+
+    @staticmethod
+    def create(name: str, address: str, type: int, parameter: bool) -> "Place":
+        return Place(
+            n=name,
+            a=address,
+            t=type,
+            p=parameter
+        )
 
 
 @dataclasses.dataclass
@@ -226,6 +241,11 @@ def get_frame_places(frame_index: int = 0) -> PlaceList:
                 ty = make_type(symbol.type, interner)
                 value = symbol.value(frame)
                 is_param = symbol.is_argument
-                places.append(Place(name=name, address=str(value.address), type=ty, param=is_param))
+                places.append(Place.create(
+                    name=name,
+                    address=str(value.address),
+                    type=ty,
+                    parameter=is_param
+                ))
             block = block.superblock
     return PlaceList(places=places, types=interner.get_types())

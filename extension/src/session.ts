@@ -198,10 +198,14 @@ interface PyResult<T> {
 }
 
 type PlaceWithInternedType = {
-  param: boolean;
-  name: string;
-  address: string;
-  type: number;
+  // Name
+  n: string;
+  // Address
+  a: string;
+  // Interned type
+  t: number;
+  // Param
+  p: boolean;
 };
 
 interface PlaceList {
@@ -219,10 +223,10 @@ function uninternPlaces(placeList: PlaceList): Place[] {
   const places: Place[] = [];
   for (const place of placeList.places) {
     places.push({
-      kind: place.param ? PlaceKind.Parameter : PlaceKind.Variable,
-      name: place.name,
-      address: place.address,
-      type: types[place.type],
+      kind: place.p ? PlaceKind.Parameter : PlaceKind.Variable,
+      name: place.n,
+      address: place.a,
+      type: types[place.t],
     });
   }
   return places;
