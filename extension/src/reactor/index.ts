@@ -22,6 +22,7 @@ import {
 import type { Status } from "./handlers";
 import { BreakpointMap, type Location } from "./locations";
 import type { ReadMemoryReq } from "memviz-glue/dist/messages";
+import { decodeBase64 } from "../utils";
 
 enum StepState {
   Idle = "idle",
@@ -305,11 +306,12 @@ export class Reactor {
 
   private async performReadMemoryRequest(message: ReadMemoryReq) {
     const result = await this.session.readMemory(message.address, message.size);
+    const data = await decodeBase64(result.data);
     this.sendMemvizResponse({
       kind: "read-memory",
       requestId: message.requestId,
       data: {
-        data: result.data,
+        data,
       },
     });
   }

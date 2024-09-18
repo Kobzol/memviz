@@ -167,9 +167,15 @@ export class DebuggerSession {
   }
 
   private async pythonEvaluate<T>(command: string): Promise<T> {
+    const start = performance.now();
     const gdbResult = await this.evaluate(
       `py print(try_run(lambda: ${command}))`,
     );
+    const duration = performance.now() - start;
+    console.debug(
+      `Py command ${command} took ${duration.toFixed(2)}ms, response size: ${gdbResult.result.length}`,
+    );
+
     let pyResult: PyResult<T>;
     try {
       pyResult = JSON.parse(gdbResult.result);

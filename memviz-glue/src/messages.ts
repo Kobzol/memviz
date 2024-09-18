@@ -47,12 +47,10 @@ export interface GetPlacesRes extends Response {
   };
 }
 
-type Base64Data = string;
-
 export interface ReadMemoryRes extends Response {
   kind: "read-memory";
   data: {
-    data: Base64Data;
+    data: Uint8Array;
   };
 }
 

@@ -13,7 +13,6 @@ import type {
   ReadMemoryReq,
 } from "../messages";
 import type { ProcessResolver } from "./resolver";
-import { decodeBase64 } from "../utils";
 
 type ExtractData<T extends { data: unknown }> = T["data"];
 
@@ -57,7 +56,7 @@ export class VsCodeResolver implements ProcessResolver {
       address,
       size,
     });
-    return await decodeBase64(res.data);
+    return res.data;
   }
 
   private sendRequest<
