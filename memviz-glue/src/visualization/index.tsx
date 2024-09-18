@@ -1,12 +1,11 @@
 import { Provider, createStore, useAtomValue } from "jotai";
 import createPanZoom from "panzoom";
-import type { ProcessState, StackTrace } from "process-def";
+import type { ProcessState } from "process-def";
 import * as React from "react";
 import { createRoot } from "react-dom/client";
 import type { ProcessResolver } from "../resolver/resolver";
 import { StackTraceComponent } from "./components/stackTrace";
 import { rootStateAtom } from "./state";
-import { useAsyncFn } from "./utils";
 
 export class Memviz {
   private store = createStore();
@@ -43,20 +42,7 @@ export class Memviz {
 
 function App() {
   const state = useAtomValue(rootStateAtom);
-  const [stackTrace, isLoading] = useAsyncFn<StackTrace>(async () => {
-    if (state.processState.threads.length === 0) {
-      return {
-        frames: [],
-      };
-    }
-    return await state.resolver.getStackTrace(state.processState.threads[0]);
-  }, [state]);
-
-  if (isLoading) {
-    return "Loading";
-  }
-
-  return <StackTraceComponent stackTrace={stackTrace} />;
+  return <StackTraceComponent stackTrace={state.processState.stackTrace} />;
 }
 
 // TODO: CSS

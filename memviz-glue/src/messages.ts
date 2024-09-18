@@ -1,5 +1,5 @@
 import type {
-  Address,
+  AddressStr,
   Place,
   ProcessState,
   StackTrace,
@@ -14,13 +14,13 @@ export interface ProcessStoppedEvent {
 
 export interface MemoryAllocatedEvent {
   kind: "mem-allocated";
-  address: Address;
+  address: AddressStr;
   size: number;
 }
 
 export interface MemoryFreedEvent {
   kind: "mem-freed";
-  address: Address;
+  address: AddressStr;
 }
 
 export type ExtensionEvent =
@@ -81,7 +81,7 @@ export interface GetPlacesReq extends Request {
 
 export interface ReadMemoryReq extends Request {
   kind: "read-memory";
-  address: string;
+  address: AddressStr;
   size: number;
 }
 

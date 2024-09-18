@@ -1,6 +1,6 @@
-import type { Address, Place } from "process-def";
+import type { AddressStr, Place } from "process-def";
 
 export interface ProcessResolver {
   getPlaces(frameIndex: number): Promise<Place[]>;
-  readMemory(address: Address, size: bigint): Promise<ArrayBuffer>;
+  readMemory(address: AddressStr, size: number): Promise<ArrayBuffer>;
 }

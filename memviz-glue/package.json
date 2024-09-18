@@ -28,8 +28,9 @@
     "fabric": "^6.4.2",
     "jotai": "^2.9.3",
     "panzoom": "^9.4.3",
+    "process-def": "file:../process-def",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "process-def": "file:../process-def"
+    "sorted-btree": "^1.8.1"
   }
 }

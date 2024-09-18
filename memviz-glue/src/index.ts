@@ -1,9 +1,7 @@
-import type { ProcessState } from "process-def";
 import type { ExtensionToMemvizMsg } from "./messages";
-import { EagerResolver } from "./resolver/eager";
+import { ProcessBuilder, typeUint32 } from "./resolver/eager";
 import { VsCodeResolver } from "./resolver/vscode";
 import { Memviz } from "./visualization";
-import { measureAsync } from "./utils";
 
 export type {
   ExtensionToMemvizMsg,
@@ -23,27 +21,8 @@ function runMemvizInVsCode() {
     "message",
     async (event: MessageEvent<ExtensionToMemvizMsg>) => {
       const message = event.data;
-      if (message.kind === "visualize-state") {
-        // const stackTrace = await resolver.getStackTrace(
-        //   message.state.threads[0],
-        // );
-
-        const vars = await measureAsync("getPlaces", async () => {
-          return await resolver.getPlaces(0);
-        });
-        const futures: any[] = [];
-        for (const variable of vars) {
-          futures.push(
-            resolver.readMemory(variable.address, variable.type.size),
-          );
-        }
-
-        // const data = await measureAsync("readMemory", async () => {
-        // return resolver.readMemory(vars[0].address, vars[0].type.size);
-        // });
-        // console.log(data);
-
-        // memviz.showState(message.state, resolver);
+      if (message.kind === "process-stopped") {
+        memviz.showState(message.state, resolver);
       } else if (
         message.kind === "mem-allocated" ||
         message.kind === "mem-freed"
@@ -56,30 +35,18 @@ function runMemvizInVsCode() {
   );
 }
 
-function runMemVizTest() {
+async function runMemVizTest() {
   const root = document.getElementById("app")!;
   const memviz = new Memviz(root);
 
-  const processState: ProcessState = {
-    threads: [0],
-  };
-  const resolver = new EagerResolver({
-    0: {
-      stackTrace: {
-        frames: [
-          {
-            id: 0,
-            name: "Frame 0",
-          },
-          {
-            id: 1,
-            name: "Frame 1",
-          },
-        ],
-      },
-    },
-  });
-  memviz.showState(processState, resolver);
+  const builder = new ProcessBuilder();
+  builder.startFrame("main");
+  builder.place("a", BigInt(4), typeUint32()).setUint32(50);
+  builder.place("b", BigInt(8), typeUint32()).setUint32(42);
+
+  const [state, resolver] = builder.build();
+  console.log(state);
+  memviz.showState(state, resolver);
 }
 
 // runMemVizTest();

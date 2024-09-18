@@ -1,13 +1,16 @@
 import type { StackFrame, StackTrace } from "process-def";
 import * as React from "react";
 
-/*display: flex;
-      flex-direction: column; */
 export function StackTraceComponent({
   stackTrace,
 }: { stackTrace: StackTrace }) {
   return (
-    <div>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+      }}
+    >
       {stackTrace.frames.map((frame) => (
         <StackFrameComponent key={frame.id} frame={frame} />
       ))}
@@ -23,5 +26,15 @@ border: 1px solid #000000;
   background-color: #AAAAAA;
 }*/
 function StackFrameComponent({ frame }: { frame: StackFrame }) {
-  return <div>{frame.name}</div>;
+  return (
+    <div
+      style={{
+        padding: "5px",
+        width: "200px",
+        border: "1px solid #000000",
+      }}
+    >
+      {frame.name}
+    </div>
+  );
 }

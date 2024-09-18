@@ -23,11 +23,12 @@ export interface StackFrame {
   name: string;
 }
 
+export type AddressStr = string;
 export type Address = bigint;
 
 export interface AddressRange {
-  start: Address;
-  end: Address;
+  start: AddressStr;
+  end: AddressStr;
 }
 
 export enum PlaceKind {
@@ -40,11 +41,7 @@ export enum PlaceKind {
 export interface Place {
   kind: PlaceKind;
   name: string;
-  address: Address | null;
+  address: AddressStr | null;
   type: Type;
   initialized: boolean;
 }
-
-// TODO: https://microsoft.github.io/debug-adapter-protocol/specification#Requests_ReadMemory
-// TODO: https://microsoft.github.io/debug-adapter-protocol/specification#Requests_SetExpression
-// TODO: https://microsoft.github.io/debug-adapter-protocol/specification#Requests_SetVariable

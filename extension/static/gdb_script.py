@@ -298,5 +298,5 @@ def get_stack_address_range() -> Optional[Tuple[str, str]]:
             if location == "[stack]":
                 range = parts[0].split("-")
                 if len(range) == 2:
-                    return tuple(range)
+                    return (f"0x{range[0]}", f"0x{range[1]}")
     return None

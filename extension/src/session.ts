@@ -55,8 +55,8 @@ export class DebuggerSession {
     if (result !== null) {
       const [start, end] = result;
       return {
-        start: BigInt(start),
-        end: BigInt(end),
+        start,
+        end,
       };
     }
     return null;
@@ -254,7 +254,7 @@ function deserializePlaces(placeList: PlaceList): Place[] {
     places.push({
       kind: PLACE_KIND_MAP[place.k],
       name: place.n,
-      address: place.a === null ? null : BigInt(place.a),
+      address: place.a,
       type: types[place.t],
       initialized: place.i,
     });

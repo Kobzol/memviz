@@ -1,6 +1,6 @@
 import { atom } from "jotai";
 import type { ProcessState } from "process-def";
-import { EagerResolver } from "../resolver/eager";
+import { ProcessBuilder } from "../resolver/eager";
 import type { ProcessResolver } from "../resolver/resolver";
 
 export interface UIState {
@@ -12,10 +12,8 @@ export const rootStateAtom = atom<Readonly<UIState>>(createDefaultState());
 export const resolverAtom = atom((get) => get(rootStateAtom)?.resolver);
 
 function createDefaultState(): UIState {
-  const processState: ProcessState = {
-    threads: [],
-  };
-  const resolver = new EagerResolver({});
+  const processBuilder = new ProcessBuilder();
+  const [processState, resolver] = processBuilder.build();
   return {
     processState,
     resolver,
