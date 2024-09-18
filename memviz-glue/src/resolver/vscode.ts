@@ -2,15 +2,15 @@ import type { AddressStr, Place, StackTrace, ThreadId } from "process-def";
 import type { WebviewApi } from "vscode-webview";
 import type {
   ExtensionToMemvizResponse,
-  GetStackTraceReq,
-  GetStackTraceRes,
   GetPlacesReq,
   GetPlacesRes,
+  GetStackTraceReq,
+  GetStackTraceRes,
   MemvizToExtensionMsg,
   MemvizToExtensionReq,
-  RequestId,
-  ReadMemoryRes,
   ReadMemoryReq,
+  ReadMemoryRes,
+  RequestId,
 } from "../messages";
 import type { ProcessResolver } from "./resolver";
 

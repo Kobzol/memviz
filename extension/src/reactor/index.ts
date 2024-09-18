@@ -8,8 +8,10 @@ import type {
   GetVariablesReq,
   MemvizToExtensionMsg,
 } from "memviz-glue";
+import type { ReadMemoryReq } from "memviz-glue/dist/messages";
 import type { FrameId } from "process-def";
 import type { DebuggerSession } from "../session";
+import { decodeBase64 } from "../utils";
 import {
   isNextRequest,
   isSetBreakpointsRequest,
@@ -21,8 +23,6 @@ import {
 } from "./guards";
 import type { Status } from "./handlers";
 import { BreakpointMap, type Location } from "./locations";
-import type { ReadMemoryReq } from "memviz-glue/dist/messages";
-import { decodeBase64 } from "../utils";
 
 enum StepState {
   Idle = "idle",

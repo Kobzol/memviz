@@ -1,12 +1,12 @@
 import type { DebugProtocol } from "@vscode/debugprotocol";
 import {
-  type Type,
+  type AddressRange,
   type FrameId,
   type Place,
+  PlaceKind,
   type StackFrame,
   type ThreadId,
-  PlaceKind,
-  type AddressRange,
+  type Type,
 } from "process-def";
 import type { DebugSession } from "vscode";
 import type { ExtractBody } from "./utils";

@@ -1,5 +1,8 @@
-const esbuild = require("esbuild");
 const fs = require("fs");
+const path = require("path");
+
+const esbuild = require("esbuild");
+const vuePlugin = require("esbuild-plugin-vue3")
 
 const production = process.argv.includes("--production");
 const watch = process.argv.includes("--watch");
@@ -26,7 +29,10 @@ const esbuildProblemMatcherPlugin = {
   },
 };
 
-const OUTPUT_PATH = "dist/index.js";
+const OUTPUT_PATHS = [
+  "dist/index.js",
+  "dist/index.css"
+];
 
 const copyFileToExtension = {
   name: "copy-file-to-extension",
@@ -34,7 +40,9 @@ const copyFileToExtension = {
     build.onEnd((result) => {
       if (result.errors.length === 0) {
         console.log("Copying output file to extension");
-        fs.copyFileSync(OUTPUT_PATH, "../extension/dist/memviz-glue.js");
+        for (const file of OUTPUT_PATHS) {
+          fs.copyFileSync(file, `../extension/dist/${path.basename(file)}`);
+        }
       }
     });
   },
@@ -48,9 +56,9 @@ async function main() {
     sourcemap: !production,
     sourcesContent: false,
     platform: "browser",
-    outfile: OUTPUT_PATH,
+    outdir: "dist",
     logLevel: "silent",
-    plugins: [esbuildProblemMatcherPlugin, copyFileToExtension],
+    plugins: [vuePlugin(), esbuildProblemMatcherPlugin, copyFileToExtension],
   });
 
   if (watch) {

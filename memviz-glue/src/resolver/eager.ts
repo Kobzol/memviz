@@ -1,5 +1,3 @@
-import type { Place } from "process-def/src";
-import type { ProcessResolver } from "./resolver";
 import {
   type Address,
   type AddressStr,
@@ -7,8 +5,10 @@ import {
   type ProcessState,
   type Type,
 } from "process-def";
-import { makeUint32, MemoryMap } from "../memory-map";
+import type { Place } from "process-def/src";
+import { MemoryMap, makeUint32 } from "../memory-map";
 import { addressToStr, strToAddress } from "../utils";
+import type { ProcessResolver } from "./resolver";
 
 export interface FullProcessState extends ProcessState {
   stackTrace: FullStackTrace;

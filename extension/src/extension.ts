@@ -92,18 +92,35 @@ function createPanel(context: vscode.ExtensionContext): vscode.WebviewPanel {
       retainContextWhenHidden: true,
     },
   );
-  const htmlPath = vscode.Uri.file(
-    path.join(context.extensionPath, "static", "index.html"),
-  ).fsPath;
-  const html = new TextDecoder("UTF-8").decode(readFileSync(htmlPath));
 
-  const scriptPath = vscode.Uri.joinPath(distDirectory, "memviz-glue.js");
-  const scriptSrc = panel.webview.asWebviewUri(scriptPath).toString();
+  const html = loadStaticFile(context, "index.html");
+  const scriptSrc = loadDistUri(panel, distDirectory, "index.js");
+  const styleSrc = loadDistUri(panel, distDirectory, "index.css");
 
   panel.webview.html = html
     .replaceAll("$SCRIPT", scriptSrc)
+    .replaceAll("$STYLE", styleSrc)
     .replaceAll("$CSPSOURCE", panel.webview.cspSource);
   return panel;
 }
 
 export function deactivate() {}
+
+function loadStaticFile(
+  context: vscode.ExtensionContext,
+  file: string,
+): string {
+  const htmlPath = vscode.Uri.file(
+    path.join(context.extensionPath, "static", file),
+  ).fsPath;
+  return new TextDecoder("UTF-8").decode(readFileSync(htmlPath));
+}
+
+function loadDistUri(
+  panel: vscode.WebviewPanel,
+  distDirectory: vscode.Uri,
+  file: string,
+): string {
+  const scriptPath = vscode.Uri.joinPath(distDirectory, file);
+  return panel.webview.asWebviewUri(scriptPath).toString();
+}
