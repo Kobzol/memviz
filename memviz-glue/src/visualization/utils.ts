@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 export function useAsyncFn<T>(
   asyncCallback: () => Promise<T>,
   deps: unknown[],
-): [T, boolean] {
+): [T | null, boolean] {
   const [data, setData] = useState<T | null>(null);
   const cachedFn = useCallback(asyncCallback, deps);
 
@@ -21,5 +21,5 @@ export function useAsyncFn<T>(
       ignore = true;
     };
   }, [cachedFn]);
-  return [data as T, data === null];
+  return [data, data === null];
 }

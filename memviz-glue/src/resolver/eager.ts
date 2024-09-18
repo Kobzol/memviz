@@ -42,20 +42,23 @@ export class EagerResolver implements ProcessResolver {
   }
 }
 
+type BuilderFrame = Omit<FullStackFrame, "id" | "index"> & {
+  baseAddress: bigint;
+};
+
 export class ProcessBuilder {
   private map: MemoryMap = new MemoryMap();
-  private frames: FullStackFrame[] = [];
-  private activeFrame: FullStackFrame | null = null;
+  private frames: BuilderFrame[] = [];
+  private activeFrame: BuilderFrame | null = null;
 
-  startFrame(name: string) {
+  startFrame(name: string, baseAddress: number) {
     if (this.activeFrame !== null) {
       this.endFrame();
     }
     this.activeFrame = {
-      id: this.frames.length,
-      index: this.frames.length,
       name,
       places: [],
+      baseAddress: BigInt(baseAddress),
     };
   }
 
@@ -69,14 +72,16 @@ export class ProcessBuilder {
     if (this.activeFrame === null) {
       throw new Error("No frame is active");
     }
+
+    const finalAddress = this.activeFrame.baseAddress + address;
     this.activeFrame.places.push({
       name,
-      address: addressToStr(address),
+      address: addressToStr(finalAddress),
       kind,
       type,
       initialized,
     });
-    return new PlaceBuilder(address, this.map);
+    return new PlaceBuilder(finalAddress, this.map);
   }
 
   endFrame() {
@@ -92,9 +97,11 @@ export class ProcessBuilder {
       this.endFrame();
     }
 
+    const frames = this.frames.slice().reverse();
+
     const processState: FullProcessState = {
       stackTrace: {
-        frames: this.frames,
+        frames: frames.map((f, index) => ({ ...f, id: index, index })),
       },
       stackAddressRange: {
         start: "0x0",
