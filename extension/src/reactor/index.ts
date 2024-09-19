@@ -325,7 +325,10 @@ export class Reactor {
     this.lastClientLocation = stopLocation;
 
     const response = await this.session.getThreads();
-    const stackTrace = await this.session.getStackTrace(response.threads[0].id);
+    const stackTrace = await this.session.getStackTrace(
+      response.threads[0].id,
+      true,
+    );
     const stackAddressRange = await this.session.getStackAddressRange(
       stackTrace[0].id,
     );

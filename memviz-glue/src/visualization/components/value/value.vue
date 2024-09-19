@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { appState } from "../../store";
 import type { Value } from "../../value";
 
 import Scalar from "./scalar.vue";
@@ -23,8 +22,12 @@ const isScalar = computed(() => {
 </template>
 
 <style scoped lang="scss">
-.place {
-    width: 100%;
-    padding: 2px;
+.value {
+    flex-grow: 1;
+
+    &:hover {
+        cursor: pointer;
+        background-color: #DDDDDD;
+    }
 }
 </style>

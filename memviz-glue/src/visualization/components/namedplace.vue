@@ -11,7 +11,6 @@ const props = defineProps<{
   place: Place;
 }>();
 
-const resolver = computed(() => appState.value.resolver);
 const address = computed((): Address | null => {
   if (props.place.address === null) {
     return null;
@@ -24,11 +23,26 @@ const value = computed((): Value => {
     address: address.value
   };
 });
+const label = computed(() => {
+  let name = `${props.place.type.name} ${props.place.name}`;
+  if (!props.place.initialized) {
+    name += " (uninit)";
+  }
+  return name;
+});
+const title = computed(() => {
+  const type = props.place.type;
+  let title = `${props.place.type.name} ${props.place.name}`;
+  title += `, ${type.size}-byte${type.size === 1 ? "" : "s"}`;
+  title += `, ${props.place.initialized ? "" : "not "}initialized`;
+  title += `, declared at line ${props.place.line}`;
+  return title;
+});
 </script>
 
 <template>
   <div class="place">
-    <code>{{ props.place.type.name }} {{ props.place.name }}</code>
+    <code :title="title">{{ label }}</code>
     <ValueComponent :value="value">
     </ValueComponent>
   </div>
@@ -38,5 +52,9 @@ const value = computed((): Value => {
 .place {
   width: 100%;
   padding: 2px;
+
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 }
 </style>

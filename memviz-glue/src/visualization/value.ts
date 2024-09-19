@@ -5,17 +5,17 @@ export interface Value {
   address: Address | null;
 }
 
-const ACCESSORS: { [key: string]: (view: DataView) => number | bigint } = {
-  i1: (view: DataView) => view.getInt8(0),
-  i2: (view: DataView) => view.getInt16(0, true),
-  i4: (view: DataView) => view.getInt32(0, true),
-  i8: (view: DataView) => view.getBigInt64(0, true),
-  u1: (view: DataView) => view.getUint8(0),
-  u2: (view: DataView) => view.getUint16(0, true),
-  u4: (view: DataView) => view.getUint32(0, true),
-  u8: (view: DataView) => view.getBigUint64(0, true),
-  f4: (view: DataView) => view.getFloat32(0, true),
-  f8: (view: DataView) => view.getFloat64(0, true),
+const FORMATTERS: { [key: string]: (view: DataView) => string } = {
+  i1: (view: DataView) => view.getInt8(0).toString(),
+  i2: (view: DataView) => view.getInt16(0, true).toString(),
+  i4: (view: DataView) => view.getInt32(0, true).toString(),
+  i8: (view: DataView) => view.getBigInt64(0, true).toString(),
+  u1: (view: DataView) => view.getUint8(0).toString(),
+  u2: (view: DataView) => view.getUint16(0, true).toString(),
+  u4: (view: DataView) => view.getUint32(0, true).toString(),
+  u8: (view: DataView) => view.getBigUint64(0, true).toString(),
+  f4: (view: DataView) => toFixedIfNecessary(view.getFloat32(0, true), 4),
+  f8: (view: DataView) => toFixedIfNecessary(view.getFloat64(0, true), 4),
 };
 
 export function scalarAsString(buffer: ArrayBuffer, type: Type): string {
@@ -35,5 +35,11 @@ export function scalarAsString(buffer: ArrayBuffer, type: Type): string {
   key += type.size;
 
   // console.log(`Resolving key ${key} for type`, type);
-  return ACCESSORS[key](view).toString();
+  return FORMATTERS[key](view);
+}
+
+function toFixedIfNecessary(value: number, decimalPlaces: number): string {
+  const formatted = value.toFixed(decimalPlaces);
+  const num = Number(formatted);
+  return num.toString();
 }

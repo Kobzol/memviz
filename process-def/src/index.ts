@@ -21,6 +21,8 @@ export interface StackFrame {
   // 0 is the topmost frame (the one where the program stopped)
   index: number;
   name: string;
+  line: number;
+  file: string | null;
 }
 
 export type AddressStr = string;
@@ -44,4 +46,5 @@ export interface Place {
   address: AddressStr | null;
   type: Type;
   initialized: boolean;
+  line: number;
 }

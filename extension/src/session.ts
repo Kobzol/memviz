@@ -144,9 +144,18 @@ export class DebuggerSession {
     return result.result.trim();
   }
 
-  async getStackTrace(threadId: ThreadId): Promise<StackFrame[]> {
+  async getStackTrace(
+    threadId: ThreadId,
+    values = false,
+  ): Promise<StackFrame[]> {
     const args: DebugProtocol.StackTraceArguments = {
       threadId,
+      format: {
+        parameters: true,
+        parameterNames: true,
+        parameterTypes: true,
+        parameterValues: values,
+      },
     };
     const response: ExtractBody<DebugProtocol.StackTraceResponse> =
       await this.session.customRequest("stackTrace", args);
@@ -154,6 +163,8 @@ export class DebuggerSession {
       id: frame.id,
       index,
       name: frame.name,
+      line: frame.line,
+      file: frame.source?.path ?? null,
     }));
   }
 
@@ -228,6 +239,8 @@ type PlaceWithInternedType = {
   k: string;
   // Initialized
   i: boolean;
+  // Line
+  l: number;
 };
 
 interface PlaceList {
@@ -257,6 +270,7 @@ function deserializePlaces(placeList: PlaceList): Place[] {
       address: place.a,
       type: types[place.t],
       initialized: place.i,
+      line: place.l,
     });
   }
   return places;

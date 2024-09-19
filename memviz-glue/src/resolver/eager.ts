@@ -3,6 +3,7 @@ import {
   type AddressStr,
   PlaceKind,
   type ProcessState,
+  type StackFrame,
   type Type,
 } from "process-def";
 import type { Place } from "process-def/src";
@@ -19,10 +20,7 @@ interface FullStackTrace {
   frames: FullStackFrame[];
 }
 
-interface FullStackFrame {
-  id: number;
-  index: number;
-  name: string;
+interface FullStackFrame extends StackFrame {
   places: Place[];
 }
 
@@ -52,12 +50,21 @@ export class ProcessBuilder {
   private frames: BuilderFrame[] = [];
   private activeFrame: BuilderFrame | null = null;
 
-  startFrame(name: string, baseAddress: number) {
+  startFrame(
+    name: string,
+    baseAddress: number,
+    line: number | null = null,
+    file = "main.c",
+  ) {
     if (this.activeFrame !== null) {
       this.endFrame();
     }
+
+    const actualLine = line ?? (this.frames.length + 1) * 20;
     this.activeFrame = {
       name,
+      line: actualLine,
+      file,
       places: [],
       baseAddress: BigInt(baseAddress),
     };
@@ -69,11 +76,13 @@ export class ProcessBuilder {
     type: Type,
     kind: PlaceKind = PlaceKind.Variable,
     initialized = true,
+    line: number | null = null,
   ): PlaceBuilder {
     if (this.activeFrame === null) {
       throw new Error("No frame is active");
     }
 
+    const actualLine = line ?? this.activeFrame.places.length + 1;
     const finalAddress = this.activeFrame.baseAddress + address;
     this.activeFrame.places.push({
       name,
@@ -81,6 +90,7 @@ export class ProcessBuilder {
       kind,
       type,
       initialized,
+      line: actualLine,
     });
     return new PlaceBuilder(finalAddress, this.map);
   }
@@ -125,6 +135,9 @@ export class PlaceBuilder {
   setUint32(value: number) {
     this.map.set(this.address, makeUint32(value));
   }
+  setFloat32(value: number) {
+    this.map.set(this.address, makeFloat32(value));
+  }
 }
 
 export function typeUint32(name = "int"): Type {
@@ -136,9 +149,24 @@ export function typeUint32(name = "int"): Type {
   };
 }
 
+export function typeFloat32(name = "float"): Type {
+  return {
+    name,
+    kind: "float",
+    size: 4,
+  };
+}
+
 function makeUint32(value: number): ArrayBuffer {
   const buffer = new ArrayBuffer(4);
   const view = new DataView(buffer);
   view.setUint32(0, value, true);
+  return buffer;
+}
+
+function makeFloat32(value: number): ArrayBuffer {
+  const buffer = new ArrayBuffer(4);
+  const view = new DataView(buffer);
+  view.setFloat32(0, value, true);
   return buffer;
 }

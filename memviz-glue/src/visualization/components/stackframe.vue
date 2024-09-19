@@ -22,9 +22,20 @@ async function maybeLoadPlaces() {
 }
 
 const resolver = computed(() => appState.value.resolver);
-const expanded = ref(false);
+const expanded = ref(props.frame.index === 0);
 const places: Ref<Place[] | null> = ref(null);
 const loading = ref(false);
+
+if (expanded.value) {
+  maybeLoadPlaces();
+}
+
+const location = computed(() => {
+  return `${props.frame.file ?? "<unknown-file>"}:${props.frame.line}`;
+});
+const title = computed(() => {
+  return `Stack frame (function ${props.frame.name}, ${location})`;
+});
 
 watch(props.frame, () => {
   console.log("frame changed");
@@ -37,8 +48,7 @@ watch(resolver, () => {
 
 <template>
   <div class="wrapper">
-    <div class="header" :title="`Stack frame (function ${frame.name})`" @click="toggleExpanded">{{ props.frame.name }}
-    </div>
+    <div class="header" :title="title" @click="toggleExpanded">{{ props.frame.name }} ({{ location }})</div>
     <div v-if="expanded" class="inner">
       <div v-if="loading">Loading...</div>
       <div v-else>
@@ -50,7 +60,8 @@ watch(resolver, () => {
 
 <style scoped lang="scss">
 .wrapper {
-  width: 200px;
+  min-width: 200px;
+  max-width: 500px;
   border: solid 1px #000000;
   border-top: 0;
 

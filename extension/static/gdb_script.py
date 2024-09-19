@@ -81,15 +81,18 @@ class Place:
     k: str
     # Initialized
     i: bool
+    # Line
+    l: int
 
     @staticmethod
-    def create(name: str, address: str, type: int, kind: str, init: bool) -> "Place":
+    def create(name: str, address: str, type: int, kind: str, init: bool, line: int) -> "Place":
         return Place(
             n=name,
             a=address,
             t=type,
             k=kind,
-            i=init
+            i=init,
+            l=line
         )
 
 
@@ -277,7 +280,8 @@ def get_frame_places(frame_index: int = 0) -> PlaceList:
                     address=address,
                     type=ty,
                     kind=kind,
-                    init=init
+                    init=init,
+                    line=symbol.line
                 )
                 places.append((place, symbol.line))
             block = block.superblock
