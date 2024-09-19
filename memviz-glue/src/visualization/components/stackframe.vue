@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { Place, StackFrame } from "process-def";
-import { computed, Ref, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
+import type { Ref } from "vue";
 import { appState } from "../store";
 import NamedPlace from "./namedplace.vue";
-import { withLoading } from "../utils";
+import { addressToStr, measureAsync, strToAddress } from "../../utils";
 
 const props = defineProps<{
   frame: StackFrame;
@@ -11,38 +12,60 @@ const props = defineProps<{
 
 function toggleExpanded() {
   expanded.value = !expanded.value;
-  maybeLoadPlaces();
 }
 
 // TODO: deduplicate loading
 async function maybeLoadPlaces() {
-  if (expanded) {
-    places.value = await withLoading(loading, () => resolver.value.getPlaces(props.frame.index));
+  if (expanded.value && places.value === null) {
+    const framePlaces = await measureAsync("loadPlaces", async () => resolver.value.getPlaces(props.frame.index));
+    // Preload stack data
+    const placesByAddress = framePlaces.filter(p => p.address !== null)
+      .sort((a, b) => {
+        const addrA = strToAddress(a.address!);
+        const addrB = strToAddress(b.address!);
+        if (addrA > addrB) return 1;
+        if (addrA < addrB) return -1;
+        return 0;
+      });
+
+    if (placesByAddress.length > 0) {
+      const start = strToAddress(placesByAddress[0].address!);
+      const lastPlace = placesByAddress[placesByAddress.length - 1];
+      const end = strToAddress(lastPlace.address!) + BigInt(lastPlace.type.size);
+      const size = end - start;
+      // Pre-cache the memory of the stack frame in a single batch, to avoid many requests
+      // for the individual stack places
+      await resolver.value.readMemory(addressToStr(start), Number(size));
+    }
+    places.value = framePlaces;
   }
 }
 
 const resolver = computed(() => appState.value.resolver);
 const expanded = ref(props.frame.index === 0);
 const places: Ref<Place[] | null> = ref(null);
-const loading = ref(false);
-
-if (expanded.value) {
-  maybeLoadPlaces();
-}
 
 const location = computed(() => {
-  return `${props.frame.file ?? "<unknown-file>"}:${props.frame.line}`;
+  let file = props.frame.file;
+  if (file?.includes("/")) {
+    const segments = file.split("/");
+    file = segments[segments.length - 1];
+  }
+  return `${file ?? "<unknown-file>"}:${props.frame.line}`;
 });
 const title = computed(() => {
-  return `Stack frame (function ${props.frame.name}, ${location})`;
+  return `Stack frame (function ${props.frame.name}, ${location.value})`;
 });
 
-watch(props.frame, () => {
-  console.log("frame changed");
-})
-watch(resolver, () => {
-  console.log("resolver changed");
+watch(() => [props.frame, resolver], () => {
+  places.value = null;
+  maybeLoadPlaces();
 });
+
+watch(expanded, () => {
+  maybeLoadPlaces();
+}, { immediate: true });
+
 // https://www.color-hex.com/color-palette/24003
 </script>
 
@@ -50,9 +73,9 @@ watch(resolver, () => {
   <div class="wrapper">
     <div class="header" :title="title" @click="toggleExpanded">{{ props.frame.name }} ({{ location }})</div>
     <div v-if="expanded" class="inner">
-      <div v-if="loading">Loading...</div>
+      <div v-if="places === null">Loading...</div>
       <div v-else>
-        <NamedPlace class="place" v-for="place in places" :place="place" />
+        <NamedPlace class="place" v-for="place in places" :key="place.name" :place="place" />
       </div>
     </div>
   </div>

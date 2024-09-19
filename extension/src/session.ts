@@ -61,7 +61,10 @@ export class DebuggerSession {
     return null;
   }
 
-  async readMemory(address: string, size: number) {
+  async readMemory(
+    address: string,
+    size: number,
+  ): Promise<ExtractBody<Required<DebugProtocol.ReadMemoryResponse>>> {
     const args: DebugProtocol.ReadMemoryArguments = {
       memoryReference: address,
       count: size,

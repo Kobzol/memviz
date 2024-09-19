@@ -7,10 +7,11 @@ import type {
   GetStackTraceReq,
   GetStackTraceRes,
   MemvizToExtensionMsg,
-  MemvizToExtensionReq,
+  MemvizToExtensionRequest,
   ReadMemoryReq,
   ReadMemoryRes,
   RequestId,
+  ResolverId,
 } from "../messages";
 import type { ProcessResolver } from "./resolver";
 
@@ -20,10 +21,18 @@ export class VsCodeResolver implements ProcessResolver {
   private requestId: RequestId = 0;
   private requestMap: Map<RequestId, (response: unknown) => void> = new Map();
 
-  public constructor(private vscode: WebviewApi<unknown>) {}
+  public constructor(
+    private vscode: WebviewApi<unknown>,
+    private resolverId: ResolverId,
+  ) {}
 
   handleMessage(message: ExtensionToMemvizResponse) {
-    console.log(`Received response for request ${message.requestId}`);
+    console.debug(`Received response for request ${message.requestId}`);
+    if (message.resolverId !== this.resolverId) {
+      console.warn("Received response for an already disposed resolver");
+      return;
+    }
+
     const resolveFn = this.requestMap.get(message.requestId);
     if (resolveFn === undefined) {
       console.warn(
@@ -60,15 +69,19 @@ export class VsCodeResolver implements ProcessResolver {
   }
 
   private sendRequest<
-    RequestType extends MemvizToExtensionReq,
+    RequestType extends MemvizToExtensionRequest,
     ResponseType extends { data: unknown },
   >(
-    request: Omit<RequestType, "requestId">,
+    request: Omit<RequestType, "requestId" | "resolverId">,
   ): Promise<ExtractData<ResponseType>> {
     const requestId = this.requestId;
     this.requestId++;
 
-    this.sendMessage({ ...request, requestId } as RequestType);
+    this.sendMessage({
+      ...request,
+      requestId,
+      resolverId: this.resolverId,
+    } as RequestType);
 
     const promise = new Promise<ExtractData<ResponseType>>(
       (resolve, _reject) => {
@@ -79,7 +92,7 @@ export class VsCodeResolver implements ProcessResolver {
   }
 
   private sendMessage(msg: MemvizToExtensionMsg) {
-    console.log(
+    console.debug(
       `Sending request to extension (kind=${msg.kind}, id=${msg.requestId})`,
     );
     this.vscode.postMessage(msg);

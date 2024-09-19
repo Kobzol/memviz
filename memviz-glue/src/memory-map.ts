@@ -32,8 +32,8 @@ export class MemoryMap {
   }
 
   dump() {
-    for (const [address, buffer] of this.map) {
+    this.map.forEachPair((address, buffer) => {
       console.log(address, bufferToByteArray(buffer));
-    }
+    });
   }
 }

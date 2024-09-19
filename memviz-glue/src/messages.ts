@@ -29,8 +29,9 @@ export type ExtensionEvent =
   | MemoryFreedEvent;
 
 // Responses to requests to the extension
-interface Response {
+export interface Response {
   requestId: RequestId;
+  resolverId: ResolverId;
 }
 
 export interface GetStackTraceRes extends Response {
@@ -64,9 +65,11 @@ export type ExtensionToMemvizMsg = ExtensionEvent | ExtensionToMemvizResponse;
 
 // Requests to the extension
 export type RequestId = number;
+export type ResolverId = number;
 
 interface Request {
   requestId: RequestId;
+  resolverId: ResolverId;
 }
 
 export interface GetStackTraceReq extends Request {
@@ -85,9 +88,9 @@ export interface ReadMemoryReq extends Request {
   size: number;
 }
 
-export type MemvizToExtensionReq =
+export type MemvizToExtensionRequest =
   | GetStackTraceReq
   | GetPlacesReq
   | ReadMemoryReq;
 
-export type MemvizToExtensionMsg = MemvizToExtensionReq;
+export type MemvizToExtensionMsg = MemvizToExtensionRequest;

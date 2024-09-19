@@ -4,11 +4,12 @@ import type { DebugProtocol } from "@vscode/debugprotocol";
 import type {
   ExtensionToMemvizMsg,
   ExtensionToMemvizResponse,
+  GetPlacesReq,
   GetStackTraceReq,
-  GetVariablesReq,
   MemvizToExtensionMsg,
+  MemvizToExtensionRequest,
+  ReadMemoryReq,
 } from "memviz-glue";
-import type { ReadMemoryReq } from "memviz-glue/dist/messages";
 import type { FrameId } from "process-def";
 import type { DebuggerSession } from "../session";
 import { decodeBase64 } from "../utils";
@@ -285,9 +286,8 @@ export class Reactor {
 
   private async performGetStackTraceRequest(message: GetStackTraceReq) {
     const frames = await this.session.getStackTrace(message.threadId);
-    this.sendMemvizResponse({
+    this.sendMemvizResponse(message, {
       kind: "get-stack-trace",
-      requestId: message.requestId,
       data: {
         stackTrace: {
           frames,
@@ -296,12 +296,11 @@ export class Reactor {
     });
   }
 
-  private async performGetPlacesRequest(message: GetVariablesReq) {
+  private async performGetPlacesRequest(message: GetPlacesReq) {
     const places = await this.session.getPlaces(message.frameIndex);
 
-    this.sendMemvizResponse({
+    this.sendMemvizResponse(message, {
       kind: "get-variables",
-      requestId: message.requestId,
       data: {
         places,
       },
@@ -310,10 +309,9 @@ export class Reactor {
 
   private async performReadMemoryRequest(message: ReadMemoryReq) {
     const result = await this.session.readMemory(message.address, message.size);
-    const data = await decodeBase64(result.data);
-    this.sendMemvizResponse({
+    const data = await decodeBase64(result.data ?? "");
+    this.sendMemvizResponse(message, {
       kind: "read-memory",
-      requestId: message.requestId,
       data: {
         data,
       },
@@ -349,8 +347,16 @@ export class Reactor {
     await this.panel.webview.postMessage(msg);
   }
 
-  private async sendMemvizResponse(response: ExtensionToMemvizResponse) {
-    await this.panel.webview.postMessage(response);
+  private async sendMemvizResponse(
+    request: MemvizToExtensionRequest,
+    response: Omit<ExtensionToMemvizResponse, "requestId" | "resolverId">,
+  ) {
+    const message = {
+      ...response,
+      requestId: request.requestId,
+      resolverId: request.resolverId,
+    } as ExtensionToMemvizResponse;
+    await this.panel.webview.postMessage(message);
   }
 }
 

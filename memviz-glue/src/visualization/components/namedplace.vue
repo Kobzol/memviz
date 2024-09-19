@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { Address, Place } from "process-def";
 import { computed } from "vue";
-import { appState } from "../store";
 import { strToAddress } from "../../utils";
 import type { Value } from "../value";
 

@@ -22,3 +22,10 @@ export function strToAddress(address: AddressStr): Address {
 export function bufferToByteArray(buffer: ArrayBuffer): number[] {
   return [...new Uint8Array(buffer)];
 }
+
+export function arrayToBuffer(array: Uint8Array): ArrayBuffer {
+  return array.buffer.slice(
+    array.byteOffset,
+    array.byteOffset + array.byteLength,
+  );
+}

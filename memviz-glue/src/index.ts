@@ -3,19 +3,26 @@ import type { ExtensionToMemvizMsg } from "./messages";
 import { ProcessBuilder, typeFloat32, typeUint32 } from "./resolver/eager";
 import { VsCodeResolver } from "./resolver/vscode";
 import { Memviz } from "./visualization";
+import { CachingResolver } from "./resolver/cache";
 
 export type {
   ExtensionToMemvizMsg,
   ExtensionToMemvizResponse,
+  MemvizToExtensionRequest,
   GetStackTraceReq,
-  GetPlacesReq as GetVariablesReq,
+  GetPlacesReq,
   MemvizToExtensionMsg,
+  ReadMemoryReq,
 } from "./messages";
 export { PlaceKind } from "process-def";
 
 function runMemvizInVsCode() {
   const vscode = acquireVsCodeApi();
-  const resolver = new VsCodeResolver(vscode);
+
+  let resolverId = 0;
+  let resolver: CachingResolver<VsCodeResolver> = new CachingResolver(
+    new VsCodeResolver(vscode, resolverId),
+  );
   const memviz = new Memviz(document.getElementById("app")!);
 
   window.addEventListener(
@@ -23,6 +30,9 @@ function runMemvizInVsCode() {
     async (event: MessageEvent<ExtensionToMemvizMsg>) => {
       const message = event.data;
       if (message.kind === "process-stopped") {
+        // We need to reset the resolver to break caches
+        resolverId++;
+        resolver = new CachingResolver(new VsCodeResolver(vscode, resolverId));
         memviz.showState(message.state, resolver);
       } else if (
         message.kind === "mem-allocated" ||
@@ -30,7 +40,7 @@ function runMemvizInVsCode() {
       ) {
         // TODO: handle memory allocation events
       } else {
-        resolver.handleMessage(message);
+        resolver.inner.handleMessage(message);
       }
     },
   );
@@ -53,9 +63,8 @@ async function runMemVizTest() {
     .setUint32(42);
 
   const [state, resolver] = builder.build();
-  console.log(state);
-  memviz.showState(state, resolver);
+  memviz.showState(state, new CachingResolver(resolver));
 }
 
-runMemVizTest();
-// runMemvizInVsCode();
+// runMemVizTest();
+runMemvizInVsCode();

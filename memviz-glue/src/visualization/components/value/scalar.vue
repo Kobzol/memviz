@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, Ref, ref } from "vue";
+import { computed, Ref, ref, watch } from "vue";
 import { appState } from "../../store";
 import { scalarAsString, type Value } from "../../value";
 import { addressToStr } from "../../../utils";
@@ -39,7 +39,9 @@ const bufferAsString = computed(() => {
     return scalarAsString(buffer.value, props.value.type);
 })
 
-loadData();
+watch(() => props.value, () => {
+    loadData();
+}, { immediate: true });
 </script>
 
 <template>

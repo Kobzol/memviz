@@ -24,6 +24,7 @@ export class Memviz {
   }
 
   async showState(processState: ProcessState, resolver: ProcessResolver) {
+    console.debug("Root state changed");
     appState.value = {
       processState,
       resolver,
