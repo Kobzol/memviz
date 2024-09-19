@@ -22,7 +22,7 @@ export class DebuggerSession {
       source,
       breakpoints,
     };
-    return await this.session.customRequest("setBreakpoints", args);
+    return await this.customRequest("setBreakpoints", args);
   }
 
   async setFunctionBreakpoints(
@@ -31,20 +31,19 @@ export class DebuggerSession {
     const args: DebugProtocol.SetFunctionBreakpointsArguments = {
       breakpoints,
     };
-    return await this.session.customRequest("setFunctionBreakpoints", args);
+    return await this.customRequest("setFunctionBreakpoints", args);
   }
 
   async evaluate(
     expression: string,
     frameId?: FrameId,
   ): Promise<ExtractBody<DebugProtocol.EvaluateResponse>> {
-    // console.log(`Evaluating ${expression}`);
     const args: DebugProtocol.EvaluateArguments = {
       expression: `-exec ${expression}`,
       frameId,
       context: "repl",
     };
-    return await this.session.customRequest("evaluate", args);
+    return await this.customRequest("evaluate", args);
   }
 
   async getStackAddressRange(frameId: FrameId): Promise<AddressRange | null> {
@@ -67,7 +66,7 @@ export class DebuggerSession {
       memoryReference: address,
       count: size,
     };
-    return await this.session.customRequest("readMemory", args);
+    return await this.customRequest("readMemory", args);
   }
 
   async next(threadId: ThreadId) {
@@ -75,7 +74,7 @@ export class DebuggerSession {
       threadId,
       granularity: "line",
     };
-    return await this.session.customRequest("next", args);
+    return await this.customRequest("next", args);
   }
 
   async stepOut(threadId: ThreadId) {
@@ -83,14 +82,14 @@ export class DebuggerSession {
       threadId,
       granularity: "line",
     };
-    return await this.session.customRequest("stepOut", args);
+    return await this.customRequest("stepOut", args);
   }
 
   async continue(threadId: ThreadId) {
     const args: DebugProtocol.ContinueArguments = {
       threadId,
     };
-    return await this.session.customRequest("continue", args);
+    return await this.customRequest("continue", args);
   }
 
   async goto(threadId: ThreadId, gotoTargetId: number) {
@@ -98,7 +97,7 @@ export class DebuggerSession {
       threadId,
       targetId: gotoTargetId,
     };
-    return await this.session.customRequest("goto", args);
+    return await this.customRequest("goto", args);
   }
 
   async getGotoTargets(
@@ -109,11 +108,11 @@ export class DebuggerSession {
       source,
       line,
     };
-    return await this.session.customRequest("gotoTargets", args);
+    return await this.customRequest("gotoTargets", args);
   }
 
   async getThreads(): Promise<ExtractBody<DebugProtocol.ThreadsResponse>> {
-    return await this.session.customRequest("threads");
+    return await this.customRequest("threads");
   }
 
   async getCurrentThreadAndFrameId(): Promise<[ThreadId, FrameId]> {
@@ -158,7 +157,7 @@ export class DebuggerSession {
       },
     };
     const response: ExtractBody<DebugProtocol.StackTraceResponse> =
-      await this.session.customRequest("stackTrace", args);
+      await this.customRequest("stackTrace", args);
     return response.stackFrames.map((frame, index) => ({
       id: frame.id,
       index,
@@ -174,7 +173,7 @@ export class DebuggerSession {
     const args: DebugProtocol.ScopesArguments = {
       frameId,
     };
-    return await this.session.customRequest("scopes", args);
+    return await this.customRequest("scopes", args);
   }
 
   async getVariables(
@@ -183,7 +182,7 @@ export class DebuggerSession {
     const args: DebugProtocol.VariablesArguments = {
       variablesReference,
     };
-    return await this.session.customRequest("variables", args);
+    return await this.customRequest("variables", args);
   }
 
   async getPlaces(frameIndex: number): Promise<Place[]> {
@@ -203,9 +202,9 @@ export class DebuggerSession {
       frameId,
     );
     const duration = performance.now() - start;
-    console.debug(
-      `Py command ${command} took ${duration.toFixed(2)}ms, response size: ${gdbResult.result.length}`,
-    );
+    // console.debug(
+    // `Py command ${command} took ${duration.toFixed(2)}ms, response size: ${gdbResult.result.length}`,
+    // );
 
     let pyResult: PyResult<T>;
     try {
@@ -219,6 +218,17 @@ export class DebuggerSession {
       throw new Error(`Python command ${command} failed:\n${pyResult.error}`);
     }
     return pyResult.value as T;
+  }
+
+  private async customRequest<T>(request: string, args?: unknown): Promise<T> {
+    const start = performance.now();
+    const result = await this.session.customRequest(request, args);
+    const duration = performance.now() - start;
+    // console.debug(
+    // `Command ${request} took ${duration.toFixed(2)}ms, args:`,
+    // args,
+    // );
+    return result as T;
   }
 }
 
