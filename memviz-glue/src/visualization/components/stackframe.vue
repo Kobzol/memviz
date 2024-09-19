@@ -72,9 +72,10 @@ watch(expanded, () => {
 <template>
   <div class="wrapper">
     <div class="header" :title="title" @click="toggleExpanded">{{ props.frame.name }} ({{ location }})</div>
-    <div v-if="expanded" class="inner">
-      <div v-if="places === null">Loading...</div>
-      <div v-else>
+    <!-- v-show is used instead of v-if to avoid destroying child state -->
+    <div v-show="expanded" class="inner">
+      <div v-show="places === null">Loading...</div>
+      <div v-show="places !== null">
         <NamedPlace class="place" v-for="place in places" :key="place.name" :place="place" />
       </div>
     </div>

@@ -17,6 +17,7 @@ const address = computed((): Address | null => {
   return strToAddress(props.place.address);
 });
 const value = computed((): Value => {
+  // console.log("COMPUTING VALUE");
   return {
     type: props.place.type,
     address: address.value
@@ -42,8 +43,7 @@ const title = computed(() => {
 <template>
   <div class="place">
     <code :title="title">{{ label }}</code>
-    <ValueComponent :value="value">
-    </ValueComponent>
+    <ValueComponent :value="value" />
   </div>
 </template>
 
