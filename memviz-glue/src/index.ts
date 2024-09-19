@@ -43,14 +43,14 @@ async function runMemVizTest() {
   builder.startFrame("main", 0);
   builder.place("a", BigInt(4), typeUint32()).setUint32(50);
   builder.place("b", BigInt(8), typeUint32()).setUint32(42);
-  builder.startFrame("foo", 32);
-  builder.place("a", BigInt(4), typeUint32()).setUint32(50);
-  builder.place("b", BigInt(8), typeUint32()).setUint32(42);
+  // builder.startFrame("foo", 32);
+  // builder.place("a", BigInt(4), typeUint32()).setUint32(50);
+  // builder.place("b", BigInt(8), typeUint32()).setUint32(42);
 
   const [state, resolver] = builder.build();
   console.log(state);
   memviz.showState(state, resolver);
 }
 
-runMemVizTest();
-// runMemvizInVsCode();
+// runMemVizTest();
+runMemvizInVsCode();

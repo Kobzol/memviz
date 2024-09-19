@@ -2,7 +2,8 @@ import createPanZoom from "panzoom";
 import type { ProcessState } from "process-def";
 import { createApp } from "vue";
 import type { ProcessResolver } from "../resolver/resolver";
-import Root from "./root.vue";
+import App from "./app.vue";
+import { appState } from "./store";
 
 export class Memviz {
   constructor(root: HTMLElement) {
@@ -19,8 +20,13 @@ export class Memviz {
       zoomDoubleClickSpeed: 1,
     });
 
-    createApp(Root).mount(root);
+    createApp(App).mount(root);
   }
 
-  async showState(state: ProcessState, resolver: ProcessResolver) {}
+  async showState(processState: ProcessState, resolver: ProcessResolver) {
+    appState.value = {
+      processState,
+      resolver,
+    };
+  }
 }

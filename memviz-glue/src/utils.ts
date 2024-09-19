@@ -18,3 +18,7 @@ export function addressToStr(address: Address): AddressStr {
 export function strToAddress(address: AddressStr): Address {
   return BigInt(address);
 }
+
+export function bufferToByteArray(buffer: ArrayBuffer): number[] {
+  return [...new Uint8Array(buffer)];
+}

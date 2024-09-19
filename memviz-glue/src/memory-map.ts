@@ -1,5 +1,6 @@
 import type { Address } from "process-def";
 import BTree from "sorted-btree";
+import { bufferToByteArray } from "./utils";
 
 export class MemoryMap {
   private map: BTree<Address, ArrayBuffer> = new BTree();
@@ -29,11 +30,10 @@ export class MemoryMap {
     if (BigInt(buffer.byteLength) - offset < count) return null;
     return new Uint8Array(buffer, Number(offset), Number(count));
   }
-}
 
-export function makeUint32(value: number): ArrayBuffer {
-  const buffer = new ArrayBuffer(4);
-  const view = new DataView(buffer);
-  view.setUint32(0, value, true);
-  return buffer;
+  dump() {
+    for (const [address, buffer] of this.map) {
+      console.log(address, bufferToByteArray(buffer));
+    }
+  }
 }

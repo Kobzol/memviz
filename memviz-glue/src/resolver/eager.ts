@@ -6,7 +6,7 @@ import {
   type Type,
 } from "process-def";
 import type { Place } from "process-def/src";
-import { MemoryMap, makeUint32 } from "../memory-map";
+import { MemoryMap } from "../memory-map";
 import { addressToStr, strToAddress } from "../utils";
 import type { ProcessResolver } from "./resolver";
 
@@ -30,6 +30,7 @@ export class EagerResolver implements ProcessResolver {
   constructor(private state: FullProcessState) {}
 
   async readMemory(address: AddressStr, size: number): Promise<ArrayBuffer> {
+    console.log(`Resolving address ${address} (${size} bytes)`);
     const res = this.state.memory.read(strToAddress(address), BigInt(size));
     if (res === null) {
       throw new Error(`Reading invalid memory at ${address} (${size} byte(s))`);
@@ -99,6 +100,8 @@ export class ProcessBuilder {
 
     const frames = this.frames.slice().reverse();
 
+    this.map.dump();
+
     const processState: FullProcessState = {
       stackTrace: {
         frames: frames.map((f, index) => ({ ...f, id: index, index })),
@@ -131,4 +134,11 @@ export function typeUint32(name = "int"): Type {
     signed: false,
     size: 4,
   };
+}
+
+function makeUint32(value: number): ArrayBuffer {
+  const buffer = new ArrayBuffer(4);
+  const view = new DataView(buffer);
+  view.setUint32(0, value, true);
+  return buffer;
 }
