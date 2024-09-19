@@ -52,5 +52,5 @@ async function runMemVizTest() {
   memviz.showState(state, resolver);
 }
 
-// runMemVizTest();
-runMemvizInVsCode();
+runMemVizTest();
+// runMemvizInVsCode();

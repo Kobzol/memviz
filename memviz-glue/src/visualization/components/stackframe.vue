@@ -60,6 +60,7 @@ watch(resolver, () => {
 }
 
 .header {
+  color: #000000;
   padding: 5px;
   background-color: #9DE19A;
 
@@ -69,6 +70,7 @@ watch(resolver, () => {
 }
 
 .inner {
+  background: #FFFFFF;
   border-top: solid 1px #000000;
 }
 </style>

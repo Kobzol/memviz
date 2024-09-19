@@ -26,6 +26,7 @@
     "vue-tsc": "^2.1.6"
   },
   "dependencies": {
+    "normalize.css": "^8.0.1",
     "panzoom": "^9.4.3",
     "process-def": "file:../process-def",
     "sorted-btree": "^1.8.1",

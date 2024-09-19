@@ -11,3 +11,7 @@ const state = computed(() => appState.value.processState);
     <StackFrameComponent v-for="frame in state.stackTrace.frames.slice().reverse()" :frame="frame" />
   </div>
 </template>
+
+<style lang="scss">
+@import "normalize.css";
+</style>

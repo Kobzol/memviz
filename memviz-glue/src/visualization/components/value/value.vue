@@ -9,7 +9,6 @@ const props = defineProps<{
     value: Value;
 }>();
 
-const resolver = computed(() => appState.value.resolver);
 const isScalar = computed(() => {
     const type = props.value.type;
     return type.kind === "bool" || type.kind === "int" || type.kind === "float";
