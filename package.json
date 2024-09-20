@@ -1,13 +1,11 @@
 {
   "name": "memviz-workspace",
-  "workspaces": [
-    "extension",
-    "memviz-ui",
-    "process-def"
-  ],
+  "workspaces": ["process-def", "memviz-ui", "extension"],
   "scripts": {
-    "check": "npm run check --prefix process-def && npm run check --prefix memviz-ui && npm run check --prefix extension",
-    "package": "npm run build --prefix process-def && npm run build --prefix memviz-ui && npm run package --prefix extension",
-    "test": "npm test --prefix memviz-ui"
+    "build": "npm run build --workspaces",
+    "fix": "npm run fix --workspaces",
+    "test": "npm test -w memviz-ui",
+    "watch": "npm run watch --workspaces",
+    "package": "npm run build && npm run package -w extension"
   }
 }

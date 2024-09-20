@@ -12,14 +12,12 @@
   "main": "./dist/extension.js",
   "contributes": {},
   "scripts": {
-    "vscode:prepublish": "npm run build",
-    "check:biome": "biome check --write",
-    "check:tsc": "tsc",
-    "check": "npm run check:biome && npm run check:tsc",
-    "build": "npm run check && node esbuild.js --production",
-    "package": "vsce package --no-dependencies",
+    "fix": "biome check --write",
+    "build": "tsc && node esbuild.js --production",
     "watch": "node esbuild.js --watch",
-    "watch:extension": "npm run watch"
+    "watch:extension": "npm run watch",
+    "package": "vsce package --no-dependencies",
+    "vscode:prepublish": "npm run build"
   },
   "devDependencies": {
     "@types/node": "20.x",

@@ -4,16 +4,12 @@
   "description": "",
   "main": "./dist/index.js",
   "scripts": {
-    "check:biome": "biome check --write",
-    "check:tsc": "vue-tsc",
-    "check": "npm run check:biome && npm run check:tsc",
-    "lint": "biome lint",
-    "build": "npm run check && node esbuild.js --production",
-    "fmt": "biome format --write",
+    "fix": "biome check --write",
+    "build": "vue-tsc && node esbuild.js --production",
     "watch:esbuild": "node esbuild.js --watch",
     "watch:ts": "vue-tsc --watch",
-    "watch:memviz-ui": "npm-run-all -p watch:esbuild watch:ts",
-    "watch": "npm run watch:memviz-ui",
+    "watch": "npm-run-all -p watch:esbuild watch:ts",
+    "watch:memviz-ui": "npm run watch",
     "test": "jest"
   },
   "devDependencies": {
