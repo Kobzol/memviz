@@ -4,8 +4,6 @@ import { computed } from "vue";
 import { strToAddress } from "../../utils";
 import type { Value } from "../value";
 
-import ValueComponent from "./value/value.vue";
-
 const props = defineProps<{
   place: Place;
 }>();
@@ -20,7 +18,7 @@ const value = computed((): Value => {
   // console.log("COMPUTING VALUE");
   return {
     type: props.place.type,
-    address: address.value
+    address: address.value,
   };
 });
 const label = computed(() => {
@@ -33,7 +31,7 @@ const label = computed(() => {
 const title = computed(() => {
   const type = props.place.type;
   let title = `${props.place.type.name} ${props.place.name}`;
-  title += `, ${type.size}-byte${type.size === 1 ? "" : "s"}`;
+  title += `, ${type.size} byte${type.size === 1 ? "" : "s"}`;
   title += `, ${props.place.initialized ? "" : "not "}initialized`;
   title += `, declared at line ${props.place.line}`;
   return title;

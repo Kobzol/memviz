@@ -8,7 +8,7 @@ import {
 } from "process-def";
 import type { Place } from "process-def/src";
 import { MemoryMap } from "../memory-map";
-import { addressToStr, arrayToBuffer, strToAddress } from "../utils";
+import { addressToStr, strToAddress } from "../utils";
 import type { ProcessResolver } from "./resolver";
 
 export interface FullProcessState extends ProcessState {
@@ -29,11 +29,14 @@ export class EagerResolver implements ProcessResolver {
 
   async readMemory(address: AddressStr, size: number): Promise<ArrayBuffer> {
     console.log(`Resolving address ${address} (${size} bytes)`);
-    const res = this.state.memory.read(strToAddress(address), BigInt(size));
+    const res = this.state.memory.readZeroFilled(
+      strToAddress(address),
+      BigInt(size),
+    );
     if (res === null) {
       throw new Error(`Reading invalid memory at ${address} (${size} byte(s))`);
     }
-    return arrayToBuffer(res);
+    return res;
   }
 
   async getPlaces(frameIndex: number): Promise<Place[]> {
@@ -66,7 +69,8 @@ export class ProcessBuilder {
       line: actualLine,
       file,
       places: [],
-      baseAddress: BigInt(baseAddress),
+      // Move stack a bit up to avoid data sitting at address 0
+      baseAddress: BigInt(1000 + baseAddress),
     };
   }
 
@@ -103,7 +107,7 @@ export class ProcessBuilder {
     this.activeFrame = null;
   }
 
-  build(): [ProcessState, EagerResolver] {
+  build(): [FullProcessState, EagerResolver] {
     if (this.activeFrame !== null) {
       this.endFrame();
     }

@@ -2,9 +2,8 @@
 import type { Place, StackFrame } from "process-def";
 import { computed, ref, watch } from "vue";
 import type { Ref } from "vue";
+import { addressToStr, strToAddress } from "../../utils";
 import { appState } from "../store";
-import NamedPlace from "./namedplace.vue";
-import { addressToStr, measureAsync, strToAddress } from "../../utils";
 
 const props = defineProps<{
   frame: StackFrame;
@@ -17,9 +16,10 @@ function toggleExpanded() {
 // TODO: deduplicate loading
 async function maybeLoadPlaces() {
   if (expanded.value && places.value === null) {
-    const framePlaces = await measureAsync("loadPlaces", async () => resolver.value.getPlaces(props.frame.index));
+    const framePlaces = await resolver.value.getPlaces(props.frame.index);
     // Preload stack data
-    const placesByAddress = framePlaces.filter(p => p.address !== null)
+    const placesByAddress = framePlaces
+      .filter((p) => p.address !== null)
       .sort((a, b) => {
         const addrA = strToAddress(a.address!);
         const addrB = strToAddress(b.address!);
@@ -31,7 +31,8 @@ async function maybeLoadPlaces() {
     if (placesByAddress.length > 0) {
       const start = strToAddress(placesByAddress[0].address!);
       const lastPlace = placesByAddress[placesByAddress.length - 1];
-      const end = strToAddress(lastPlace.address!) + BigInt(lastPlace.type.size);
+      const end =
+        strToAddress(lastPlace.address!) + BigInt(lastPlace.type.size);
       const size = end - start;
       // Pre-cache the memory of the stack frame in a single batch, to avoid many requests
       // for the individual stack places
@@ -57,14 +58,21 @@ const title = computed(() => {
   return `Stack frame (function ${props.frame.name}, ${location.value})`;
 });
 
-watch(() => [props.frame, resolver], () => {
-  places.value = null;
-  maybeLoadPlaces();
-});
+watch(
+  () => [props.frame, resolver],
+  () => {
+    places.value = null;
+    maybeLoadPlaces();
+  },
+);
 
-watch(expanded, () => {
-  maybeLoadPlaces();
-}, { immediate: true });
+watch(
+  expanded,
+  () => {
+    maybeLoadPlaces();
+  },
+  { immediate: true },
+);
 
 // https://www.color-hex.com/color-palette/24003
 </script>

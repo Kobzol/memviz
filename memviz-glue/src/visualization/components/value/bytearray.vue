@@ -3,7 +3,7 @@ import { computed } from "vue";
 import { bufferToByteArray } from "../../../utils";
 
 const props = defineProps<{
-    buffer: ArrayBuffer;
+  buffer: ArrayBuffer;
 }>();
 
 const array = computed(() => bufferToByteArray(props.buffer));

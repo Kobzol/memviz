@@ -1,9 +1,10 @@
 import { PlaceKind } from "process-def";
+import type { WebviewApi } from "vscode-webview";
 import type { ExtensionToMemvizMsg } from "./messages";
+import { CachingResolver } from "./resolver/cache";
 import { ProcessBuilder, typeFloat32, typeUint32 } from "./resolver/eager";
 import { VsCodeResolver } from "./resolver/vscode";
 import { Memviz } from "./visualization";
-import { CachingResolver } from "./resolver/cache";
 
 export type {
   ExtensionToMemvizMsg,
@@ -16,9 +17,7 @@ export type {
 } from "./messages";
 export { PlaceKind } from "process-def";
 
-function runMemvizInVsCode() {
-  const vscode = acquireVsCodeApi();
-
+function runMemvizInVsCode(vscode: WebviewApi<unknown>) {
   let resolverId = 0;
   let resolver: CachingResolver<VsCodeResolver> = new CachingResolver(
     new VsCodeResolver(vscode, resolverId),
@@ -63,8 +62,13 @@ async function runMemVizTest() {
     .setUint32(42);
 
   const [state, resolver] = builder.build();
+  state.memory.dump();
   memviz.showState(state, new CachingResolver(resolver));
 }
 
-// runMemVizTest();
-runMemvizInVsCode();
+try {
+  const vscode = acquireVsCodeApi();
+  runMemvizInVsCode(vscode);
+} catch {
+  runMemVizTest();
+}

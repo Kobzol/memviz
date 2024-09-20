@@ -2,15 +2,13 @@
 import { computed } from "vue";
 import type { Value } from "../../value";
 
-import Scalar from "./scalar.vue";
-
 const props = defineProps<{
-    value: Value;
+  value: Value;
 }>();
 
 const isScalar = computed(() => {
-    const type = props.value.type;
-    return type.kind === "bool" || type.kind === "int" || type.kind === "float";
+  const type = props.value.type;
+  return type.kind === "bool" || type.kind === "int" || type.kind === "float";
 });
 </script>
 

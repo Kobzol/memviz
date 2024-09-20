@@ -23,9 +23,8 @@ export function bufferToByteArray(buffer: ArrayBuffer): number[] {
   return [...new Uint8Array(buffer)];
 }
 
-export function arrayToBuffer(array: Uint8Array): ArrayBuffer {
-  return array.buffer.slice(
-    array.byteOffset,
-    array.byteOffset + array.byteLength,
-  );
+export function assert(condition: boolean, message: string): asserts condition {
+  if (!condition) {
+    throw new Error(`Assertion failed: ${message}`);
+  }
 }

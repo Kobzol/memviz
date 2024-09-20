@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed, Ref, ref, watch } from "vue";
-import { appState } from "../../store";
-import { scalarAsString, type Value } from "../../value";
+import { type Ref, computed, ref, watch } from "vue";
 import { addressToStr } from "../../../utils";
-import ByteArray from "./bytearray.vue";
+import { appState } from "../../store";
+import { type Value, scalarAsString } from "../../value";
 
 const props = defineProps<{
     value: Value;
@@ -11,7 +10,7 @@ const props = defineProps<{
 
 enum DisplayMode {
     String = "string",
-    ByteArray = "per-byte"
+    ByteArray = "per-byte",
 }
 
 async function loadData() {
@@ -19,7 +18,10 @@ async function loadData() {
     if (address === null) {
         return;
     }
-    buffer.value = await resolver.value.readMemory(addressToStr(address), props.value.type.size);
+    buffer.value = await resolver.value.readMemory(
+        addressToStr(address),
+        props.value.type.size,
+    );
 }
 
 function toggleDisplayMode() {
@@ -37,11 +39,15 @@ const buffer: Ref<ArrayBuffer | null> = ref(null);
 const bufferAsString = computed(() => {
     if (buffer.value === null) return "";
     return scalarAsString(buffer.value, props.value.type);
-})
+});
 
-watch(() => props.value, () => {
-    loadData();
-}, { immediate: true });
+watch(
+    () => props.value,
+    () => {
+        loadData();
+    },
+    { immediate: true },
+);
 </script>
 
 <template>

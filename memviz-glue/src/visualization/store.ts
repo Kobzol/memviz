@@ -1,7 +1,7 @@
-import { ref, type Ref } from "vue";
-import type { ProcessResolver } from "../resolver/resolver";
 import type { ProcessState } from "process-def";
+import { type Ref, ref } from "vue";
 import { ProcessBuilder } from "../resolver/eager";
+import type { ProcessResolver } from "../resolver/resolver";
 
 interface AppState {
   processState: Readonly<ProcessState>;
