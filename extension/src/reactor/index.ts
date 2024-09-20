@@ -47,7 +47,7 @@ export class Reactor {
     private panel: vscode.WebviewPanel,
     private session: DebuggerSession,
     private gdbScriptPath: string,
-  ) { }
+  ) {}
 
   async handleMessageFromClient(message: DebugProtocol.ProtocolMessage) {
     // The client sends setFunctionBreakpoints at the very beginning of the debug session.
