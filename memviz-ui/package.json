@@ -1,19 +1,15 @@
 {
-  "name": "memviz-glue",
+  "name": "memviz-ui",
   "version": "0.0.1",
   "description": "",
   "main": "./dist/index.js",
   "scripts": {
-    "check:biome": "biome check --write",
-    "check:tsc": "vue-tsc",
-    "check": "npm run check:biome && npm run check:tsc",
-    "lint": "biome lint",
-    "build": "npm run check && node esbuild.js --production",
-    "fmt": "biome format --write",
+    "fix": "biome check --write",
+    "build": "vue-tsc && node esbuild.js --production",
     "watch:esbuild": "node esbuild.js --watch",
     "watch:ts": "vue-tsc --watch",
-    "watch:memviz-glue": "npm-run-all -p watch:esbuild watch:ts",
-    "watch": "npm run watch:memviz-glue",
+    "watch": "npm-run-all -p watch:esbuild watch:ts",
+    "watch:memviz-ui": "npm run watch",
     "test": "jest"
   },
   "devDependencies": {
@@ -33,7 +29,6 @@
   "dependencies": {
     "normalize.css": "^8.0.1",
     "panzoom": "^9.4.3",
-    "process-def": "file:../process-def",
     "sorted-btree": "^1.8.1",
     "vue": "^3.5.6"
   }

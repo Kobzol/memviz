@@ -8,7 +8,13 @@ import type { Config } from "jest";
 const config: Config = {
   // Enable ESM imports in tests
   transform: {
-    "(\\.ts$)": ["ts-jest", {}],
+    "^.+\\.tsx?$": [
+      "ts-jest",
+      {
+        tsconfig: "./tsconfig.jest.json",
+        useESM: true,
+      },
+    ],
   },
   // All imported modules in your tests should be mocked automatically
   // automock: false,

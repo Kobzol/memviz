@@ -5,7 +5,7 @@
             "label": "watch",
             "dependsOn": [
                 "compile-extension",
-                "compile-memviz-glue",
+                "compile-memviz-ui",
                 "compile-process-def"
             ],
             "presentation": {
@@ -33,14 +33,14 @@
         },
         {
             "type": "npm",
-            "script": "watch:memviz-glue",
+            "script": "watch:memviz-ui",
             "group": "build",
             "options": {
-                "cwd": "${workspaceFolder}/memviz-glue"
+                "cwd": "${workspaceFolder}/memviz-ui"
             },
             "problemMatcher": "$esbuild-watch",
             "isBackground": true,
-            "label": "compile-memviz-glue",
+            "label": "compile-memviz-ui",
             "presentation": {
                 "group": "watch",
                 "reveal": "never"

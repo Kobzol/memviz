@@ -1,16 +1,11 @@
 {
   "name": "memviz-workspace",
-  "workspaces": [
-    "extension",
-    "memviz-glue",
-    "process-def"
-  ],
+  "workspaces": ["process-def", "memviz-ui", "extension"],
   "scripts": {
-    "check": "npm run check --prefix process-def && npm run check --prefix memviz-glue && npm run check --prefix extension",
-    "package": "npm run build --prefix process-def && npm run build --prefix memviz-glue && npm run package --prefix extension",
-    "test": "npm test --prefix memviz-glue"
-  },
-  "dependencies": {
-    "sorted-btree": "^1.8.1"
+    "build": "npm run build --workspaces",
+    "fix": "npm run fix --workspaces",
+    "test": "npm test -w memviz-ui",
+    "watch": "npm run watch --workspaces",
+    "package": "npm run build && npm run package -w extension"
   }
 }

@@ -9,7 +9,7 @@ import type {
   MemvizToExtensionMsg,
   MemvizToExtensionRequest,
   ReadMemoryReq,
-} from "memviz-glue";
+} from "memviz-ui";
 import type { FrameId } from "process-def";
 import type { DebuggerSession } from "../session";
 import { decodeBase64 } from "../utils";

@@ -4,12 +4,10 @@
   "description": "",
   "main": "./dist/index.js",
   "scripts": {
-    "check:biome": "biome check --write",
-    "check:tsc": "tsc --noEmit",
-    "check": "npm run check:biome && npm run check:tsc",
+    "fix": "biome check --write",
     "build": "tsc",
-    "watch": "npm run watch",
-    "watch:process-def": "tsc --watch"
+    "watch": "tsc --watch",
+    "watch:process-def": "npm run watch:process-def"
   },
   "devDependencies": {
     "typescript": "^5.5.4"

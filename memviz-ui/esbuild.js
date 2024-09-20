@@ -40,6 +40,7 @@ const copyFileToExtension = {
     build.onEnd((result) => {
       if (result.errors.length === 0) {
         console.log("Copying output file to extension");
+        fs.mkdirSync("../extension/dist", {recursive: true});
         for (const file of OUTPUT_PATHS) {
           fs.copyFileSync(file, `../extension/dist/${path.basename(file)}`);
         }
