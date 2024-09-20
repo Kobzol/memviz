@@ -14,7 +14,8 @@
       "extension/esbuild.js",
       "memviz-glue/dist",
       "memviz-glue/esbuild.js",
-      "process-def/dist"
+      "process-def/dist",
+      "*.vue"
     ]
   },
   "formatter": {
