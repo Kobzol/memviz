@@ -9,7 +9,7 @@ import type {
   MemvizToExtensionMsg,
   MemvizToExtensionRequest,
   ReadMemoryReq,
-} from "memviz-glue";
+} from "memviz-ui";
 import type { FrameId } from "process-def";
 import type { DebuggerSession } from "../session";
 import { decodeBase64 } from "../utils";
@@ -47,7 +47,7 @@ export class Reactor {
     private panel: vscode.WebviewPanel,
     private session: DebuggerSession,
     private gdbScriptPath: string,
-  ) {}
+  ) { }
 
   async handleMessageFromClient(message: DebugProtocol.ProtocolMessage) {
     // The client sends setFunctionBreakpoints at the very beginning of the debug session.

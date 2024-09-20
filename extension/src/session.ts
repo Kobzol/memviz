@@ -12,7 +12,7 @@ import type { DebugSession } from "vscode";
 import type { ExtractBody } from "./utils";
 
 export class DebuggerSession {
-  constructor(private session: DebugSession) {}
+  constructor(private session: DebugSession) { }
 
   async setBreakpoints(
     source: DebugProtocol.Source,

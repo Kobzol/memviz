@@ -7,8 +7,12 @@
   "engines": {
     "vscode": "^1.93.0"
   },
-  "categories": ["Other"],
-  "activationEvents": ["onDebug"],
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onDebug"
+  ],
   "main": "./dist/extension.js",
   "contributes": {},
   "scripts": {
@@ -28,9 +32,5 @@
     "@vscode/vsce": "^3.1.0",
     "esbuild": "^0.23.1",
     "typescript": "^5.5.4"
-  },
-  "dependencies": {
-    "process-def": "file:../process-def",
-    "memviz-glue": "file:../memviz-glue"
   }
 }
