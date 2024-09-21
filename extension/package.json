@@ -1,15 +1,37 @@
 {
   "name": "memviz",
-  "displayName": "memviz",
-  "description": "Memory visualizer",
+  "displayName": "Memory visualizer",
+  "description": "Memory visualizer of C programs - display stack and heap variables and their relations.",
   "repository": "https://github.com/Kobzol/memviz",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "engines": {
-    "vscode": "^1.93.0"
+    "vscode": "^1.80.0"
   },
-  "categories": ["Other"],
-  "activationEvents": ["onDebug"],
+  "license": "MIT",
+  "publisher": "jakub-beranek",
+  "categories": ["Debuggers", "Visualization", "Education"],
+  "keywords": [
+    "debugger",
+    "visualization",
+    "c programs",
+    "address space",
+    "pointers"
+  ],
+  "preview": true,
+  "badges": [
+    {
+      "url": "https://github.com/kobzol/memviz/actions/workflows/test.yaml/badge.svg",
+      "href": "https://github.com/kobzol/memviz",
+      "description": "CI tests"
+    }
+  ],
+  "icon": "img/icon.png",
+  "pricing": "Free",
+  "galleryBanner": {
+    "color": "#ECEA50"
+  },
   "main": "./dist/extension.js",
+  "activationEvents": ["onDebug"],
   "contributes": {},
   "scripts": {
     "fix": "biome check --write",
@@ -17,11 +39,12 @@
     "watch": "node esbuild.js --watch",
     "watch:extension": "npm run watch",
     "package": "vsce package --no-dependencies",
-    "vscode:prepublish": "npm run build"
+    "publish": "vsce publish patch --no-dependencies --target linux-x64",
+    "vscode:prepublish": "rm -rf dist && npm run build --prefix ../"
   },
   "devDependencies": {
     "@types/node": "20.x",
-    "@types/vscode": "^1.93.0",
+    "@types/vscode": "^1.80.0",
     "@vscode/debugprotocol": "^1.67.0",
     "@vscode/vsce": "^3.1.0",
     "esbuild": "^0.23.1",

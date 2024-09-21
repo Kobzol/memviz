@@ -4,6 +4,7 @@ import { computed, ref, watch } from "vue";
 import type { Ref } from "vue";
 import { addressToStr, strToAddress } from "../../utils";
 import { appState } from "../store";
+import NamedPlace from "./namedplace.vue";
 
 const props = defineProps<{
   frame: StackFrame;

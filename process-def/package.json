@@ -7,7 +7,7 @@
     "fix": "biome check --write",
     "build": "tsc",
     "watch": "tsc --watch",
-    "watch:process-def": "npm run watch:process-def"
+    "watch:process-def": "npm run watch"
   },
   "devDependencies": {
     "typescript": "^5.5.4"

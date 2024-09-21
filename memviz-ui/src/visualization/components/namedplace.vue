@@ -3,6 +3,7 @@ import type { Address, Place } from "process-def";
 import { computed } from "vue";
 import { strToAddress } from "../../utils";
 import type { Value } from "../value";
+import ValueComponent from "./value/value.vue";
 
 const props = defineProps<{
   place: Place;

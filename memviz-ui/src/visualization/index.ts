@@ -7,6 +7,7 @@ import { appState } from "./store";
 
 export class Memviz {
   constructor(root: HTMLElement) {
+    createApp(App).mount(root);
     createPanZoom(root, {
       smoothScroll: false,
       onDoubleClick: (_e) => {
@@ -19,8 +20,6 @@ export class Memviz {
       },
       zoomDoubleClickSpeed: 1,
     });
-
-    createApp(App).mount(root);
   }
 
   async showState(processState: ProcessState, resolver: ProcessResolver) {

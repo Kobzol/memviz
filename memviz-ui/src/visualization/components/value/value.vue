@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { Value } from "../../value";
+import Scalar from "./scalar.vue";
 
 const props = defineProps<{
   value: Value;

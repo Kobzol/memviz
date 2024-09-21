@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { appState } from "./store";
+import StackFrameComponent from "./components/stackframe.vue";
 
 const state = computed(() => appState.value.processState);
 </script>
