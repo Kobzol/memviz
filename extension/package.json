@@ -9,11 +9,7 @@
   },
   "license": "MIT",
   "publisher": "jakub-beranek",
-  "categories": [
-    "Debuggers",
-    "Visualization",
-    "Education"
-  ],
+  "categories": ["Debuggers", "Visualization", "Education"],
   "keywords": [
     "debugger",
     "visualization",
@@ -35,9 +31,7 @@
     "color": "#ECEA50"
   },
   "main": "./dist/extension.js",
-  "activationEvents": [
-    "onDebug"
-  ],
+  "activationEvents": ["onDebug"],
   "contributes": {},
   "scripts": {
     "fix": "biome check --write",
