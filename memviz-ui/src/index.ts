@@ -2,8 +2,8 @@ import type { WebviewApi } from "vscode-webview";
 import type { ExtensionToMemvizMsg } from "./messages";
 import { CachingResolver } from "./resolver/cache";
 import { VsCodeResolver } from "./resolver/vscode";
-import { Memviz } from "./visualization";
 import { buildArray } from "./test-programs";
+import { Memviz } from "./visualization";
 
 export type {
   ExtensionToMemvizMsg,

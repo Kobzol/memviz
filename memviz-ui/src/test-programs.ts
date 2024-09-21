@@ -1,7 +1,7 @@
 import { PlaceKind } from ".";
 import {
-  makeUint32,
   ProcessBuilder,
+  makeUint32,
   typeArray,
   typeFloat32,
   typeUint32,
