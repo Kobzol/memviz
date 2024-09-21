@@ -1,4 +1,5 @@
 import type { Address, TyBool, TyFloat, TyInt, Type } from "process-def";
+import { assert } from "../utils";
 
 export interface Value<T extends Type> {
   type: T;
@@ -36,6 +37,26 @@ export function scalarAsString(buffer: ArrayBuffer, type: TyScalar): string {
 
   // console.log(`Resolving key ${key} for type`, type);
   return FORMATTERS[key](view);
+}
+
+export function formatAddress(address: Address | null): string {
+  if (address === null) {
+    return "<unknown address>";
+  }
+  return `0x${address.toString(16)}`;
+}
+
+export function bufferAsBigInt(buffer: ArrayBuffer, size: number): bigint {
+  assert(size === 4 || size === 8, "only 4 and 8 byte pointers are supported");
+
+  const view = new DataView(buffer);
+  if (size === 8) {
+    return view.getBigUint64(0, true);
+  }
+  if (size === 4) {
+    return BigInt(view.getUint32(0, true));
+  }
+  return BigInt(0);
 }
 
 function toFixedIfNecessary(value: number, decimalPlaces: number): string {

@@ -2,7 +2,7 @@
 import type { Address, Place, Type } from "process-def";
 import { computed } from "vue";
 import { strToAddress } from "../../utils";
-import type { Value } from "../value";
+import type { Value } from "../formatting";
 import ValueComponent from "./value/value.vue";
 import { Path } from "../path";
 
@@ -44,7 +44,7 @@ const path = computed((): Path => {
 
 <template>
   <div class="place">
-    <code :title="title">{{ label }}</code>
+    <code class="decl" :title="title">{{ label }}</code>
     <ValueComponent :value="value" :path="path" />
   </div>
 </template>
@@ -57,5 +57,9 @@ const path = computed((): Path => {
   display: flex;
   flex-direction: row;
   align-items: center;
+
+  .decl {
+    margin-right: 5px;
+  }
 }
 </style>

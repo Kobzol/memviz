@@ -16,7 +16,7 @@ export interface TyFloat extends TyBase {
   kind: "float";
 }
 
-interface TyPtr extends TyBase {
+export interface TyPtr extends TyBase {
   kind: "ptr";
   target: Type;
 }

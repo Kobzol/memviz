@@ -1,5 +1,5 @@
-import type { ProcessState } from "process-def";
-import { type Ref, ref } from "vue";
+import type { Address, ProcessState } from "process-def";
+import { type Reactive, type Ref, reactive, ref } from "vue";
 import { ProcessBuilder } from "../resolver/eager";
 import type { ProcessResolver } from "../resolver/resolver";
 
@@ -18,3 +18,9 @@ function createDefaultState(): AppState {
 }
 
 export const appState: Ref<AppState> = ref(createDefaultState());
+
+interface PointerState {
+  targets: Address[];
+}
+
+export const pointerTargets: Reactive<PointerState> = reactive({ targets: [] });

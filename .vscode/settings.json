@@ -12,7 +12,7 @@
   "typescript.tsc.autoDetect": "off",
   "editor.formatOnSave": true,
   "[vue]": {
-      "editor.defaultFormatter": "Vue.volar"
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
   "[typescript]": {
       "editor.defaultFormatter": "biomejs.biome",
