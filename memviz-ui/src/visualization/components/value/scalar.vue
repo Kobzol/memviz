@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Ref, computed, ref, watch } from "vue";
+import { type Ref, computed, ref, watchEffect } from "vue";
 import { addressToStr } from "../../../utils";
 import { appState } from "../../store";
 import { TyScalar, type Value, scalarAsString } from "../../value";
@@ -44,13 +44,7 @@ const bufferAsString = computed(() => {
     return scalarAsString(buffer.value, props.value.type);
 });
 
-watch(
-    () => props.value,
-    () => {
-        loadData();
-    },
-    { immediate: true },
-);
+watchEffect(() => loadData());
 </script>
 
 <template>
