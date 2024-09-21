@@ -2,11 +2,11 @@
 import { type Ref, computed, ref, watch } from "vue";
 import { addressToStr } from "../../../utils";
 import { appState } from "../../store";
-import { type Value, scalarAsString } from "../../value";
+import { TyScalar, type Value, scalarAsString } from "../../value";
 import ByteArray from "./bytearray.vue";
 
 const props = defineProps<{
-    value: Value;
+    value: Value<TyScalar>;
 }>();
 
 enum DisplayMode {
@@ -67,6 +67,11 @@ watch(
     display: flex;
     justify-content: end;
     padding: 0px 5px;
+
+    &:hover {
+        cursor: pointer;
+        background-color: #DDDDDD;
+    }
 }
 
 .string {

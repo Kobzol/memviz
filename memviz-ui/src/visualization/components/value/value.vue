@@ -1,32 +1,28 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { Value } from "../../value";
+import type { TyScalar, Value } from "../../value";
+import { Type, TyArray } from "process-def";
 import Scalar from "./scalar.vue";
+import Array from "./array.vue";
 
 const props = defineProps<{
-  value: Value;
+  value: Value<Type>;
 }>();
 
-const isScalar = computed(() => {
-  const type = props.value.type;
-  return type.kind === "bool" || type.kind === "int" || type.kind === "float";
-});
+function isScalar(value: Value<Type>): value is Value<TyScalar> {
+  return value.type.kind === "bool" || value.type.kind === "int" || value.type.kind === "float";
+}
+
+function isArray(value: Value<Type>): value is Value<TyArray> {
+  return value.type.kind === "array";
+}
 </script>
 
 <template>
-    <div class="value">
-        <Scalar v-if="isScalar" :value="value"></Scalar>
-        <div v-else>&lg;value&gt;</div>
-    </div>
+  <div class="value">
+    <Scalar v-if="isScalar(value)" :value="value"></Scalar>
+    <Array v-else-if="isArray(value)" :value="value"></Array>
+    <div v-else>&lt;value&gt;</div>
+  </div>
 </template>
 
-<style scoped lang="scss">
-.value {
-    flex-grow: 1;
-
-    &:hover {
-        cursor: pointer;
-        background-color: #DDDDDD;
-    }
-}
-</style>
+<style scoped lang="scss"></style>

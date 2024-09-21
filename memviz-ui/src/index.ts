@@ -1,10 +1,9 @@
-import { PlaceKind } from "process-def";
 import type { WebviewApi } from "vscode-webview";
 import type { ExtensionToMemvizMsg } from "./messages";
 import { CachingResolver } from "./resolver/cache";
-import { ProcessBuilder, typeFloat32, typeUint32 } from "./resolver/eager";
 import { VsCodeResolver } from "./resolver/vscode";
 import { Memviz } from "./visualization";
+import { buildArray } from "./test-programs";
 
 export type {
   ExtensionToMemvizMsg,
@@ -49,17 +48,7 @@ async function runMemVizTest() {
   const root = document.getElementById("app")!;
   const memviz = new Memviz(root);
 
-  const builder = new ProcessBuilder();
-  builder.startFrame("main", 0);
-  builder.place("a", BigInt(4), typeUint32()).setUint32(50);
-  builder.place("b", BigInt(8), typeUint32()).setUint32(42);
-  builder.place("c", BigInt(12), typeFloat32()).setFloat32(1.58);
-  builder.place("d", BigInt(16), typeFloat32()).setFloat32(4);
-  builder.startFrame("foo", 32);
-  builder.place("a", BigInt(4), typeUint32()).setUint32(50);
-  builder
-    .place("b", BigInt(8), typeUint32(), PlaceKind.Variable, false)
-    .setUint32(42);
+  const builder = buildArray();
 
   const [state, resolver] = builder.build();
   state.memory.dump();

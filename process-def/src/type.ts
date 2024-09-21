@@ -3,16 +3,16 @@ interface TyBase {
   size: number;
 }
 
-interface TyBool extends TyBase {
+export interface TyBool extends TyBase {
   kind: "bool";
 }
 
-interface TyInt extends TyBase {
+export interface TyInt extends TyBase {
   kind: "int";
   signed: boolean;
 }
 
-interface TyFloat extends TyBase {
+export interface TyFloat extends TyBase {
   kind: "float";
 }
 
@@ -32,7 +32,7 @@ interface TyStruct extends TyBase {
   fields: StructField[];
 }
 
-interface TyArray extends TyBase {
+export interface TyArray extends TyBase {
   kind: "array";
   type: Type;
   element_count: number;

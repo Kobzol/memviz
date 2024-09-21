@@ -1,7 +1,7 @@
-import type { Address, Type } from "process-def";
+import type { Address, TyBool, TyFloat, TyInt, Type } from "process-def";
 
-export interface Value {
-  type: Type;
+export interface Value<T extends Type> {
+  type: T;
   address: Address | null;
 }
 
@@ -18,7 +18,9 @@ const FORMATTERS: { [key: string]: (view: DataView) => string } = {
   f8: (view: DataView) => toFixedIfNecessary(view.getFloat64(0, true), 4),
 };
 
-export function scalarAsString(buffer: ArrayBuffer, type: Type): string {
+export type TyScalar = TyBool | TyInt | TyFloat;
+
+export function scalarAsString(buffer: ArrayBuffer, type: TyScalar): string {
   const view = new DataView(buffer);
   if (type.kind === "bool") {
     return view.getUint8(0) === 0 ? "false" : "true";
@@ -29,8 +31,6 @@ export function scalarAsString(buffer: ArrayBuffer, type: Type): string {
     key += type.signed ? "i" : "u";
   } else if (type.kind === "float") {
     key += "f";
-  } else {
-    throw new Error(`Invalid type ${type.kind} passed to scalarAsString`);
   }
   key += type.size;
 

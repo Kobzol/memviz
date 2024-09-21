@@ -134,6 +134,14 @@ export class PlaceBuilder {
     private map: MemoryMap,
   ) {}
 
+  setArray(generator: (index: number) => ArrayBuffer, count: number) {
+    let address = this.address;
+    for (let i = 0; i < count; i++) {
+      const buffer = generator(i);
+      this.map.set(address, buffer);
+      address += BigInt(buffer.byteLength);
+    }
+  }
   setUint32(value: number) {
     this.map.set(this.address, makeUint32(value));
   }
@@ -159,14 +167,24 @@ export function typeFloat32(name = "float"): Type {
   };
 }
 
-function makeUint32(value: number): ArrayBuffer {
+export function typeArray(type: Type, element_count: number): Type {
+  return {
+    name: `${type.name}[${element_count}]`,
+    kind: "array",
+    size: type.size * element_count,
+    type,
+    element_count,
+  };
+}
+
+export function makeUint32(value: number): ArrayBuffer {
   const buffer = new ArrayBuffer(4);
   const view = new DataView(buffer);
   view.setUint32(0, value, true);
   return buffer;
 }
 
-function makeFloat32(value: number): ArrayBuffer {
+export function makeFloat32(value: number): ArrayBuffer {
   const buffer = new ArrayBuffer(4);
   const view = new DataView(buffer);
   view.setFloat32(0, value, true);

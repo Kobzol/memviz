@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Address, Place } from "process-def";
+import type { Address, Place, Type } from "process-def";
 import { computed } from "vue";
 import { strToAddress } from "../../utils";
 import type { Value } from "../value";
@@ -15,8 +15,7 @@ const address = computed((): Address | null => {
   }
   return strToAddress(props.place.address);
 });
-const value = computed((): Value => {
-  // console.log("COMPUTING VALUE");
+const value = computed((): Value<Type> => {
   return {
     type: props.place.type,
     address: address.value,
