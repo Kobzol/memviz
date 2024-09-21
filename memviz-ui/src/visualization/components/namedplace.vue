@@ -4,6 +4,7 @@ import { computed } from "vue";
 import { strToAddress } from "../../utils";
 import type { Value } from "../value";
 import ValueComponent from "./value/value.vue";
+import { Path } from "../path";
 
 const props = defineProps<{
   place: Place;
@@ -36,12 +37,15 @@ const title = computed(() => {
   title += `, declared at line ${props.place.line}`;
   return title;
 });
+const path = computed((): Path => {
+  return Path.rootStackFrame(props.place.name);
+});
 </script>
 
 <template>
   <div class="place">
     <code :title="title">{{ label }}</code>
-    <ValueComponent :value="value" />
+    <ValueComponent :value="value" :path="path" />
   </div>
 </template>
 

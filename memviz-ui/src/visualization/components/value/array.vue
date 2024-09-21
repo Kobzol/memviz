@@ -5,9 +5,11 @@ import { appState } from "../../store";
 import { type Value } from "../../value";
 import { TyArray, Type } from "process-def";
 import ValueComponent from "./value.vue";
+import { Path } from "../../path";
 
 const props = defineProps<{
     value: Value<TyArray>;
+    path: Path;
 }>();
 
 const MAX_ELEMENTS_TO_LOAD = 5;
@@ -41,6 +43,10 @@ function createValue(index: number): Value<Type> {
     };
 }
 
+function createPath(index: number): Path {
+    return props.path.makeArrayIndex(index);
+}
+
 const resolver = computed(() => appState.value.resolver);
 
 const elementsToShow: Ref<number> = ref(0);
@@ -57,7 +63,7 @@ watch(
 <template>
     <div class="array">
         <div class="element" v-for="(_, index) in elementsToShow">
-            <ValueComponent :value="createValue(index)" />
+            <ValueComponent :value="createValue(index)" :path="createPath(index)" />
         </div>
     </div>
 </template>

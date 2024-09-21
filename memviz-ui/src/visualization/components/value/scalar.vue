@@ -3,10 +3,12 @@ import { type Ref, computed, ref, watch } from "vue";
 import { addressToStr } from "../../../utils";
 import { appState } from "../../store";
 import { TyScalar, type Value, scalarAsString } from "../../value";
+import { Path } from "../../path";
 import ByteArray from "./bytearray.vue";
 
 const props = defineProps<{
     value: Value<TyScalar>;
+    path: Path;
 }>();
 
 enum DisplayMode {
