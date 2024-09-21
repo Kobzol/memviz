@@ -3,13 +3,17 @@
   "displayName": "Memory visualizer",
   "description": "Memory visualizer of C programs - display stack and heap variables and their relations.",
   "repository": "https://github.com/Kobzol/memviz",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "engines": {
     "vscode": "^1.80.0"
   },
   "license": "MIT",
   "publisher": "jakub-beranek",
-  "categories": ["Debuggers", "Visualization", "Education"],
+  "categories": [
+    "Debuggers",
+    "Visualization",
+    "Education"
+  ],
   "keywords": [
     "debugger",
     "visualization",
@@ -31,7 +35,9 @@
     "color": "#ECEA50"
   },
   "main": "./dist/extension.js",
-  "activationEvents": ["onDebug"],
+  "activationEvents": [
+    "onDebug"
+  ],
   "contributes": {},
   "scripts": {
     "fix": "biome check --write",
