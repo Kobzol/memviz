@@ -55,12 +55,7 @@ const location = computed(() =>
 const title = computed(() => {
   return `Stack frame of function <b>${props.frame.name}</b> located at <b>${location.value}</b>`;
 });
-const titleFontWeight = computed(() => {
-  if (props.frame.index === 0) {
-    return "bold";
-  }
-  return "normal";
-});
+const isTopFrame = computed(() => props.frame.index === 0);
 
 watch(
   () => [props.frame, resolver],
@@ -83,8 +78,8 @@ watch(
 
 <template>
   <div class="wrapper">
-    <div class="header" v-tippy="title" @click="toggleExpanded">
-      <div>{{ props.frame.name }}</div><div>{{ location }}</div>
+    <div :class="{header: true, 'top-frame': isTopFrame}" v-tippy="title" @click="toggleExpanded">
+      <div class="name">{{ props.frame.name }}</div><div>{{ location }}</div>
     </div>
     <!-- TODO: v-show should be used instead of v-if to avoid destroying child state -->
     <div v-if="expanded" class="inner">
@@ -121,10 +116,17 @@ watch(
   color: #000000;
   padding: 5px;
   background-color: #9de19a;
-  font-weight: v-bind(titleFontWeight);
+
+  &.top-frame {
+    background-color: #38ac69;
+    .name {
+      font-weight: bold;
+    }
+  }
 
   &:hover {
-    background-color: #73ff6d;
+    cursor: pointer;
+    box-shadow: inset 0 0 1px 1px rgb(76, 76, 76);
   }
 }
 
