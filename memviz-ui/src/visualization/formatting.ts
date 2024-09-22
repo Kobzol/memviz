@@ -47,6 +47,19 @@ export function formatAddress(address: Address | null): string {
   return `0x${formatted.padStart(16, "0")}`;
 }
 
+export function formatTypeSize(type: Type): string {
+  return `${type.size} byte${type.size === 1 ? "" : "s"}`;
+}
+
+export function formatLocation(file: string | null, line: number): string {
+  let result = file;
+  if (file?.includes("/")) {
+    const segments = file.split("/");
+    result = segments[segments.length - 1];
+  }
+  return `${result ?? "<unknown-file>"}:${line}`;
+}
+
 export function bufferAsBigInt(buffer: ArrayBuffer, size: number): bigint {
   assert(size === 4 || size === 8, "only 4 and 8 byte pointers are supported");
 

@@ -6,6 +6,7 @@ import {
   TyScalar,
   type Value,
   formatAddress,
+  formatTypeSize,
   scalarAsString,
 } from "../../formatting";
 import { Path } from "../../pointers/path";
@@ -53,9 +54,9 @@ const bufferAsString = computed(() => {
 });
 
 const title = computed(() => {
-  return `${bufferAsString.value} at address ${formatAddress(
-    props.value.address
-  )}`;
+  return `Value \`${bufferAsString.value}\` (${formatTypeSize(
+    props.value.type
+  )}) at ${formatAddress(props.value.address)}`;
 });
 
 watch(
@@ -66,11 +67,11 @@ watch(
 </script>
 
 <template>
-  <div class="scalar" @click="toggleDisplayMode" :title="title">
+  <div class="scalar" @click="toggleDisplayMode" v-tippy="title">
     <template v-if="buffer !== null">
-      <span class="string" v-if="displayMode === DisplayMode.String">
+      <code class="string" v-if="displayMode === DisplayMode.String">
         {{ bufferAsString }}
-      </span>
+      </code>
       <ByteArray v-else :buffer="buffer"></ByteArray>
     </template>
   </div>
@@ -81,10 +82,11 @@ watch(
   display: flex;
   justify-content: end;
   padding: 0px 5px;
+  font-family: monospace;
+  font-size: 1.2em;
 
   &:hover {
     cursor: pointer;
-    background-color: #dddddd;
   }
 }
 

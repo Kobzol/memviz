@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { Address, Place, Type } from "process-def";
+import { PlaceKind, type Address, type Place, type Type } from "process-def";
 import { computed } from "vue";
 import { strToAddress } from "../../utils";
-import type { Value } from "../formatting";
+import { formatTypeSize, type Value } from "../formatting";
 import ValueComponent from "./value/value.vue";
 import { Path } from "../pointers/path";
 
@@ -23,17 +23,23 @@ const value = computed((): Value<Type> => {
   };
 });
 const label = computed(() => {
-  let name = `${props.place.type.name} ${props.place.name}`;
-  if (!props.place.initialized) {
-    name += " (uninit)";
-  }
-  return name;
+  return `${props.place.type.name} ${props.place.name}`;
 });
 const title = computed(() => {
   const type = props.place.type;
-  let title = `${props.place.type.name} ${props.place.name}`;
-  title += `, ${type.size} byte${type.size === 1 ? "" : "s"}`;
-  title += `, ${props.place.initialized ? "" : "not "}initialized`;
+  let title = "";
+  if (
+    props.place.kind === PlaceKind.Variable ||
+    props.place.kind === PlaceKind.ShadowedVariable
+  ) {
+    title = "Local variable";
+  } else if (props.place.kind === PlaceKind.Parameter) {
+    title = "Function parameter";
+  }
+
+  title += ` <b>${props.place.type.name} ${props.place.name}</b>`;
+  title += `, ${formatTypeSize(type)}`;
+  title += `, <b>${props.place.initialized ? "" : "not "}initialized</b>`;
   title += `, declared at line ${props.place.line}`;
   return title;
 });
@@ -44,7 +50,15 @@ const path = computed((): Path => {
 
 <template>
   <div class="place">
-    <code class="decl" :title="title">{{ label }}</code>
+    <code
+      :class="{
+        decl: true,
+        uninit: !place.initialized,
+        param: place.kind === PlaceKind.Parameter,
+      }"
+      v-tippy="title"
+      >{{ label }}</code
+    >
     <ValueComponent :value="value" :path="path" />
   </div>
 </template>
@@ -56,10 +70,23 @@ const path = computed((): Path => {
 
   display: flex;
   flex-direction: row;
-  align-items: center;
+  justify-content: space-between;
+  align-items: baseline;
 
   .decl {
+    border: 3px solid #000000;
+    padding: 3px;
     margin-right: 5px;
+    font-size: 1.1em;
+    background-color: #a4c5ea;
+    border-radius: 5px;
+
+    &.param {
+      background-color: #bca9e1;
+    }
+    &.uninit {
+      opacity: 0.5;
+    }
   }
 }
 </style>

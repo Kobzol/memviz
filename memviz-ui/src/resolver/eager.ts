@@ -95,8 +95,8 @@ export class ProcessBuilder {
     name: string,
     type: Type,
     kind: PlaceKind = PlaceKind.Variable,
-    address: bigint | null = null,
     initialized = true,
+    address: bigint | null = null,
     line: number | null = null,
   ): PlaceBuilder {
     assert(this.activeFrame !== null, "no frame is active");

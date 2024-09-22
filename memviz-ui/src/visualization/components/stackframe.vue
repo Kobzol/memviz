@@ -6,6 +6,7 @@ import { addressToStr, strToAddress } from "../../utils";
 import { appState } from "../store";
 import NamedPlace from "./namedplace.vue";
 import PtrTarget from "./ptrtarget.vue";
+import { formatLocation } from "../formatting";
 
 const props = defineProps<{
   frame: StackFrame;
@@ -48,16 +49,17 @@ const resolver = computed(() => appState.value.resolver);
 const expanded = ref(props.frame.index === 0);
 const places: Ref<Place[] | null> = ref(null);
 
-const location = computed(() => {
-  let file = props.frame.file;
-  if (file?.includes("/")) {
-    const segments = file.split("/");
-    file = segments[segments.length - 1];
-  }
-  return `${file ?? "<unknown-file>"}:${props.frame.line}`;
-});
+const location = computed(() =>
+  formatLocation(props.frame.file, props.frame.line)
+);
 const title = computed(() => {
   return `Stack frame (function ${props.frame.name}, ${location.value})`;
+});
+const titleFontWeight = computed(() => {
+  if (props.frame.index === 0) {
+    return "bold";
+  }
+  return "normal";
 });
 
 watch(
@@ -81,7 +83,7 @@ watch(
 
 <template>
   <div class="wrapper">
-    <div class="header" :title="title" @click="toggleExpanded">
+    <div class="header" v-tippy="title" @click="toggleExpanded">
       {{ props.frame.name }} ({{ location }})
     </div>
     <!-- TODO: v-show should be used instead of v-if to avoid destroying child state -->
@@ -115,6 +117,7 @@ watch(
   color: #000000;
   padding: 5px;
   background-color: #9de19a;
+  font-weight: v-bind(titleFontWeight);
 
   &:hover {
     background-color: #73ff6d;
@@ -124,5 +127,6 @@ watch(
 .inner {
   background: #ffffff;
   border-top: solid 1px #000000;
+  padding: 5px;
 }
 </style>
