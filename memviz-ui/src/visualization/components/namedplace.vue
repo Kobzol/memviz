@@ -38,6 +38,7 @@ const title = computed(() => {
   }
 
   title += ` <b>${props.place.type.name} ${props.place.name}</b>`;
+  title += `, address <b>${props.place.address ?? '&lt;missing&gt;'}</b>`;
   title += `, ${formatTypeSize(type)}`;
   title += `, <b>${props.place.initialized ? "" : "not "}initialized</b>`;
   title += `, declared at line ${props.place.line}`;

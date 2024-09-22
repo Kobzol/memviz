@@ -33,7 +33,8 @@ function isPtr(value: Value<Type>): value is Value<TyPtr> {
 <template>
   <PtrTarget :value="value">
     <div class="value">
-      <Scalar v-if="isScalar(value)" :path="path" :value="value"></Scalar>
+      <div v-if="value.address === null">&lt;missing address&gt;</div>
+      <Scalar v-else-if="isScalar(value)" :path="path" :value="value"></Scalar>
       <Array v-else-if="isArray(value)" :path="path" :value="value"></Array>
       <Pointer v-else-if="isPtr(value)" :path="path" :value="value"></Pointer>
       <div v-else>&lt;value of type {{ value.type.name }}&gt;</div>
