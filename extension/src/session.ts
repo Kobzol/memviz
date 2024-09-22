@@ -295,6 +295,7 @@ function uninternType(type: Type, types: Type[]) {
       type.target = types[type.target as unknown as number];
       uninternType(type.target, types);
     }
+    fillName(type);
   } else if (type.kind === "struct") {
     for (const field of type.fields) {
       if (Number.isInteger(field.type)) {
@@ -306,6 +307,19 @@ function uninternType(type: Type, types: Type[]) {
     if (Number.isInteger(type.type)) {
       type.type = types[type.type as unknown as number];
       uninternType(type.type, types);
+    }
+    fillName(type);
+  }
+}
+
+function fillName(type: Type) {
+  if (type.kind === "ptr") {
+    if (type.name === null && type.target.name !== null) {
+      type.name = `${type.target.name}*`;
+    }
+  } else if (type.kind === "array") {
+    if (type.name === null && type.type.name !== null) {
+      type.name = `${type.type.name}[${type.element_count}]`;
     }
   }
 }

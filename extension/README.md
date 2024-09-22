@@ -23,7 +23,6 @@ You can also pan the canvas using the middle mouse button and zoom using the mou
   - Stack frames
   - Scalars (integers, floats, chars)
   - Arrays
-  - Pointers
 - Heap memory allocation tracking
 - Lazy loading of memory from the debugged process
 - Simple tracking of variable initialization
@@ -31,6 +30,7 @@ You can also pan the canvas using the middle mouse button and zoom using the mou
 
 ## Planned/WIP features
 
+- Pointers
 - Structs
 - Strings (both inline array and string pointers)
 - Heap memory

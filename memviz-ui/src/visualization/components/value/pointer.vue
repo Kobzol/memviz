@@ -42,6 +42,8 @@ function formatAsString(): string {
 }
 
 function tryAddArrow() {
+  // TODO: re-enable pointers
+  return;
   if (elementRef.value === null || targetAddress.value === null) {
     tryRemoveArrow();
     return;

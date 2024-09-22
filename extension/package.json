@@ -3,7 +3,7 @@
   "displayName": "Memory visualizer",
   "description": "Memory visualizer of C programs - display stack and heap variables and their relations.",
   "repository": "https://github.com/Kobzol/memviz",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "engines": {
     "vscode": "^1.80.0"
   },
