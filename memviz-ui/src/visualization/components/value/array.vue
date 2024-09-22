@@ -12,7 +12,7 @@ const props = defineProps<{
   path: Path;
 }>();
 
-const MAX_ELEMENTS_TO_LOAD = 5;
+const DEFAULT_ELEMENT_COUNT = 5;
 
 async function loadData() {
   const address = props.value.address;
@@ -21,17 +21,22 @@ async function loadData() {
   }
 
   const innerType = props.value.type.type;
-  const count = Math.min(props.value.type.element_count, MAX_ELEMENTS_TO_LOAD);
+
+  const index = startIndex.value;
+  const count = activeCount.value;
+
+  const startAddress = address + BigInt(index * innerType.size);
 
   // Preload the memory of the individual array elements
   await resolver.value.readMemory(
-    addressToStr(address),
+    addressToStr(startAddress),
     innerType.size * count
   );
-  elementsToShow.value = count;
 }
 
-function createValue(index: number): Value<Type> {
+function createValue(listIndex: number): Value<Type> {
+  const index = startIndex.value + listIndex;
+
   const { type, address } = props.value;
   assert(index >= 0, "array index negative");
   assert(index < type.element_count, "array index out of bounds");
@@ -43,16 +48,27 @@ function createValue(index: number): Value<Type> {
   };
 }
 
-function createPath(index: number): Path {
-  return props.path.makeArrayIndex(index);
+function createPath(listIndex: number): Path {
+  return props.path.makeArrayIndex(startIndex.value + listIndex);
 }
+
+// How many elements are actively being shown now
+const activeCount = computed(() => {
+  const start = startIndex.value;
+  const remaining = Math.max(0, props.value.type.element_count - start);
+  return Math.min(remaining, targetCount.value);
+});
 
 const resolver = computed(() => appState.value.resolver);
 
-const elementsToShow: Ref<number> = ref(0);
+// How many elements the user wants to show
+const targetCount: Ref<number> = ref(DEFAULT_ELEMENT_COUNT);
+
+// From which index we load the elements
+const startIndex: Ref<number> = ref(0);
 
 watch(
-  () => [props.value, resolver.value],
+  () => [props.value, activeCount.value, resolver.value],
   () => loadData(),
   { immediate: true }
 );
@@ -60,7 +76,7 @@ watch(
 
 <template>
   <div class="array">
-    <div class="element" v-for="(_, index) in elementsToShow">
+    <div class="element" v-for="(_, index) in activeCount">
       <ValueComponent :value="createValue(index)" :path="createPath(index)" />
     </div>
   </div>
