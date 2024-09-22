@@ -104,7 +104,7 @@ const resolver = computed(() => appState.value.resolver);
 const targetCount: Ref<number> = ref(DEFAULT_ELEMENT_COUNT);
 
 // From which index we load the elements
-const startIndex: Ref<number> = ref(2);
+const startIndex: Ref<number> = ref(0);
 
 watch(
   () => [props.value, activeCount.value, resolver.value],
