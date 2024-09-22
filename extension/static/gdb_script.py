@@ -289,7 +289,7 @@ def get_frame_places(frame_index: int = 0) -> PlaceList:
                     init=init,
                     line=symbol.line
                 )
-                places.append((place, symbol.line))
+                places.append((place, (symbol.line, address or name or "")))
             block = block.superblock
     places = sorted(places, key=lambda v: v[1])
     places = [place for (place, _) in places]
