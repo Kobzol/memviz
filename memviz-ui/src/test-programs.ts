@@ -23,9 +23,11 @@ export function buildSimpleProgram(): ProcessBuilder {
 export function buildArray(): ProcessBuilder {
   const builder = new ProcessBuilder();
   builder.startFrame("main");
+
+  const size = 100;
   builder
-    .place("a", typeArray(typeUint32(), 10))
-    .setArray((index) => makeUint32(index + 1), 10);
+    .place("a", typeArray(typeUint32(), size))
+    .setArray((index) => makeUint32(index + 1), size);
   return builder;
 }
 

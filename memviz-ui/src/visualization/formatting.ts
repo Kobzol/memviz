@@ -60,7 +60,7 @@ export function formatAddress(address: Address | null): string {
 }
 
 export function formatTypeSize(type: Type): string {
-  return `${type.size} byte${type.size === 1 ? "" : "s"}`;
+  return `${type.size} ${pluralize("byte", type.size)}`;
 }
 
 export function formatLocation(file: string | null, line: number): string {
@@ -83,6 +83,10 @@ export function bufferAsBigInt(buffer: ArrayBuffer, size: number): bigint {
     return BigInt(view.getUint32(0, true));
   }
   return BigInt(0);
+}
+
+export function pluralize(text: string, count: number): string {
+  return `${text}${count === 1 ? "" : "s"}`;
 }
 
 function toFixedIfNecessary(value: number, decimalPlaces: number): string {

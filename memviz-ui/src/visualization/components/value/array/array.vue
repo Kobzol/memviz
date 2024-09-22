@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { type Ref, computed, ref, watch } from "vue";
-import { addressToStr, assert } from "../../../utils";
-import { appState } from "../../store";
-import { type Value } from "../../formatting";
+import { addressToStr, assert } from "../../../../utils";
+import { appState } from "../../../store";
+import { pluralize, type Value } from "../../../formatting";
 import { TyArray, Type } from "process-def";
-import ValueComponent from "./value.vue";
-import { Path } from "../../pointers/path";
+import ValueComponent from "../value.vue";
+import { Path } from "../../../pointers/path";
 
 const props = defineProps<{
   value: Value<TyArray>;
@@ -52,11 +52,50 @@ function createPath(listIndex: number): Path {
   return props.path.makeArrayIndex(startIndex.value + listIndex);
 }
 
+function prevTitle(): string {
+  const count = Math.min(targetCount.value, precedingCount.value);
+  return `Show ${count} previous ${pluralize("element", count)}`;
+}
+function nextTitle(): string {
+  const count = Math.min(targetCount.value, followingCount.value);
+  return `Show ${count} next ${pluralize("element", count)}`;
+}
+
+function movePrev() {
+  startIndex.value = Math.max(0, startIndex.value - targetCount.value);
+}
+
+function moveNext() {
+  startIndex.value = Math.min(
+    lastValidIndex.value,
+    startIndex.value + targetCount.value
+  );
+}
+
+function title(): string {
+  const count = props.value.type.element_count;
+  return `Array with ${count} ${pluralize(
+    "element",
+    count
+  )}, current index <b>${startIndex.value}</b>, showing <b>${
+    activeCount.value
+  }</b> ${pluralize("element", activeCount.value)}`;
+}
+
 // How many elements are actively being shown now
 const activeCount = computed(() => {
   const start = startIndex.value;
   const remaining = Math.max(0, props.value.type.element_count - start);
   return Math.min(remaining, targetCount.value);
+});
+const lastValidIndex = computed(() => {
+  return Math.max(0, props.value.type.element_count - targetCount.value);
+});
+
+const precedingCount = computed(() => startIndex.value);
+const followingCount = computed(() => {
+  const end = startIndex.value + activeCount.value;
+  return props.value.type.element_count - end;
 });
 
 const resolver = computed(() => appState.value.resolver);
@@ -65,7 +104,7 @@ const resolver = computed(() => appState.value.resolver);
 const targetCount: Ref<number> = ref(DEFAULT_ELEMENT_COUNT);
 
 // From which index we load the elements
-const startIndex: Ref<number> = ref(0);
+const startIndex: Ref<number> = ref(2);
 
 watch(
   () => [props.value, activeCount.value, resolver.value],
@@ -75,9 +114,25 @@ watch(
 </script>
 
 <template>
-  <div class="array">
+  <div class="array" v-tippy="title()">
+    <div
+      class="offset"
+      v-tippy="prevTitle()"
+      v-if="precedingCount > 0"
+      @click="movePrev"
+    >
+      {{ precedingCount }} more
+    </div>
     <div class="element" v-for="(_, index) in activeCount">
       <ValueComponent :value="createValue(index)" :path="createPath(index)" />
+    </div>
+    <div
+      class="offset"
+      v-tippy="nextTitle()"
+      v-if="followingCount > 0"
+      @click="moveNext"
+    >
+      {{ followingCount }} more
     </div>
   </div>
 </template>
@@ -96,5 +151,24 @@ watch(
   border: 1px solid #000000;
   display: flex;
   justify-content: center;
+}
+.offset {
+  @extend .element;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 5px;
+  cursor: pointer;
+
+  &:first-child {
+    margin-right: 5px;
+    // TODO: make nicer
+    border-radius: 50% 0 0 50%;
+  }
+  &:last-child {
+    margin-left: 5px;
+    border-radius: 0 50% 50% 0;
+  }
 }
 </style>

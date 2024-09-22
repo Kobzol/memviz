@@ -3,7 +3,7 @@ import type { TyScalar, Value } from "../../formatting";
 import { Type, TyArray, TyPtr } from "process-def";
 import { Path } from "../../pointers/path";
 
-import Array from "./array.vue";
+import Array from "./array/array.vue";
 import Pointer from "./pointer.vue";
 import Scalar from "./scalar.vue";
 import PtrTarget from "../ptrtarget.vue";
