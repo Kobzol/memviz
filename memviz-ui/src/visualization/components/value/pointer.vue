@@ -44,31 +44,31 @@ function formatAsString(): string {
 function tryAddArrow() {
   // TODO: re-enable pointers
   return;
-  if (elementRef.value === null || targetAddress.value === null) {
-    tryRemoveArrow();
-    return;
-  }
+  // if (elementRef.value === null || targetAddress.value === null) {
+  //   tryRemoveArrow();
+  //   return;
+  // }
 
-  const targets = componentMap.value.getComponentsAt(targetAddress.value);
-  if (targets.length === 0) {
-    tryRemoveArrow();
-    return;
-  }
+  // const targets = componentMap.value.getComponentsAt(targetAddress.value);
+  // if (targets.length === 0) {
+  //   tryRemoveArrow();
+  //   return;
+  // }
 
-  // TODO: select by deepest path
-  const target = targets[0];
-  if (arrow.value !== null) {
-    tryRemoveArrow();
-  }
+  // // TODO: select by deepest path
+  // const target = targets[0];
+  // if (arrow.value !== null) {
+  //   tryRemoveArrow();
+  // }
 
-  // Hack: allow LeaderLine to calculate positions correctly
-  const transform = document.body.style.removeProperty("transform");
-  arrow.value = new LeaderLine(elementRef.value, target.element, {
-    path: "straight",
-    startSocket: "right",
-    endSocket: "left",
-  });
-  document.body.style.setProperty("transform", transform);
+  // // Hack: allow LeaderLine to calculate positions correctly
+  // const transform = document.body.style.removeProperty("transform");
+  // arrow.value = new LeaderLine(elementRef.value, target.element, {
+  //   path: "straight",
+  //   startSocket: "right",
+  //   endSocket: "left",
+  // });
+  // document.body.style.setProperty("transform", transform);
 }
 
 function tryRemoveArrow() {

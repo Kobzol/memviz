@@ -3,7 +3,7 @@
   "displayName": "Memory visualizer",
   "description": "Memory visualizer of C programs - display stack and heap variables and their relations.",
   "repository": "https://github.com/Kobzol/memviz",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "engines": {
     "vscode": "^1.80.0"
   },
@@ -39,7 +39,7 @@
     "watch": "node esbuild.js --watch",
     "watch:extension": "npm run watch",
     "package": "vsce package --no-dependencies",
-    "publish": "vsce publish patch --no-dependencies --target linux-x64 --baseImagesUrl https://github.com/kobzol/memviz/raw/main/extension/",
+    "publish": "vsce publish --no-dependencies --target linux-x64 --baseImagesUrl https://github.com/kobzol/memviz/raw/main/extension/",
     "vscode:prepublish": "rm -rf dist && npm run build --prefix ../"
   },
   "devDependencies": {
