@@ -53,7 +53,7 @@ const location = computed(() =>
   formatLocation(props.frame.file, props.frame.line)
 );
 const title = computed(() => {
-  return `Stack frame (function ${props.frame.name}, ${location.value})`;
+  return `Stack frame of function <b>${props.frame.name}</b> located at <b>${location.value}</b>`;
 });
 const titleFontWeight = computed(() => {
   if (props.frame.index === 0) {
@@ -84,7 +84,7 @@ watch(
 <template>
   <div class="wrapper">
     <div class="header" v-tippy="title" @click="toggleExpanded">
-      {{ props.frame.name }} ({{ location }})
+      <div>{{ props.frame.name }}</div><div>{{ location }}</div>
     </div>
     <!-- TODO: v-show should be used instead of v-if to avoid destroying child state -->
     <div v-if="expanded" class="inner">
@@ -114,6 +114,10 @@ watch(
 }
 
 .header {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+
   color: #000000;
   padding: 5px;
   background-color: #9de19a;
