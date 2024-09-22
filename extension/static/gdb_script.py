@@ -272,7 +272,13 @@ def get_frame_places(frame_index: int = 0) -> PlaceList:
                 if address is not None:
                     address = address.format_string(
                         raw=True,
-                        symbols=False
+                        address=True,
+                        symbols=False,
+                        pretty_arrays=False,
+                        pretty_structs=False,
+                        array_indexes=False,
+                        actual_objects=False,
+                        format="x"
                     )
 
                 place = Place.create(
