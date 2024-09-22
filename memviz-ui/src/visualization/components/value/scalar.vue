@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type Ref, computed, onMounted, ref, watch, watchEffect } from "vue";
+import { type Ref, computed, nextTick, ref, shallowRef, watch } from "vue";
 import { addressToStr } from "../../../utils";
-import { appState } from "../../store";
+import { appState, notifyComponentMap } from "../../store";
 import {
   TyScalar,
   type Value,
@@ -26,10 +26,13 @@ async function loadData() {
   if (address === null) {
     return;
   }
+
   buffer.value = await resolver.value.readMemory(
     addressToStr(address),
     props.value.type.size
   );
+  // await nextTick();
+  // notifyComponentMap();
 }
 
 function toggleDisplayMode() {
@@ -43,7 +46,7 @@ function toggleDisplayMode() {
 const resolver = computed(() => appState.value.resolver);
 const displayMode = ref(DisplayMode.String);
 
-const buffer: Ref<ArrayBuffer | null> = ref(null);
+const buffer: Ref<ArrayBuffer | null> = shallowRef(null);
 const bufferAsString = computed(() => {
   if (buffer.value === null) return "";
   return scalarAsString(buffer.value, props.value.type);
@@ -55,18 +58,15 @@ const title = computed(() => {
   )}`;
 });
 
-const elementRef = ref<HTMLDivElement | null>(null);
-
-watchEffect(() => loadData());
+watch(
+  () => [props.value, resolver.value],
+  () => loadData(),
+  { immediate: true }
+);
 </script>
 
 <template>
-  <div
-    class="scalar"
-    @click="toggleDisplayMode"
-    :title="title"
-    :ref="(el: any) => elementRef = el"
-  >
+  <div class="scalar" @click="toggleDisplayMode" :title="title">
     <template v-if="buffer !== null">
       <span class="string" v-if="displayMode === DisplayMode.String">
         {{ bufferAsString }}

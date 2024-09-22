@@ -8,7 +8,7 @@ import { appState } from "./store";
 export class Memviz {
   constructor(root: HTMLElement) {
     createApp(App).mount(root);
-    createPanZoom(root, {
+    createPanZoom(document.body, {
       smoothScroll: false,
       onDoubleClick: (_e) => {
         return false; // tells the library to not preventDefault, and not stop propagation

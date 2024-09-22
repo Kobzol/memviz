@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Ref, computed, ref, watchEffect } from "vue";
+import { type Ref, computed, ref, watch } from "vue";
 import { addressToStr, assert } from "../../../utils";
 import { appState } from "../../store";
 import { type Value } from "../../formatting";
@@ -51,7 +51,11 @@ const resolver = computed(() => appState.value.resolver);
 
 const elementsToShow: Ref<number> = ref(0);
 
-watchEffect(() => loadData());
+watch(
+  () => [props.value, resolver.value],
+  () => loadData(),
+  { immediate: true }
+);
 </script>
 
 <template>

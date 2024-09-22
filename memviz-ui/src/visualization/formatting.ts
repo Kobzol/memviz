@@ -43,7 +43,8 @@ export function formatAddress(address: Address | null): string {
   if (address === null) {
     return "<unknown address>";
   }
-  return `0x${address.toString(16)}`;
+  const formatted = address.toString(16).toUpperCase();
+  return `0x${formatted.padStart(16, "0")}`;
 }
 
 export function bufferAsBigInt(buffer: ArrayBuffer, size: number): bigint {

@@ -1,5 +1,5 @@
 import type { ProcessState } from "process-def";
-import { type Ref, ref, type ShallowRef, shallowRef } from "vue";
+import { type Ref, ref, type ShallowRef, shallowRef, triggerRef } from "vue";
 import { ProcessBuilder } from "../resolver/eager";
 import type { ProcessResolver } from "../resolver/resolver";
 import { ComponentMap } from "./pointers/component-map";
@@ -23,3 +23,6 @@ export const appState: Ref<AppState> = ref(createDefaultState());
 export const componentMap: ShallowRef<ComponentMap> = shallowRef(
   new ComponentMap(),
 );
+export function notifyComponentMap() {
+  triggerRef(componentMap);
+}

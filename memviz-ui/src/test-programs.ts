@@ -35,8 +35,14 @@ export function buildArray(): ProcessBuilder {
 export function buildPointers(): ProcessBuilder {
   const builder = new ProcessBuilder();
   builder.startFrame("main");
-  const a = builder.place("a", typeUint32()).setUint32(42);
+  builder.place("a", typeUint32()).setUint32(42);
+  const target = builder.place("b", typeUint32()).setUint32(43);
+  builder.place("c", typeUint32()).setUint32(44);
+  builder.place("d", typeUint32()).setUint32(45);
+  builder
+    .place("arr", typeArray(typeUint32(), 5))
+    .setArray((index) => makeUint32(index + 1), 5);
   builder.startFrame("foo");
-  builder.place("pa", typePtr(typeUint32())).setPtr(a.address);
+  builder.place("pa", typePtr(typeUint32())).setPtr(target.address + BigInt(8));
   return builder;
 }

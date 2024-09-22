@@ -40,6 +40,44 @@ export class ComponentMap {
     return () => this.removeComponent(address, id, ref);
   }
 
+  count(): number {
+    let count = 0;
+    for (const entry of this.map.entries()) {
+      count += entry[1].size;
+    }
+    return count;
+  }
+
+  getComponentsAt(address: Address): ComponentWithAddress[] {
+    const components: ComponentWithAddress[] = [];
+
+    function matchesAddress(addr: Address, component: ComponentWithAddress) {
+      return addr <= address && address < addr + BigInt(component.size);
+    }
+
+    // TODO: optimize, with a hierarchical tree?
+    // https://www.npmjs.com/package/js-hierarchy
+    let current = this.map.getPairOrNextHigher(address);
+    while (current !== undefined) {
+      const [addr, submap] = current;
+      submap.forEach((component) => {
+        if (matchesAddress(addr, component)) {
+          components.push(component);
+        }
+      });
+
+      current = this.map.nextLowerPair(addr);
+    }
+
+    return components;
+  }
+
+  dump() {
+    for (const entry of this.map.entries()) {
+      console.log(entry[0], entry[1]);
+    }
+  }
+
   private removeComponent(
     address: Address,
     id: number,

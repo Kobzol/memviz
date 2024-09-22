@@ -2,16 +2,20 @@
 import {
   type Ref,
   computed,
+  nextTick,
   onBeforeUnmount,
+  onMounted,
   ref,
+  shallowRef,
   watch,
   watchEffect,
 } from "vue";
 import { addressToStr, assert } from "../../../utils";
-import { appState, componentMap } from "../../store";
+import { appState, componentMap, notifyComponentMap } from "../../store";
 import { type Value, bufferAsBigInt, formatAddress } from "../../formatting";
 import { Path } from "../../pointers/path";
 import { Address, TyPtr } from "process-def";
+import { LeaderLine } from "leader-line";
 
 const props = defineProps<{
   value: Value<TyPtr>;
@@ -27,6 +31,9 @@ async function loadData() {
     addressToStr(address),
     props.value.type.size
   );
+  await nextTick();
+  // notifyComponentMap();
+  tryAddArrow();
 }
 
 function formatAsString(): string {
@@ -34,81 +41,65 @@ function formatAsString(): string {
   return formatAddress(targetAddress.value);
 }
 
-function addPointerSource() {
-  if (elementRef.value === null || targetAddress.value === null) return;
+function tryAddArrow() {
+  if (elementRef.value === null || targetAddress.value === null) {
+    tryRemoveArrow();
+    return;
+  }
 
-  // console.log(`Looking for element with address ${targetAddress.value}`);
-  // componentMap.activePointers.push({
-  //   source: elementRef.value,
-  //   target: targetAddress.value,
-  // });
+  const targets = componentMap.value.getComponentsAt(targetAddress.value);
+  if (targets.length === 0) {
+    tryRemoveArrow();
+    return;
+  }
+
+  // TODO: select by deepest path
+  const target = targets[0];
+  if (arrow.value !== null) {
+    tryRemoveArrow();
+  }
+
+  // Hack: allow LeaderLine to calculate positions correctly
+  const transform = document.body.style.removeProperty("transform");
+  arrow.value = new LeaderLine(elementRef.value, target.element, {
+    path: "straight",
+    startSocket: "right",
+    endSocket: "left",
+  });
+  document.body.style.setProperty("transform", transform);
 }
 
-function removePointerSource() {
-  // TODO: create a unique identifier
-  // for (const item of componentMap.activePointers) {
-  // }
+function tryRemoveArrow() {
+  if (arrow.value !== null) {
+    arrow.value.remove();
+    arrow.value = null;
+  }
 }
-
-function matchesTarget(address: Address): boolean {
-  if (props.value.address === null) return false;
-
-  const start = props.value.address;
-  return start <= address && address < start + BigInt(props.value.type.size);
-}
-
-// function disposeArrow() {
-//   if (arrow.value !== null) {
-//     arrow.value.remove();
-//     arrow.value = null;
-//   }
-// }
-
-// function checkTarget() {
-//   const targetRef = elementRef.value;
-//   if (targetRef === null) return;
-
-//   console.log("FINDING MATCHES");
-//   let srcPointer = null;
-//   for (const ptr of pointers) {
-//     if (matchesTarget(ptr.target)) {
-//       console.log("FOUND TARGET MATCH");
-//       srcPointer = ptr.source;
-//       break;
-//     }
-//   }
-//   if (srcPointer === null) return;
-//   source.value = srcPointer;
-
-//   if (arrow.value === null) {
-//     arrow.value = new LeaderLine(source.value, targetRef, {
-//       path: "straight",
-//     });
-//   } else {
-//     arrow.value.setOptions({
-//       start: source.value,
-//       end: targetRef,
-//     });
-//   }
-// }
 
 const targetAddress = computed((): Address | null => {
+  const type = props.value.type;
   if (buffer.value === null) return null;
-  return bufferAsBigInt(buffer.value, props.value.type.size);
+  return bufferAsBigInt(buffer.value, type.size);
 });
 
 const resolver = computed(() => appState.value.resolver);
 
-const buffer: Ref<ArrayBuffer | null> = ref(null);
-const elementRef: Ref<HTMLDivElement | null> = ref(null);
-
-watchEffect(() => loadData());
+const buffer: Ref<ArrayBuffer | null> = shallowRef(null);
+const elementRef: Ref<HTMLDivElement | null> = shallowRef(null);
+const arrow: Ref<LeaderLine | null> = shallowRef(null);
 
 watch(
-  () => [elementRef.value, targetAddress.value],
-  () => addPointerSource()
+  () => [props.value, resolver.value],
+  () => loadData(),
+  { immediate: true }
 );
-onBeforeUnmount(() => removePointerSource());
+
+watch(componentMap, () => {
+  tryAddArrow();
+});
+onMounted(() => tryAddArrow());
+
+onBeforeUnmount(() => tryRemoveArrow());
 </script>
 
 <template>
