@@ -10,3 +10,6 @@ You can find more information about the extension [here](./extension).
 
 ## Examples
 ![](extension/img/screen-1.png)
+
+## License
+[MIT](LICENSE.md)
