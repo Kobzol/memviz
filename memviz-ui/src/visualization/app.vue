@@ -19,8 +19,17 @@ const state = computed(() => appState.value.processState);
 <style lang="scss">
 @import "normalize.css";
 
+html {
+  width: 100%;
+  height: 100%;
+}
+
 body {
-  color: black;
+  // This enables tippy tooltip to be positioned correctly even after panning the canvas
+  position: relative;
+  width: 100%;
+  height: 100%;
+  color: #000000;
 }
 code {
   color: #000000;

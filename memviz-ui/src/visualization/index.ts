@@ -20,6 +20,7 @@ export class Memviz {
       },
     });
     app.mount(root);
+
     createPanZoom(document.body, {
       smoothScroll: false,
       onDoubleClick: (_e) => {
