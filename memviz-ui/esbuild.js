@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 const esbuild = require("esbuild");
-const vuePlugin = require("esbuild-plugin-vue3")
+const vuePlugin = require("esbuild-plugin-vue3");
 
 const production = process.argv.includes("--production");
 const watch = process.argv.includes("--watch");
@@ -29,22 +29,35 @@ const esbuildProblemMatcherPlugin = {
   },
 };
 
-const OUTPUT_PATHS = [
-  "dist/index.js",
-  "dist/index.css"
-];
+const OUTPUT_PATHS = ["dist/index.js", "dist/index.css"];
 
+// Copy built bundle to the extension's dist directory
 const copyFileToExtension = {
   name: "copy-file-to-extension",
   setup(build) {
-    build.onEnd((result) => {
+    build.onEnd(async (result) => {
       if (result.errors.length === 0) {
         console.log("Copying output file to extension");
-        fs.mkdirSync("../extension/dist", {recursive: true});
+        await fs.promises.mkdir("../extension/dist", { recursive: true });
         for (const file of OUTPUT_PATHS) {
-          fs.copyFileSync(file, `../extension/dist/${path.basename(file)}`);
+          await fs.promises.copyFile(
+            file,
+            `../extension/dist/${path.basename(file)}`,
+          );
         }
       }
+    });
+  },
+};
+
+// Export LeaderLine constructor from the leader-line library
+const exportLeaderLinePlugin = {
+  name: "export-leader-line",
+  setup(build) {
+    build.onLoad({ filter: /leader-line/ }, async (args) => {
+      let contents = await fs.promises.readFile(args.path, "utf8");
+      contents += "export {LeaderLine};";
+      return { contents };
     });
   },
 };
@@ -59,7 +72,12 @@ async function main() {
     platform: "browser",
     outdir: "dist",
     logLevel: "silent",
-    plugins: [vuePlugin(), esbuildProblemMatcherPlugin, copyFileToExtension],
+    plugins: [
+      vuePlugin(),
+      esbuildProblemMatcherPlugin,
+      copyFileToExtension,
+      exportLeaderLinePlugin,
+    ],
   });
 
   if (watch) {

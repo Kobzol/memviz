@@ -1,5 +1,9 @@
 import type { Address, AddressStr } from "process-def";
 
+export interface Dictionary<T> {
+  [index: string]: T;
+}
+
 export async function measureAsync<T>(
   name: string,
   block: () => Promise<T>,

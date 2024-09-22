@@ -11,9 +11,7 @@
       ".git",
       ".vscode",
       "extension/dist",
-      "extension/esbuild.js",
       "memviz-ui/dist",
-      "memviz-ui/esbuild.js",
       "process-def/dist",
       "*.vue"
     ]

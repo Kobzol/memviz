@@ -36,6 +36,7 @@ export function buildPointers(): ProcessBuilder {
   const builder = new ProcessBuilder();
   builder.startFrame("main");
   const a = builder.place("a", typeUint32()).setUint32(42);
+  builder.startFrame("foo");
   builder.place("pa", typePtr(typeUint32())).setPtr(a.address);
   return builder;
 }

@@ -5,6 +5,7 @@ import type { Ref } from "vue";
 import { addressToStr, strToAddress } from "../../utils";
 import { appState } from "../store";
 import NamedPlace from "./namedplace.vue";
+import PtrTarget from "./ptrtarget.vue";
 
 const props = defineProps<{
   frame: StackFrame;
@@ -64,7 +65,7 @@ watch(
   () => {
     places.value = null;
     maybeLoadPlaces();
-  },
+  }
 );
 
 watch(
@@ -72,7 +73,7 @@ watch(
   () => {
     maybeLoadPlaces();
   },
-  { immediate: true },
+  { immediate: true }
 );
 
 // https://www.color-hex.com/color-palette/24003
@@ -80,12 +81,19 @@ watch(
 
 <template>
   <div class="wrapper">
-    <div class="header" :title="title" @click="toggleExpanded">{{ props.frame.name }} ({{ location }})</div>
-    <!-- v-show is used instead of v-if to avoid destroying child state -->
-    <div v-show="expanded" class="inner">
-      <div v-show="places === null">Loading...</div>
-      <div v-show="places !== null">
-        <NamedPlace class="place" v-for="place in places" :key="place.name" :place="place" />
+    <div class="header" :title="title" @click="toggleExpanded">
+      {{ props.frame.name }} ({{ location }})
+    </div>
+    <!-- TODO: v-show should be used instead of v-if to avoid destroying child state -->
+    <div v-if="expanded" class="inner">
+      <div v-if="places === null">Loading...</div>
+      <div v-if="places !== null">
+        <NamedPlace
+          class="place"
+          v-for="place in places"
+          :key="place.name"
+          :place="place"
+        />
       </div>
     </div>
   </div>
@@ -106,15 +114,15 @@ watch(
 .header {
   color: #000000;
   padding: 5px;
-  background-color: #9DE19A;
+  background-color: #9de19a;
 
   &:hover {
-    background-color: #73FF6D;
+    background-color: #73ff6d;
   }
 }
 
 .inner {
-  background: #FFFFFF;
+  background: #ffffff;
   border-top: solid 1px #000000;
 }
 </style>

@@ -8,7 +8,7 @@ import {
   formatAddress,
   scalarAsString,
 } from "../../formatting";
-import { Path } from "../../path";
+import { Path } from "../../pointers/path";
 import ByteArray from "./bytearray.vue";
 
 const props = defineProps<{
@@ -58,13 +58,6 @@ const title = computed(() => {
 const elementRef = ref<HTMLDivElement | null>(null);
 
 watchEffect(() => loadData());
-onMounted(() => {
-  console.log(
-    "GOT HTML REF",
-    elementRef.value,
-    elementRef.value?.getBoundingClientRect()
-  );
-});
 </script>
 
 <template>

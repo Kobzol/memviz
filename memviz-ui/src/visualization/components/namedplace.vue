@@ -4,7 +4,7 @@ import { computed } from "vue";
 import { strToAddress } from "../../utils";
 import type { Value } from "../formatting";
 import ValueComponent from "./value/value.vue";
-import { Path } from "../path";
+import { Path } from "../pointers/path";
 
 const props = defineProps<{
   place: Place;

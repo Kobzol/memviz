@@ -1,7 +1,8 @@
-import type { Address, ProcessState } from "process-def";
-import { type Reactive, type Ref, reactive, ref } from "vue";
+import type { ProcessState } from "process-def";
+import { type Ref, ref, type ShallowRef, shallowRef } from "vue";
 import { ProcessBuilder } from "../resolver/eager";
 import type { ProcessResolver } from "../resolver/resolver";
+import { ComponentMap } from "./pointers/component-map";
 
 interface AppState {
   processState: Readonly<ProcessState>;
@@ -19,8 +20,6 @@ function createDefaultState(): AppState {
 
 export const appState: Ref<AppState> = ref(createDefaultState());
 
-interface PointerState {
-  targets: Address[];
-}
-
-export const pointerTargets: Reactive<PointerState> = reactive({ targets: [] });
+export const componentMap: ShallowRef<ComponentMap> = shallowRef(
+  new ComponentMap(),
+);

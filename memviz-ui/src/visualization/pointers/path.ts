@@ -4,24 +4,24 @@ export class Path {
     return new Path([stackPlaceComponent(name)]);
   }
 
-  private components: Component[] = [];
+  private readonly components: ReadonlyArray<Component> = [];
 
   constructor(components: Component[]) {
     this.components = [...components];
   }
 
   makeArrayIndex(index: number): Path {
-    const path = this.clone();
-    path.components.push(arrayIndexComponent(index));
-    return path;
+    const components = this.clone();
+    components.push(arrayIndexComponent(index));
+    return new Path(components);
   }
 
   length(): number {
     return this.components.length;
   }
 
-  private clone(): Path {
-    return new Path(this.components);
+  private clone(): Component[] {
+    return [...this.components];
   }
 }
 

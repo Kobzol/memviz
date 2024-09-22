@@ -8,7 +8,11 @@ const state = computed(() => appState.value.processState);
 
 <template>
   <div>
-    <StackFrameComponent v-for="frame in state.stackTrace.frames.slice().reverse()" :key="frame.id" :frame="frame" />
+    <StackFrameComponent
+      v-for="frame in state.stackTrace.frames.slice().reverse()"
+      :key="frame.id"
+      :frame="frame"
+    />
   </div>
 </template>
 

@@ -27,6 +27,7 @@
     "vue-tsc": "^2.1.6"
   },
   "dependencies": {
+    "leader-line": "^1.0.7",
     "normalize.css": "^8.0.1",
     "panzoom": "^9.4.3",
     "sorted-btree": "^1.8.1",
