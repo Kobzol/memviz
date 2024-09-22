@@ -16,9 +16,7 @@ export function buildSimpleProgram(): ProcessBuilder {
   builder.place("d", typeFloat32()).setFloat32(4);
   builder.startFrame("foo");
   builder.place("a", typeUint32()).setUint32(50);
-  builder
-    .place("b", typeUint32(), PlaceKind.Variable, null, false)
-    .setUint32(42);
+  builder.place("b", typeUint32(), PlaceKind.Variable, false).setUint32(42);
   return builder;
 }
 
