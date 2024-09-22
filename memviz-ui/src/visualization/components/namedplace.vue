@@ -59,7 +59,7 @@ const path = computed((): Path => {
       v-tippy="title"
       >{{ label }}</code
     >
-    <ValueComponent :value="value" :path="path" />
+    <ValueComponent v-if="place.initialized" :value="value" :path="path" />
   </div>
 </template>
 

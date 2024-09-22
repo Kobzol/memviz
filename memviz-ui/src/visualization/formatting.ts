@@ -21,10 +21,22 @@ const FORMATTERS: { [key: string]: (view: DataView) => string } = {
 
 export type TyScalar = TyBool | TyInt | TyFloat;
 
+function isChar(type: TyScalar): boolean {
+  if (type.name !== "char") return false;
+  if (type.kind !== "int") return false;
+  if (type.size !== 1) return false;
+  return true;
+}
+
 export function scalarAsString(buffer: ArrayBuffer, type: TyScalar): string {
   const view = new DataView(buffer);
   if (type.kind === "bool") {
     return view.getUint8(0) === 0 ? "false" : "true";
+  }
+  if (isChar(type)) {
+    const value = view.getUint8(0);
+    const char = String.fromCharCode(value);
+    return `'${char}'`;
   }
 
   let key = "";
