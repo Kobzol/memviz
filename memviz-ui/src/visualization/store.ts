@@ -1,5 +1,5 @@
 import type { ProcessState } from "process-def";
-import { type Ref, ref, type ShallowRef, shallowRef, triggerRef } from "vue";
+import { type Ref, type ShallowRef, ref, shallowRef, triggerRef } from "vue";
 import { ProcessBuilder } from "../resolver/eager";
 import type { ProcessResolver } from "../resolver/resolver";
 import { ComponentMap } from "./pointers/component-map";

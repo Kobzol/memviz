@@ -18,4 +18,12 @@ const state = computed(() => appState.value.processState);
 
 <style lang="scss">
 @import "normalize.css";
+
+body {
+  color: black;
+}
+code {
+  color: #000000;
+  background-color: #ffffff;
+}
 </style>

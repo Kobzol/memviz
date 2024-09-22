@@ -1,6 +1,6 @@
 import type { Address } from "process-def";
 import BTree from "sorted-btree";
-import { triggerRef, type ShallowRef } from "vue";
+import { type ShallowRef, triggerRef } from "vue";
 
 interface ComponentWithAddress {
   size: number;
