@@ -2,7 +2,7 @@
 import { type Ref, computed, ref, watch } from "vue";
 import { addressToStr, assert } from "../../../../utils";
 import { appState } from "../../../store";
-import { pluralize, type Value } from "../../../formatting";
+import { pluralize, type Value } from "../../../utils/formatting";
 import { TyArray, Type } from "process-def";
 import ValueComponent from "../value.vue";
 import { Path } from "../../../pointers/path";

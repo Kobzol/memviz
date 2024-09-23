@@ -1,5 +1,5 @@
 import type { Address, TyBool, TyFloat, TyInt, Type } from "process-def";
-import { assert } from "../utils";
+import { assert } from "../../utils";
 
 export interface Value<T extends Type> {
   type: T;

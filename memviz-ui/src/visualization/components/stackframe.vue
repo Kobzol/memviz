@@ -6,7 +6,7 @@ import { addressToStr, strToAddress } from "../../utils";
 import { appState } from "../store";
 import NamedPlace from "./namedplace.vue";
 import PtrTarget from "./ptrtarget.vue";
-import { formatLocation } from "../formatting";
+import { formatLocation } from "../utils/formatting";
 
 const props = defineProps<{
   frame: StackFrame;
@@ -78,8 +78,13 @@ watch(
 
 <template>
   <div class="wrapper">
-    <div :class="{header: true, 'top-frame': isTopFrame}" v-tippy="title" @click="toggleExpanded">
-      <div class="name">{{ props.frame.name }}</div><div>{{ location }}</div>
+    <div
+      :class="{ header: true, 'top-frame': isTopFrame }"
+      v-tippy="title"
+      @click="toggleExpanded"
+    >
+      <div class="name">{{ props.frame.name }}</div>
+      <div>{{ location }}</div>
     </div>
     <!-- TODO: v-show should be used instead of v-if to avoid destroying child state -->
     <div v-if="expanded" class="inner">

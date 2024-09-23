@@ -8,7 +8,7 @@ import {
   formatAddress,
   formatTypeSize,
   scalarAsString,
-} from "../../formatting";
+} from "../../utils/formatting";
 import { Path } from "../../pointers/path";
 import ByteArray from "./bytearray.vue";
 

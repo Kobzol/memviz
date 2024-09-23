@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TyScalar, Value } from "../../formatting";
+import type { TyScalar, Value } from "../../utils/formatting";
 import { Type, TyArray, TyPtr } from "process-def";
 import { Path } from "../../pointers/path";
 

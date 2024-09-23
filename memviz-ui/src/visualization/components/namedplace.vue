@@ -2,7 +2,7 @@
 import { PlaceKind, type Address, type Place, type Type } from "process-def";
 import { computed } from "vue";
 import { strToAddress } from "../../utils";
-import { formatTypeSize, type Value } from "../formatting";
+import { formatTypeSize, type Value } from "../utils/formatting";
 import ValueComponent from "./value/value.vue";
 import { Path } from "../pointers/path";
 
@@ -38,7 +38,7 @@ const title = computed(() => {
   }
 
   title += ` <b>${props.place.type.name} ${props.place.name}</b>`;
-  title += `, address <b>${props.place.address ?? '&lt;missing&gt;'}</b>`;
+  title += `, address <b>${props.place.address ?? "&lt;missing&gt;"}</b>`;
   title += `, ${formatTypeSize(type)}`;
   title += `, <b>${props.place.initialized ? "" : "not "}initialized</b>`;
   title += `, declared at line ${props.place.line}`;

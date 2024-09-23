@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, Ref, ref, watch } from "vue";
-import { Value } from "../formatting";
+import { Value } from "../utils/formatting";
 import { Type } from "process-def";
 import { componentMap } from "../store";
 import { assert } from "../../utils";
