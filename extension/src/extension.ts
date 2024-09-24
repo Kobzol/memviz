@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 
 import type { DebugProtocol } from "@vscode/debugprotocol";
 import { MenuViewProvider } from "./menu/menu";
-import { loadSettings } from "./menu/storage";
+import { loadSettings, saveSettings } from "./menu/storage";
 import { Reactor } from "./reactor";
 import { getFileUri, getStaticFilePath, loadStaticFile } from "./resources";
 import { DebuggerSession } from "./session";
@@ -17,6 +17,7 @@ export function activate(context: vscode.ExtensionContext) {
     (newSettings) => {
       console.log("Memviz settings reloaded", newSettings);
       settings = newSettings;
+      saveSettings(context, newSettings);
     },
   );
   context.subscriptions.push(
