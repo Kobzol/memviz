@@ -32,7 +32,17 @@
   },
   "main": "./dist/extension.js",
   "activationEvents": ["onDebug"],
-  "contributes": {},
+  "contributes": {
+    "views": {
+      "debug": [
+        {
+          "type": "webview",
+          "id": "memviz.menuView",
+          "name": "Memviz"
+        }
+      ]
+    }
+  },
   "scripts": {
     "fix": "biome check --write",
     "build": "tsc && node esbuild.js --production",

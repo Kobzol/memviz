@@ -1,17 +1,27 @@
-import { readFileSync } from "fs";
-import path from "path";
 import * as vscode from "vscode";
 
 import type { DebugProtocol } from "@vscode/debugprotocol";
 import { Reactor } from "./reactor";
 import { DebuggerSession } from "./session";
+import { MenuViewProvider } from "./menu/menu";
+import {
+  getCompiledFileUri,
+  getStaticFilePath,
+  loadStaticFile,
+} from "./resources";
 
 export function activate(context: vscode.ExtensionContext) {
+  const menuProvider = new MenuViewProvider(context.extensionUri);
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(
+      MenuViewProvider.viewType,
+      menuProvider,
+    ),
+  );
+
   let handler: Reactor | null = null;
 
-  const gdbScriptPath = vscode.Uri.file(
-    path.join(context.extensionPath, "static", "gdb_script.py"),
-  ).fsPath;
+  const gdbScriptPath = getStaticFilePath(context, "gdb_script.py");
 
   const trackerDisposable = vscode.debug.registerDebugAdapterTrackerFactory(
     "cppdbg",
@@ -77,14 +87,13 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 function createPanel(context: vscode.ExtensionContext): vscode.WebviewPanel {
-  const distDirectory = vscode.Uri.joinPath(context.extensionUri, "dist");
   const panel = vscode.window.createWebviewPanel(
     "memviz",
     "Memviz",
     vscode.ViewColumn.Beside, // Show to the side of the editor.
     {
       localResourceRoots: [
-        distDirectory,
+        vscode.Uri.joinPath(context.extensionUri, "dist"),
         vscode.Uri.joinPath(context.extensionUri, "static"),
       ],
       enableScripts: true,
@@ -94,8 +103,8 @@ function createPanel(context: vscode.ExtensionContext): vscode.WebviewPanel {
   );
 
   const html = loadStaticFile(context, "index.html");
-  const scriptSrc = loadDistUri(panel, distDirectory, "index.js");
-  const styleSrc = loadDistUri(panel, distDirectory, "index.css");
+  const scriptSrc = getCompiledFileUri(panel, context, "index.js");
+  const styleSrc = getCompiledFileUri(panel, context, "index.css");
 
   panel.webview.html = html
     .replaceAll("$SCRIPT", scriptSrc)
@@ -105,22 +114,3 @@ function createPanel(context: vscode.ExtensionContext): vscode.WebviewPanel {
 }
 
 export function deactivate() {}
-
-function loadStaticFile(
-  context: vscode.ExtensionContext,
-  file: string,
-): string {
-  const htmlPath = vscode.Uri.file(
-    path.join(context.extensionPath, "static", file),
-  ).fsPath;
-  return new TextDecoder("UTF-8").decode(readFileSync(htmlPath));
-}
-
-function loadDistUri(
-  panel: vscode.WebviewPanel,
-  distDirectory: vscode.Uri,
-  file: string,
-): string {
-  const scriptPath = vscode.Uri.joinPath(distDirectory, file);
-  return panel.webview.asWebviewUri(scriptPath).toString();
-}
