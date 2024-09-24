@@ -26,7 +26,7 @@ const esbuildProblemMatcherPlugin = {
 };
 
 async function main() {
-  const ctx = await esbuild.context({
+  const extensionCtx = await esbuild.context({
     entryPoints: ["src/extension.ts"],
     bundle: true,
     minify: production,
@@ -38,12 +38,25 @@ async function main() {
     logLevel: "silent",
     plugins: [esbuildProblemMatcherPlugin],
   });
+  const menuCtx = await esbuild.context({
+    entryPoints: ["menu-ui/index.ts"],
+    bundle: true,
+    minify: production,
+    sourcemap: !production,
+    sourcesContent: false,
+    platform: "browser",
+    outfile: "dist/menu.js",
+    external: [],
+    logLevel: "silent",
+    plugins: [esbuildProblemMatcherPlugin],
+  });
+  const contexts = [extensionCtx, menuCtx];
 
   if (watch) {
-    await ctx.watch();
+    await Promise.all(contexts.map((ctx) => ctx.watch()));
   } else {
-    await ctx.rebuild();
-    await ctx.dispose();
+    await Promise.all(contexts.map((ctx) => ctx.rebuild()));
+    await Promise.all(contexts.map((ctx) => ctx.dispose()));
   }
 }
 

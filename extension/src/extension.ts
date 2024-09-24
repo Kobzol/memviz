@@ -1,22 +1,44 @@
-import { readFileSync } from "fs";
-import path from "path";
 import * as vscode from "vscode";
 
 import type { DebugProtocol } from "@vscode/debugprotocol";
+import { MenuViewProvider } from "./menu/menu";
+import { loadSettings, saveSettings } from "./menu/storage";
 import { Reactor } from "./reactor";
+import { getFileUri, getStaticFilePath, loadStaticFile } from "./resources";
 import { DebuggerSession } from "./session";
 
 export function activate(context: vscode.ExtensionContext) {
+  let settings = loadSettings(context);
+  console.log("Memviz settings loaded", settings);
+
+  const menuProvider = new MenuViewProvider(
+    context.extensionUri,
+    settings,
+    (newSettings) => {
+      console.log("Memviz settings reloaded", newSettings);
+      settings = newSettings;
+      saveSettings(context, newSettings);
+    },
+  );
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(
+      MenuViewProvider.viewType,
+      menuProvider,
+    ),
+  );
+
   let handler: Reactor | null = null;
 
-  const gdbScriptPath = vscode.Uri.file(
-    path.join(context.extensionPath, "static", "gdb_script.py"),
-  ).fsPath;
+  const gdbScriptPath = getStaticFilePath(
+    context.extensionUri,
+    "gdb_script.py",
+  );
 
   const trackerDisposable = vscode.debug.registerDebugAdapterTrackerFactory(
     "cppdbg",
     {
       createDebugAdapterTracker(session: vscode.DebugSession) {
+        if (!settings.enabled) return undefined;
         return {
           onWillReceiveMessage: async (message: DebugProtocol.Request) => {
             if (handler === null) {
@@ -39,6 +61,8 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(trackerDisposable);
 
   const startDisposable = vscode.debug.onDidStartDebugSession((session) => {
+    if (!settings.enabled) return;
+
     if (handler !== null) {
       handler.dispose();
     }
@@ -77,14 +101,13 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 function createPanel(context: vscode.ExtensionContext): vscode.WebviewPanel {
-  const distDirectory = vscode.Uri.joinPath(context.extensionUri, "dist");
   const panel = vscode.window.createWebviewPanel(
     "memviz",
     "Memviz",
     vscode.ViewColumn.Beside, // Show to the side of the editor.
     {
       localResourceRoots: [
-        distDirectory,
+        vscode.Uri.joinPath(context.extensionUri, "dist"),
         vscode.Uri.joinPath(context.extensionUri, "static"),
       ],
       enableScripts: true,
@@ -93,9 +116,9 @@ function createPanel(context: vscode.ExtensionContext): vscode.WebviewPanel {
     },
   );
 
-  const html = loadStaticFile(context, "index.html");
-  const scriptSrc = loadDistUri(panel, distDirectory, "index.js");
-  const styleSrc = loadDistUri(panel, distDirectory, "index.css");
+  const html = loadStaticFile(context.extensionUri, "index.html");
+  const scriptSrc = getFileUri(panel.webview, context.extensionUri, "index.js");
+  const styleSrc = getFileUri(panel.webview, context.extensionUri, "index.css");
 
   panel.webview.html = html
     .replaceAll("$SCRIPT", scriptSrc)
@@ -105,22 +128,3 @@ function createPanel(context: vscode.ExtensionContext): vscode.WebviewPanel {
 }
 
 export function deactivate() {}
-
-function loadStaticFile(
-  context: vscode.ExtensionContext,
-  file: string,
-): string {
-  const htmlPath = vscode.Uri.file(
-    path.join(context.extensionPath, "static", file),
-  ).fsPath;
-  return new TextDecoder("UTF-8").decode(readFileSync(htmlPath));
-}
-
-function loadDistUri(
-  panel: vscode.WebviewPanel,
-  distDirectory: vscode.Uri,
-  file: string,
-): string {
-  const scriptPath = vscode.Uri.joinPath(distDirectory, file);
-  return panel.webview.asWebviewUri(scriptPath).toString();
-}
