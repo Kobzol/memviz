@@ -7,5 +7,7 @@
     "noEmit": true,
     "sourceMap": true,
     "rootDir": "src"
-  }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["menu-ui/**/*"]
 }

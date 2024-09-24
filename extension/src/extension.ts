@@ -1,17 +1,24 @@
 import * as vscode from "vscode";
 
 import type { DebugProtocol } from "@vscode/debugprotocol";
-import { Reactor } from "./reactor";
-import { DebuggerSession } from "./session";
 import { MenuViewProvider } from "./menu/menu";
-import {
-  getCompiledFileUri,
-  getStaticFilePath,
-  loadStaticFile,
-} from "./resources";
+import { loadSettings } from "./menu/storage";
+import { Reactor } from "./reactor";
+import { getFileUri, getStaticFilePath, loadStaticFile } from "./resources";
+import { DebuggerSession } from "./session";
 
 export function activate(context: vscode.ExtensionContext) {
-  const menuProvider = new MenuViewProvider(context.extensionUri);
+  let settings = loadSettings(context);
+  console.log("Memviz settings loaded", settings);
+
+  const menuProvider = new MenuViewProvider(
+    context.extensionUri,
+    settings,
+    (newSettings) => {
+      console.log("Memviz settings reloaded", newSettings);
+      settings = newSettings;
+    },
+  );
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
       MenuViewProvider.viewType,
@@ -21,12 +28,16 @@ export function activate(context: vscode.ExtensionContext) {
 
   let handler: Reactor | null = null;
 
-  const gdbScriptPath = getStaticFilePath(context, "gdb_script.py");
+  const gdbScriptPath = getStaticFilePath(
+    context.extensionUri,
+    "gdb_script.py",
+  );
 
   const trackerDisposable = vscode.debug.registerDebugAdapterTrackerFactory(
     "cppdbg",
     {
       createDebugAdapterTracker(session: vscode.DebugSession) {
+        if (!settings.enabled) return undefined;
         return {
           onWillReceiveMessage: async (message: DebugProtocol.Request) => {
             if (handler === null) {
@@ -49,6 +60,8 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(trackerDisposable);
 
   const startDisposable = vscode.debug.onDidStartDebugSession((session) => {
+    if (!settings.enabled) return;
+
     if (handler !== null) {
       handler.dispose();
     }
@@ -102,9 +115,9 @@ function createPanel(context: vscode.ExtensionContext): vscode.WebviewPanel {
     },
   );
 
-  const html = loadStaticFile(context, "index.html");
-  const scriptSrc = getCompiledFileUri(panel, context, "index.js");
-  const styleSrc = getCompiledFileUri(panel, context, "index.css");
+  const html = loadStaticFile(context.extensionUri, "index.html");
+  const scriptSrc = getFileUri(panel.webview, context.extensionUri, "index.js");
+  const styleSrc = getFileUri(panel.webview, context.extensionUri, "index.css");
 
   panel.webview.html = html
     .replaceAll("$SCRIPT", scriptSrc)

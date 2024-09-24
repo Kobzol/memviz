@@ -3,27 +3,24 @@ import path from "path";
 import * as vscode from "vscode";
 
 export function getStaticFilePath(
-  context: vscode.ExtensionContext,
+  extensionUri: vscode.Uri,
   file: string,
 ): string {
-  return vscode.Uri.file(path.join(context.extensionPath, "static", file))
-    .fsPath;
+  return vscode.Uri.file(path.join(extensionUri.fsPath, "static", file)).fsPath;
 }
 
-export function loadStaticFile(
-  context: vscode.ExtensionContext,
-  file: string,
-): string {
-  const htmlPath = getStaticFilePath(context, file);
+export function loadStaticFile(extensionUri: vscode.Uri, file: string): string {
+  const htmlPath = getStaticFilePath(extensionUri, file);
   return new TextDecoder("UTF-8").decode(readFileSync(htmlPath));
 }
 
-export function getCompiledFileUri(
-  panel: vscode.WebviewPanel,
-  context: vscode.ExtensionContext,
+export function getFileUri(
+  webview: vscode.Webview,
+  extensionUri: vscode.Uri,
   file: string,
+  directory = "dist",
 ): string {
-  const distDirectory = vscode.Uri.joinPath(context.extensionUri, "dist");
+  const distDirectory = vscode.Uri.joinPath(extensionUri, directory);
   const scriptPath = vscode.Uri.joinPath(distDirectory, file);
-  return panel.webview.asWebviewUri(scriptPath).toString();
+  return webview.asWebviewUri(scriptPath).toString();
 }
