@@ -17,9 +17,14 @@ import type { ProcessResolver } from "./resolver";
 
 type ExtractData<T extends { data: unknown }> = T["data"];
 
+interface InFlightRequest {
+  resolve: (response: unknown) => void;
+  reject: (error: string) => void;
+}
+
 export class VsCodeResolver implements ProcessResolver {
   private requestId: RequestId = 0;
-  private requestMap: Map<RequestId, (response: unknown) => void> = new Map();
+  private requestMap: Map<RequestId, InFlightRequest> = new Map();
 
   public constructor(
     private vscode: WebviewApi<unknown>,
@@ -33,14 +38,18 @@ export class VsCodeResolver implements ProcessResolver {
       return;
     }
 
-    const resolveFn = this.requestMap.get(message.requestId);
-    if (resolveFn === undefined) {
+    const request = this.requestMap.get(message.requestId);
+    if (request === undefined) {
       console.warn(
         `Received response for an unknown or already handled request ${message.requestId}`,
       );
       return;
     }
-    resolveFn(message.data);
+    if (message.kind === "error") {
+      request.reject(message.error);
+    } else {
+      request.resolve(message.data);
+    }
   }
 
   async getStackTrace(threadId: ThreadId): Promise<StackTrace> {
@@ -84,8 +93,12 @@ export class VsCodeResolver implements ProcessResolver {
     } as RequestType);
 
     const promise = new Promise<ExtractData<ResponseType>>(
-      (resolve, _reject) => {
-        this.requestMap.set(requestId, resolve as (_data: unknown) => void);
+      (resolve, reject) => {
+        const request = {
+          resolve,
+          reject,
+        };
+        this.requestMap.set(requestId, request as InFlightRequest);
       },
     );
     return promise;

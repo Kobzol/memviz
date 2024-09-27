@@ -299,11 +299,11 @@ export class Reactor {
   /// It asks DAP for information and sends responses back to the webview.
   async handleWebviewMessage(message: MemvizToExtensionMsg) {
     if (message.kind === "get-stack-trace") {
-      this.performGetStackTraceRequest(message);
+      await this.performGetStackTraceRequest(message);
     } else if (message.kind === "get-variables") {
-      this.performGetPlacesRequest(message);
+      await this.performGetPlacesRequest(message);
     } else if (message.kind === "read-memory") {
-      this.performReadMemoryRequest(message);
+      await this.performReadMemoryRequest(message);
     }
   }
 
@@ -312,36 +312,44 @@ export class Reactor {
   }
 
   private async performGetStackTraceRequest(message: GetStackTraceReq) {
-    const frames = await this.session.getStackTrace(message.threadId);
-    this.sendMemvizResponse(message, {
-      kind: "get-stack-trace",
-      data: {
-        stackTrace: {
-          frames,
+    await this.sendMemvizResponse(message, async () => {
+      const frames = await this.session.getStackTrace(message.threadId);
+      return {
+        kind: "get-stack-trace",
+        data: {
+          stackTrace: {
+            frames,
+          },
         },
-      },
+      };
     });
   }
 
   private async performGetPlacesRequest(message: GetPlacesReq) {
-    const places = await this.session.getPlaces(message.frameIndex);
-
-    this.sendMemvizResponse(message, {
-      kind: "get-variables",
-      data: {
-        places,
-      },
+    await this.sendMemvizResponse(message, async () => {
+      const places = await this.session.getPlaces(message.frameIndex);
+      return {
+        kind: "get-variables",
+        data: {
+          places,
+        },
+      };
     });
   }
 
   private async performReadMemoryRequest(message: ReadMemoryReq) {
-    const result = await this.session.readMemory(message.address, message.size);
-    const data = await decodeBase64(result.data ?? "");
-    this.sendMemvizResponse(message, {
-      kind: "read-memory",
-      data: {
-        data,
-      },
+    await this.sendMemvizResponse(message, async () => {
+      const result = await this.session.readMemory(
+        message.address,
+        message.size,
+      );
+      const data = await decodeBase64(result.data ?? "");
+      return {
+        kind: "read-memory",
+        data: {
+          data,
+        },
+      };
     });
   }
 
@@ -376,14 +384,28 @@ export class Reactor {
 
   private async sendMemvizResponse(
     request: MemvizToExtensionRequest,
-    response: Omit<ExtensionToMemvizResponse, "requestId" | "resolverId">,
+    fn: () => Promise<
+      Omit<ExtensionToMemvizResponse, "requestId" | "resolverId">
+    >,
   ) {
-    const message = {
-      ...response,
-      requestId: request.requestId,
-      resolverId: request.resolverId,
-    } as ExtensionToMemvizResponse;
-    await this.panel.webview.postMessage(message);
+    try {
+      const response = await fn();
+      const message = {
+        ...response,
+        requestId: request.requestId,
+        resolverId: request.resolverId,
+      } as ExtensionToMemvizResponse;
+      await this.panel.webview.postMessage(message);
+    } catch (e: any) {
+      console.log("Error while handing request", request, e);
+      vscode.window.showErrorMessage(`Request failed: ${e}`);
+      await this.panel.webview.postMessage({
+        kind: "error",
+        error: e.toString(),
+        requestId: request.requestId,
+        resolverId: request.resolverId,
+      } satisfies ExtensionToMemvizResponse);
+    }
   }
 }
 

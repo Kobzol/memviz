@@ -55,10 +55,16 @@ export interface ReadMemoryRes extends Response {
   };
 }
 
+export interface ErrorRes extends Response {
+  kind: "error";
+  error: string;
+}
+
 export type ExtensionToMemvizResponse =
   | GetStackTraceRes
   | GetPlacesRes
-  | ReadMemoryRes;
+  | ReadMemoryRes
+  | ErrorRes;
 
 // Any message from the extension
 export type ExtensionToMemvizMsg = ExtensionEvent | ExtensionToMemvizResponse;
