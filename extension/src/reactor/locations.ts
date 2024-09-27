@@ -54,6 +54,6 @@ export class BreakpointMap {
   }
 }
 
-function sourceHashKey(source: DebugProtocol.Source): string {
-  return source.path ?? source.name ?? "source";
+function sourceHashKey(source: DebugProtocol.Source | undefined): string {
+  return source?.path ?? source?.name ?? "source";
 }
