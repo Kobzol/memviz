@@ -1,4 +1,4 @@
-import type * as vscode from "vscode";
+import * as vscode from "vscode";
 
 import type { DebugProtocol } from "@vscode/debugprotocol";
 import type {
@@ -88,6 +88,11 @@ export class Reactor {
     } else if (this.status.kind === "waiting-for-main-breakpoint") {
       if (isStoppedEvent(message) && message.body.reason === "breakpoint") {
         const stopLocation = getStopLocation(message);
+
+        if (!(await this.checkDebugInfo(stopLocation))) {
+          return;
+        }
+
         // If the user also has a breakpoint here, do not ignore it
         const hasUserBreakpoint =
           this.breakpointMap.hasUserBreakpoint(stopLocation);
@@ -117,6 +122,9 @@ export class Reactor {
       if (isStoppedEvent(message)) {
         const reason = message.body.reason;
         const stopLocation = getStopLocation(message);
+        if (!(await this.checkDebugInfo(stopLocation))) {
+          return;
+        }
         // console.log(
         //   "STOPPED",
         //   reason,
@@ -192,6 +200,25 @@ export class Reactor {
         }
       }
     }
+  }
+
+  // Returns true if it looks like debug info is present in the debugged process,
+  // based on the passed location.
+  async checkDebugInfo(stopLocation: Location): Promise<boolean> {
+    if (stopLocation.source === undefined) {
+      vscode.window.showInformationMessage(
+        "Source code location not found. Is your program compiled with debug symbols?",
+      );
+      this.status = {
+        kind: "initialized",
+      };
+
+      const [threadId, frameId] =
+        await this.session.getCurrentThreadAndFrameId();
+      await this.session.continue(threadId);
+      return false;
+    }
+    return true;
   }
 
   private handleSetFunctionBreakpointsResponse(
