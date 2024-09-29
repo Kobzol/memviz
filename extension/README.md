@@ -12,10 +12,18 @@ It has been created as an education tool for the [Introduction to Programming](h
 Simply start a normal debugging session of a _C_ file (using e.g. `F5`) using the `GDB` debugger.
 `Memviz` will then open a webview that will visualize the state of the program once it stops on a breakpoint.
 
+> You have to compile your program with debug symbols (e.g. `gcc -g`) for the visualization (and debugging itself) to work!
+
 The visualized components are interactive. You can e.g. expand/collapse stack frames, displays byte values of scalar
 values or change the start index of array elements that are displayed.
 
 You can also pan the canvas using the middle mouse button and zoom using the mouse wheel.
+
+### Configuration
+
+When you open the `Run and Debug` container in the Activity Bar on the left, you should see a foldable section title `Memviz`, which can be used to configure Memviz. Currently, the only thing that can be configured is if `Memviz` is enabled or not. If Memviz causes any issues during debugging, you can temporarily turn it off here without uninstalling the plugin.
+
+![](./img/screen-configuration-panel.png)
 
 ## Features
 

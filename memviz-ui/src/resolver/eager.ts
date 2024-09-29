@@ -13,6 +13,7 @@ import {
 import type { Place } from "process-def/src";
 import { MemoryMap } from "../memory-map";
 import { assert, addressToStr, strToAddress } from "../utils";
+import type { TyChar } from "../visualization/utils/types";
 import type { ProcessResolver } from "./resolver";
 
 export interface FullProcessState extends ProcessState {
@@ -168,6 +169,13 @@ export class PlaceBuilder {
     }
     return this;
   }
+  setCString(text: string): PlaceBuilder {
+    const str = new TextEncoder().encode(text);
+    const buffer = new ArrayBuffer(str.byteLength + 1);
+    new Uint8Array(buffer).set(str);
+    this.map.set(this.address, buffer);
+    return this;
+  }
   setUint32(value: number): PlaceBuilder {
     this.map.set(this.address, makeUint32(value));
     return this;
@@ -188,6 +196,15 @@ export function typeUint32(name = "int"): TyInt {
     kind: "int",
     signed: false,
     size: 4,
+  };
+}
+
+export function typeChar(name = "char"): TyChar {
+  return {
+    name,
+    kind: "int",
+    size: 1,
+    signed: false,
   };
 }
 

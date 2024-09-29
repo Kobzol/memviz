@@ -3,7 +3,6 @@ import { type Ref, computed, nextTick, ref, shallowRef, watch } from "vue";
 import { addressToStr } from "../../../utils";
 import { appState, notifyComponentMap } from "../../store";
 import {
-  TyScalar,
   type Value,
   formatAddress,
   formatTypeSize,
@@ -11,6 +10,7 @@ import {
 } from "../../utils/formatting";
 import { Path } from "../../pointers/path";
 import ByteArray from "./bytearray.vue";
+import { TyScalar } from "../../utils/types";
 
 const props = defineProps<{
   value: Value<TyScalar>;
