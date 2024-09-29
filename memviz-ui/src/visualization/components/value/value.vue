@@ -5,6 +5,7 @@ import { Path } from "../../pointers/path";
 import {
   isCharType,
   isScalarType,
+  TyCharArray,
   TyScalar,
   TyStringPtr,
 } from "../../utils/types";
@@ -14,6 +15,7 @@ import Pointer from "./pointer.vue";
 import Scalar from "./scalar.vue";
 import StringPointer from "./string/stringpointer.vue";
 import PtrTarget from "../ptrtarget.vue";
+import CharArray from "./string/chararray.vue";
 
 const props = defineProps<{
   value: Value<Type>;
@@ -36,6 +38,11 @@ function isStringPtr(value: Value<Type>): value is Value<TyStringPtr> {
   if (!isPtr(value)) return false;
   return isCharType(value.type.target);
 }
+
+function isCharArray(value: Value<Type>): value is Value<TyCharArray> {
+  if (!isArray(value)) return false;
+  return isCharType(value.type.type);
+}
 </script>
 
 <template>
@@ -48,6 +55,11 @@ function isStringPtr(value: Value<Type>): value is Value<TyStringPtr> {
         :path="path"
         :value="value"
       ></StringPointer>
+      <CharArray
+        v-else-if="isCharArray(value)"
+        :path="path"
+        :value="value"
+      ></CharArray>
       <Array v-else-if="isArray(value)" :path="path" :value="value"></Array>
       <Pointer v-else-if="isPtr(value)" :path="path" :value="value"></Pointer>
       <div v-else>&lt;value of type {{ value.type.name }}&gt;</div>

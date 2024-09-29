@@ -6,11 +6,13 @@ import {
   type Value,
   bufferAsBigInt,
   bufferToHexadecimal,
+  formatAddress,
 } from "../../../utils/formatting";
 import { Path } from "../../../pointers/path";
 import { TyStringPtr } from "../../../utils/types";
 import { Address } from "process-def";
 import String from "./string.vue";
+import Pointer from "../pointer.vue";
 
 const props = defineProps<{
   value: Value<TyStringPtr>;
@@ -46,9 +48,9 @@ const resolver = computed(() => appState.value.resolver);
 const displayMode = ref(DisplayMode.String);
 
 const ptrBuffer: Ref<ArrayBuffer | null> = shallowRef(null);
-const ptrAsHexadecimal = computed(() => {
-  if (ptrBuffer.value === null) return "";
-  return bufferToHexadecimal(ptrBuffer.value);
+const ptrFormatted = computed(() => {
+  if (ptrAsAddress.value === null) return "";
+  return formatAddress(ptrAsAddress.value);
 });
 const ptrAsAddress = computed((): Address | null => {
   if (ptrBuffer.value === null) return null;
@@ -56,7 +58,7 @@ const ptrAsAddress = computed((): Address | null => {
 });
 
 const title = computed(() => {
-  return `String pointer pointing to \`${ptrAsHexadecimal.value}\``;
+  return `String pointer pointing to \`${ptrFormatted.value}\``;
 });
 
 watch(
@@ -69,10 +71,11 @@ watch(
 <template>
   <div class="wrapper" @click="toggleDisplayMode" v-tippy="title">
     <template v-if="ptrBuffer !== null">
-      <div class="string" v-if="displayMode === DisplayMode.String">
-        <String v-if="ptrAsAddress !== null" :address="ptrAsAddress" />
-      </div>
-      <div v-else>{{ ptrAsHexadecimal }}</div>
+      <String
+        v-if="displayMode === DisplayMode.String && ptrAsAddress !== null"
+        :address="ptrAsAddress"
+      />
+      <Pointer v-else :value="value" :path="path" />
     </template>
   </div>
 </template>
