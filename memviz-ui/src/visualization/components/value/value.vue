@@ -12,7 +12,7 @@ import {
 import Array from "./array/array.vue";
 import Pointer from "./pointer.vue";
 import Scalar from "./scalar.vue";
-import StringPointer from "./stringpointer.vue";
+import StringPointer from "./string/stringpointer.vue";
 import PtrTarget from "../ptrtarget.vue";
 
 const props = defineProps<{

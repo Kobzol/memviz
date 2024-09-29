@@ -1,17 +1,10 @@
 <script setup lang="ts">
-import { type Ref, computed, nextTick, ref, shallowRef, watch } from "vue";
-import { addressToStr } from "../../../utils";
-import { appState, notifyComponentMap } from "../../store";
-import {
-  type Value,
-  bufferToHexadecimal,
-  formatAddress,
-  formatTypeSize,
-  scalarAsString,
-} from "../../utils/formatting";
-import { Path } from "../../pointers/path";
-import ByteArray from "./bytearray.vue";
-import { TyStringPtr } from "../../utils/types";
+import { type Ref, computed, ref, shallowRef, watch } from "vue";
+import { addressToStr } from "../../../../utils";
+import { appState } from "../../../store";
+import { type Value, bufferToHexadecimal } from "../../../utils/formatting";
+import { Path } from "../../../pointers/path";
+import { TyStringPtr } from "../../../utils/types";
 
 const props = defineProps<{
   value: Value<TyStringPtr>;
