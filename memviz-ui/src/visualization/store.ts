@@ -26,3 +26,11 @@ export const componentMap: ShallowRef<ComponentMap> = shallowRef(
 export function notifyComponentMap() {
   triggerRef(componentMap);
 }
+
+export const tooltipStack: Ref<string[]> = ref([]);
+export function addToTooltip(tooltip: string) {
+  tooltipStack.value.push(tooltip);
+}
+export function removeFromTooltip() {
+  tooltipStack.value.pop();
+}

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { type Ref, computed, nextTick, ref, shallowRef, watch } from "vue";
+import { type Ref, computed, ref, shallowRef, watch } from "vue";
 import { addressToStr } from "../../../utils";
-import { appState, notifyComponentMap } from "../../store";
+import { appState } from "../../store";
 import {
   type Value,
   formatAddress,
@@ -11,6 +11,7 @@ import {
 import { Path } from "../../pointers/path";
 import ByteArray from "./bytearray.vue";
 import { TyScalar } from "../../utils/types";
+import TooltipContributor from "../tooltip/tooltip-contributor.vue";
 
 const props = defineProps<{
   value: Value<TyScalar>;
@@ -53,7 +54,7 @@ const bufferAsString = computed(() => {
   return scalarAsString(buffer.value, props.value.type);
 });
 
-const title = computed(() => {
+const tooltip = computed(() => {
   return `Value \`${bufferAsString.value}\` (${formatTypeSize(
     props.value.type
   )}) at ${formatAddress(props.value.address)}`;
@@ -67,14 +68,16 @@ watch(
 </script>
 
 <template>
-  <div class="scalar" @click="toggleDisplayMode" v-tippy="title">
-    <template v-if="buffer !== null">
-      <code class="string" v-if="displayMode === DisplayMode.String">
-        {{ bufferAsString }}
-      </code>
-      <ByteArray v-else :buffer="buffer"></ByteArray>
-    </template>
-  </div>
+  <TooltipContributor :tooltip="tooltip">
+    <div class="scalar" @click="toggleDisplayMode">
+      <template v-if="buffer !== null">
+        <code class="string" v-if="displayMode === DisplayMode.String">
+          {{ bufferAsString }}
+        </code>
+        <ByteArray v-else :buffer="buffer"></ByteArray>
+      </template>
+    </div>
+  </TooltipContributor>
 </template>
 
 <style scoped lang="scss">

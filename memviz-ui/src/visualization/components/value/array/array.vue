@@ -6,6 +6,7 @@ import { pluralize, type Value } from "../../../utils/formatting";
 import { TyArray, Type } from "process-def";
 import ValueComponent from "../value.vue";
 import { Path } from "../../../pointers/path";
+import TooltipContributor from "../../tooltip/tooltip-contributor.vue";
 
 const props = defineProps<{
   value: Value<TyArray>;
@@ -72,16 +73,6 @@ function moveNext() {
   );
 }
 
-function title(): string {
-  const count = props.value.type.element_count;
-  return `Array with ${count} ${pluralize(
-    "element",
-    count
-  )}, current index <b>${startIndex.value}</b>, showing <b>${
-    activeCount.value
-  }</b> ${pluralize("element", activeCount.value)}`;
-}
-
 // How many elements are actively being shown now
 const activeCount = computed(() => {
   const start = startIndex.value;
@@ -96,6 +87,16 @@ const precedingCount = computed(() => startIndex.value);
 const followingCount = computed(() => {
   const end = startIndex.value + activeCount.value;
   return props.value.type.element_count - end;
+});
+
+const tooltip = computed(() => {
+  const count = props.value.type.element_count;
+  return `Array with ${count} ${pluralize(
+    "element",
+    count
+  )}, current index <b>${startIndex.value}</b>, showing <b>${
+    activeCount.value
+  }</b> ${pluralize("element", activeCount.value)}`;
 });
 
 const resolver = computed(() => appState.value.resolver);
@@ -114,27 +115,23 @@ watch(
 </script>
 
 <template>
-  <div class="array" v-tippy="title()">
-    <div
-      class="offset"
-      v-tippy="prevTitle()"
-      v-if="precedingCount > 0"
-      @click="movePrev"
-    >
-      {{ precedingCount }} more
+  <TooltipContributor :tooltip="tooltip">
+    <div class="array">
+      <div class="offset" v-if="precedingCount > 0" @click="movePrev">
+        <TooltipContributor :tooltip="prevTitle()">
+          {{ precedingCount }} more
+        </TooltipContributor>
+      </div>
+      <div class="element" v-for="(_, index) in activeCount">
+        <ValueComponent :value="createValue(index)" :path="createPath(index)" />
+      </div>
+      <div class="offset" v-if="followingCount > 0" @click="moveNext">
+        <TooltipContributor :tooltip="nextTitle()">
+          {{ followingCount }} more
+        </TooltipContributor>
+      </div>
     </div>
-    <div class="element" v-for="(_, index) in activeCount">
-      <ValueComponent :value="createValue(index)" :path="createPath(index)" />
-    </div>
-    <div
-      class="offset"
-      v-tippy="nextTitle()"
-      v-if="followingCount > 0"
-      @click="moveNext"
-    >
-      {{ followingCount }} more
-    </div>
-  </div>
+  </TooltipContributor>
 </template>
 
 <style scoped lang="scss">
