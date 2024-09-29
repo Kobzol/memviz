@@ -1,5 +1,6 @@
-import type { Address, TyBool, TyFloat, TyInt, Type } from "process-def";
+import type { Address, Type } from "process-def";
 import { assert } from "../../utils";
+import { isCharType, type TyScalar } from "./types";
 
 export interface Value<T extends Type> {
   type: T;
@@ -19,21 +20,12 @@ const FORMATTERS: { [key: string]: (view: DataView) => string } = {
   f8: (view: DataView) => toFixedIfNecessary(view.getFloat64(0, true), 4),
 };
 
-export type TyScalar = TyBool | TyInt | TyFloat;
-
-function isChar(type: TyScalar): boolean {
-  if (type.name !== "char") return false;
-  if (type.kind !== "int") return false;
-  if (type.size !== 1) return false;
-  return true;
-}
-
 export function scalarAsString(buffer: ArrayBuffer, type: TyScalar): string {
   const view = new DataView(buffer);
   if (type.kind === "bool") {
     return view.getUint8(0) === 0 ? "false" : "true";
   }
-  if (isChar(type)) {
+  if (isCharType(type)) {
     const value = view.getUint8(0);
     const char = String.fromCharCode(value);
     return `'${char}'`;
@@ -83,6 +75,15 @@ export function bufferAsBigInt(buffer: ArrayBuffer, size: number): bigint {
     return BigInt(view.getUint32(0, true));
   }
   return BigInt(0);
+}
+
+export function bufferToHexadecimal(buffer: ArrayBuffer): string {
+  // Assume little endian
+  const data = [...new Uint8Array(buffer)]
+    .reverse()
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  return `0x${data}`;
 }
 
 export function pluralize(text: string, count: number): string {

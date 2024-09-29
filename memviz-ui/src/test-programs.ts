@@ -3,7 +3,9 @@ import {
   ProcessBuilder,
   makeUint32,
   typeArray,
+  typeChar,
   typeFloat32,
+  typePtr,
   typeUint32,
 } from "./resolver/eager";
 
@@ -49,5 +51,15 @@ export function buildPointers(): ProcessBuilder {
     .setArray((index) => makeUint32(index + 1), 5);
   // builder.startFrame("foo");
   // builder.place("pa", typePtr(typeUint32())).setPtr(target.address + BigInt(8));
+  return builder;
+}
+
+export function buildString(): ProcessBuilder {
+  const builder = new ProcessBuilder();
+  builder.startFrame("main");
+  const p0 = builder
+    .place("data", typeArray(typeChar(), 6), PlaceKind.Parameter)
+    .setCString("Hello");
+  builder.place("ptr", typePtr(typeChar())).setPtr(p0.address);
   return builder;
 }

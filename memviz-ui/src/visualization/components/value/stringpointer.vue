@@ -4,93 +4,78 @@ import { addressToStr } from "../../../utils";
 import { appState, notifyComponentMap } from "../../store";
 import {
   type Value,
+  bufferToHexadecimal,
   formatAddress,
   formatTypeSize,
   scalarAsString,
 } from "../../utils/formatting";
 import { Path } from "../../pointers/path";
 import ByteArray from "./bytearray.vue";
-import { TyScalar } from "../../utils/types";
+import { TyStringPtr } from "../../utils/types";
 
 const props = defineProps<{
-  value: Value<TyScalar>;
+  value: Value<TyStringPtr>;
   path: Path;
 }>();
 
 enum DisplayMode {
   String = "string",
-  ByteArray = "per-byte",
+  Pointer = "pointer",
 }
 
-async function loadData() {
+async function loadPointerContents() {
   const address = props.value.address;
   if (address === null) {
     return;
   }
 
-  buffer.value = await resolver.value.readMemory(
+  ptrBuffer.value = await resolver.value.readMemory(
     addressToStr(address),
     props.value.type.size
   );
-  // await nextTick();
-  // notifyComponentMap();
 }
 
 function toggleDisplayMode() {
   if (displayMode.value === DisplayMode.String) {
-    displayMode.value = DisplayMode.ByteArray;
-  } else if (displayMode.value === DisplayMode.ByteArray) {
+    displayMode.value = DisplayMode.Pointer;
+  } else if (displayMode.value === DisplayMode.Pointer) {
     displayMode.value = DisplayMode.String;
   }
 }
 
 const resolver = computed(() => appState.value.resolver);
-const displayMode = ref(DisplayMode.String);
+const displayMode = ref(DisplayMode.Pointer);
 
-const buffer: Ref<ArrayBuffer | null> = shallowRef(null);
-const bufferAsString = computed(() => {
-  if (buffer.value === null) return "";
-  return scalarAsString(buffer.value, props.value.type);
+const ptrBuffer: Ref<ArrayBuffer | null> = shallowRef(null);
+const ptrAsHexadecimal = computed(() => {
+  if (ptrBuffer.value === null) return "";
+  return bufferToHexadecimal(ptrBuffer.value);
 });
 
 const title = computed(() => {
-  return `Value \`${bufferAsString.value}\` (${formatTypeSize(
-    props.value.type
-  )}) at ${formatAddress(props.value.address)}`;
+  return `String pointer pointing to \`${ptrAsHexadecimal.value}\``;
 });
 
 watch(
   () => [props.value, resolver.value],
-  () => loadData(),
+  () => loadPointerContents(),
   { immediate: true }
 );
 </script>
 
 <template>
-  <div class="scalar" @click="toggleDisplayMode" v-tippy="title">
-    <template v-if="buffer !== null">
+  <div class="wrapper" @click="toggleDisplayMode" v-tippy="title">
+    <template v-if="ptrBuffer !== null">
       <code class="string" v-if="displayMode === DisplayMode.String">
-        {{ bufferAsString }}
+        string
       </code>
-      <ByteArray v-else :buffer="buffer"></ByteArray>
+      <div v-else>{{ ptrAsHexadecimal }}</div>
     </template>
   </div>
 </template>
 
 <style scoped lang="scss">
-.scalar {
-  display: flex;
-  justify-content: end;
-  padding: 0px 5px;
-  font-family: monospace;
-  font-size: 1.2em;
-
-  &:hover {
-    cursor: pointer;
-  }
-}
-
-.string {
-  padding: 1px 0;
+.wrapper {
+  cursor: pointer;
 }
 </style>
