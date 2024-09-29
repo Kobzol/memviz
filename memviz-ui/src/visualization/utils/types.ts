@@ -1,4 +1,4 @@
-import type { TyBool, TyFloat, TyInt, Type, TyPtr } from "process-def";
+import type { TyBool, TyFloat, TyInt, TyPtr, Type } from "process-def";
 
 export type TyScalar = TyBool | TyInt | TyFloat;
 

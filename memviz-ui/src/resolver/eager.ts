@@ -13,8 +13,8 @@ import {
 import type { Place } from "process-def/src";
 import { MemoryMap } from "../memory-map";
 import { assert, addressToStr, strToAddress } from "../utils";
-import type { ProcessResolver } from "./resolver";
 import type { TyChar } from "../visualization/utils/types";
+import type { ProcessResolver } from "./resolver";
 
 export interface FullProcessState extends ProcessState {
   stackTrace: FullStackTrace;

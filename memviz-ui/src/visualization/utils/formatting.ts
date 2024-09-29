@@ -1,6 +1,6 @@
 import type { Address, Type } from "process-def";
 import { assert } from "../../utils";
-import { isCharType, type TyScalar } from "./types";
+import { type TyScalar, isCharType } from "./types";
 
 export interface Value<T extends Type> {
   type: T;
