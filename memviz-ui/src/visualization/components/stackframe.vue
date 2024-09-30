@@ -7,6 +7,9 @@ import { appState } from "../store";
 import NamedPlace from "./namedplace.vue";
 import { formatLocation } from "../utils/formatting";
 import TooltipContributor from "./tooltip/tooltip-contributor.vue";
+import PtrTarget from "./ptrtarget.vue";
+import { AddressRegion, EMPTY_REGION } from "../pointers/region";
+import { Path } from "../pointers/path";
 
 const props = defineProps<{
   frame: StackFrame;
@@ -57,6 +60,38 @@ const tooltip = computed(() => {
 });
 const isTopFrame = computed(() => props.frame.index === 0);
 
+// Compute the memory region of the stack frame's parameters and locals.
+// TODO: preload the address region even without loading places.
+const region = computed((): AddressRegion => {
+  if (places.value === null || places.value.length === 0) {
+    return EMPTY_REGION;
+  }
+  const placesByAddress = [...places.value]
+    .filter((p) => p.address !== null)
+    .sort((a, b) => {
+      const addrA = strToAddress(a.address!);
+      const addrB = strToAddress(b.address!);
+      if (addrA < addrB) return -1;
+      if (addrA > addrB) return 1;
+      return 0;
+    });
+  if (placesByAddress.length === 0) {
+    return EMPTY_REGION;
+  }
+
+  const startAddress = strToAddress(placesByAddress[0].address!);
+  const lastPlace = placesByAddress[placesByAddress.length - 1];
+  const end = strToAddress(lastPlace.address!) + BigInt(lastPlace.type.size);
+  const size = end - startAddress;
+  return {
+    address: startAddress,
+    size: Number(size),
+  };
+});
+const path = computed(() => {
+  return Path.stackFrame(props.frame.index);
+});
+
 watch(
   () => [props.frame, resolver],
   () => {
@@ -78,27 +113,29 @@ watch(
 
 <template>
   <div class="wrapper">
-    <TooltipContributor :tooltip="tooltip">
-      <div
-        :class="{ header: true, 'top-frame': isTopFrame }"
-        @click="toggleExpanded"
-      >
-        <div class="name">{{ props.frame.name }}</div>
-        <div>{{ location }}</div>
+    <PtrTarget :region="region" :path="path">
+      <TooltipContributor :tooltip="tooltip">
+        <div
+          :class="{ header: true, 'top-frame': isTopFrame }"
+          @click="toggleExpanded"
+        >
+          <div class="name">{{ props.frame.name }}</div>
+          <div>{{ location }}</div>
+        </div>
+      </TooltipContributor>
+      <!-- TODO: v-show should be used instead of v-if to avoid destroying child state -->
+      <div v-if="expanded" class="inner">
+        <div v-if="places === null">Loading...</div>
+        <div v-if="places !== null">
+          <NamedPlace
+            class="place"
+            v-for="place in places"
+            :key="place.name"
+            :place="place"
+          />
+        </div>
       </div>
-    </TooltipContributor>
-    <!-- TODO: v-show should be used instead of v-if to avoid destroying child state -->
-    <div v-if="expanded" class="inner">
-      <div v-if="places === null">Loading...</div>
-      <div v-if="places !== null">
-        <NamedPlace
-          class="place"
-          v-for="place in places"
-          :key="place.name"
-          :place="place"
-        />
-      </div>
-    </div>
+    </PtrTarget>
   </div>
 </template>
 

@@ -1,9 +1,11 @@
 import type { Address } from "process-def";
 import BTree from "sorted-btree";
 import { type ShallowRef, triggerRef } from "vue";
+import type { Path } from "./path";
 
 interface ComponentWithAddress {
   size: number;
+  path: Path;
   element: HTMLElement;
 }
 
@@ -11,15 +13,15 @@ export type ComponentUnsubscribeFn = () => void;
 
 // Maps addresses to components
 // This component is only shallowly reactive, to avoid unnecessary overhead
-// We mark its updates explicitly with a shallow ref parameter to `addComponent`
+// We mark its updates explicitly with a shallow ref parameter that is
+// passed to `addComponent`
 export class ComponentMap {
   private map: BTree<Address, Map<number, ComponentWithAddress>> = new BTree();
   private lastId = 0;
 
   addComponent(
     address: Address,
-    size: number,
-    element: HTMLElement,
+    component: ComponentWithAddress,
     ref: ShallowRef<ComponentMap>,
   ): ComponentUnsubscribeFn {
     const id = this.lastId;
@@ -30,10 +32,7 @@ export class ComponentMap {
       entry = new Map();
       this.map.set(address, entry);
     }
-    entry.set(id, {
-      size,
-      element,
-    });
+    entry.set(id, component);
 
     triggerRef(ref);
 

@@ -16,11 +16,20 @@ import Scalar from "./scalar.vue";
 import StringPointer from "./string/stringpointer.vue";
 import PtrTarget from "../ptrtarget.vue";
 import CharArray from "./string/chararray.vue";
+import { AddressRegion } from "../../pointers/region";
+import { computed } from "vue";
 
 const props = defineProps<{
   value: Value<Type>;
   path: Path;
 }>();
+
+const region = computed((): AddressRegion => {
+  return {
+    address: props.value.address,
+    size: props.value.type.size,
+  };
+});
 
 function isScalar(value: Value<Type>): value is Value<TyScalar> {
   return isScalarType(value.type);
@@ -46,7 +55,7 @@ function isCharArray(value: Value<Type>): value is Value<TyCharArray> {
 </script>
 
 <template>
-  <PtrTarget :value="value">
+  <PtrTarget :region="region" :path="path">
     <div class="value">
       <div v-if="value.address === null">&lt;missing address&gt;</div>
       <Scalar v-else-if="isScalar(value)" :path="path" :value="value"></Scalar>

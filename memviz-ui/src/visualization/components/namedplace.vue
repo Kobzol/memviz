@@ -46,7 +46,7 @@ const tooltip = computed(() => {
   return title;
 });
 const path = computed((): Path => {
-  return Path.rootStackFrame(props.place.name);
+  return Path.stackFramePlace(props.place.name);
 });
 </script>
 

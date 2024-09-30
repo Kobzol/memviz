@@ -1,7 +1,10 @@
 // Represents an "access point" to some value from a root (global scope/stack frame/heap)
 export class Path {
-  static rootStackFrame(name: string): Path {
-    return new Path([stackPlaceComponent(name)]);
+  static stackFrame(index: number): Path {
+    return new Path([stackFrameComponent(index)]);
+  }
+  static stackFramePlace(name: string): Path {
+    return new Path([stackFramePlaceComponent(name)]);
   }
 
   private readonly components: ReadonlyArray<Component> = [];
@@ -25,8 +28,11 @@ export class Path {
   }
 }
 
-function stackPlaceComponent(name: string): Component {
-  return `s-${name}`;
+function stackFrameComponent(index: number): Component {
+  return `s-${index}`;
+}
+function stackFramePlaceComponent(name: string): Component {
+  return `p-${name}`;
 }
 
 function arrayIndexComponent(index: number): Component {

@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { appState, tooltipStack } from "./store";
+import { computed, watch } from "vue";
+import { appState, componentMap, tooltipStack } from "./store";
 import StackFrameComponent from "./components/stackframe.vue";
 import TooltipContent from "./components/tooltip/tooltip-content.vue";
 
 const state = computed(() => appState.value.processState);
+watch(componentMap, () => {
+  componentMap.value.dump();
+});
 </script>
 
 <template>
