@@ -2,22 +2,25 @@
 import { type Ref, computed, shallowRef, watch } from "vue";
 import { appState } from "../../../store";
 import { Address } from "process-def";
-import { loadCString } from "../../../utils/string";
+import { CStringLoadResult, loadCString } from "../../../utils/string";
 
 const props = defineProps<{
   address: Address;
 }>();
 
+const MAX_DISPLAY = 100;
+
 async function loadData() {
-  stringBuffer.value = await loadCString(resolver.value, props.address);
+  const result = await loadCString(resolver.value, props.address, MAX_DISPLAY);
+  loadedString.value = result;
 }
 
 const resolver = computed(() => appState.value.resolver);
 
-const stringBuffer: Ref<ArrayBuffer | null> = shallowRef(null);
+const loadedString: Ref<CStringLoadResult | null> = shallowRef(null);
 const stringAsText = computed(() => {
-  if (stringBuffer.value === null) return null;
-  return new TextDecoder().decode(stringBuffer.value);
+  if (loadedString.value === null) return null;
+  return new TextDecoder().decode(loadedString.value.buffer);
 });
 const stringFormatted = computed(() => {
   if (stringAsText.value === null) return "";
@@ -32,7 +35,16 @@ watch(
 </script>
 
 <template>
-  <div>
-    <code v-if="stringBuffer !== null">{{ stringFormatted }}</code>
+  <div class="string">
+    <code v-if="loadedString !== null">
+      {{ stringFormatted }}
+    </code>
+    <template v-if="loadedString?.hasMore">…</template>
   </div>
 </template>
+
+<style lang="scss" scoped>
+.string {
+  word-break: break-all;
+}
+</style>

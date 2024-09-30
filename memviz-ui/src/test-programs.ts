@@ -61,8 +61,8 @@ export function buildComplex(): ProcessBuilder {
   const builder = new ProcessBuilder();
   builder.startFrame("main");
   const p0 = builder
-    .place("data", typeArray(typeChar(), 6), PlaceKind.Parameter)
-    .setCString("Hello");
+    .place("data", typeArray(typeChar(), 101), PlaceKind.Parameter)
+    .setCString("Hello".repeat(20));
   builder.place("ptr", typePtr(typeChar())).setPtr(p0.address);
   builder.place("p0", typeUint32(), PlaceKind.Parameter).setUint32(42);
   const p1 = builder.place("p1", typePtr(typeUint32()));
