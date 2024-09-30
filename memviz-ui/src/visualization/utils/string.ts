@@ -3,6 +3,7 @@ import type { ProcessResolver } from "../../resolver/resolver";
 import { addressToStr } from "../../utils";
 
 // Load a C string from the specified address. Tries to load until it encounters a zero.
+// TODO: add maximum loaded count and handle load errors
 export async function loadCString(
   resolver: ProcessResolver,
   address: Address,
