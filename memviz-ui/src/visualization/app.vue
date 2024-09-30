@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { appState } from "./store";
+import { appState, tooltipStack } from "./store";
 import StackFrameComponent from "./components/stackframe.vue";
+import TooltipContent from "./components/tooltip/tooltip-content.vue";
 
 const state = computed(() => appState.value.processState);
 </script>
 
 <template>
+  <TooltipContent :tooltips="tooltipStack" />
   <div>
     <StackFrameComponent
       v-for="frame in state.stackTrace.frames.slice().reverse()"

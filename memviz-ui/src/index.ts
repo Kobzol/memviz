@@ -2,7 +2,7 @@ import type { WebviewApi } from "vscode-webview";
 import type { ExtensionToMemvizMsg } from "./messages";
 import { CachingResolver } from "./resolver/cache";
 import { VsCodeResolver } from "./resolver/vscode";
-import { buildString } from "./test-programs";
+import { buildArray } from "./test-programs";
 import { Memviz } from "./visualization";
 
 export type {
@@ -48,7 +48,7 @@ async function runMemVizTest() {
   const root = document.getElementById("app")!;
   const memviz = new Memviz(root);
 
-  const builder = buildString();
+  const builder = buildArray();
 
   const [state, resolver] = builder.build();
   state.memory.dump();

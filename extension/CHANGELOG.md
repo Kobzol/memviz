@@ -5,6 +5,7 @@
 - Add text visualization of string pointers and char arrays.
 - Add a configuration panel to the `Run & Debug` activity view.
 - Show a notification when an error occurs.
+- Improve rendering of (hierarchical) tooltips.
 
 ## 0.1.3
 

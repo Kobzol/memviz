@@ -13,6 +13,7 @@ import { TyStringPtr } from "../../../utils/types";
 import { Address } from "process-def";
 import String from "./string.vue";
 import Pointer from "../pointer.vue";
+import TooltipContributor from "../../tooltip/tooltip-contributor.vue";
 
 const props = defineProps<{
   value: Value<TyStringPtr>;
@@ -57,7 +58,7 @@ const ptrAsAddress = computed((): Address | null => {
   return bufferAsBigInt(ptrBuffer.value, props.value.type.size);
 });
 
-const title = computed(() => {
+const tooltip = computed(() => {
   return `String pointer pointing to \`${ptrFormatted.value}\``;
 });
 
@@ -69,15 +70,17 @@ watch(
 </script>
 
 <template>
-  <div class="wrapper" @click="toggleDisplayMode" v-tippy="title">
-    <template v-if="ptrBuffer !== null">
-      <String
-        v-if="displayMode === DisplayMode.String && ptrAsAddress !== null"
-        :address="ptrAsAddress"
-      />
-      <Pointer v-else :value="value" :path="path" />
-    </template>
-  </div>
+  <TooltipContributor :tooltip="tooltip">
+    <div class="wrapper" @click="toggleDisplayMode">
+      <template v-if="ptrBuffer !== null">
+        <String
+          v-if="displayMode === DisplayMode.String && ptrAsAddress !== null"
+          :address="ptrAsAddress"
+        />
+        <Pointer v-else :value="value" :path="path" />
+      </template>
+    </div>
+  </TooltipContributor>
 </template>
 
 <style scoped lang="scss">

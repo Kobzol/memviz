@@ -5,8 +5,8 @@ import type { Ref } from "vue";
 import { addressToStr, strToAddress } from "../../utils";
 import { appState } from "../store";
 import NamedPlace from "./namedplace.vue";
-import PtrTarget from "./ptrtarget.vue";
 import { formatLocation } from "../utils/formatting";
+import TooltipContributor from "./tooltip/tooltip-contributor.vue";
 
 const props = defineProps<{
   frame: StackFrame;
@@ -52,7 +52,7 @@ const places: Ref<Place[] | null> = ref(null);
 const location = computed(() =>
   formatLocation(props.frame.file, props.frame.line)
 );
-const title = computed(() => {
+const tooltip = computed(() => {
   return `Stack frame of function <b>${props.frame.name}</b> located at <b>${location.value}</b>`;
 });
 const isTopFrame = computed(() => props.frame.index === 0);
@@ -78,14 +78,15 @@ watch(
 
 <template>
   <div class="wrapper">
-    <div
-      :class="{ header: true, 'top-frame': isTopFrame }"
-      v-tippy="title"
-      @click="toggleExpanded"
-    >
-      <div class="name">{{ props.frame.name }}</div>
-      <div>{{ location }}</div>
-    </div>
+    <TooltipContributor :tooltip="tooltip">
+      <div
+        :class="{ header: true, 'top-frame': isTopFrame }"
+        @click="toggleExpanded"
+      >
+        <div class="name">{{ props.frame.name }}</div>
+        <div>{{ location }}</div>
+      </div>
+    </TooltipContributor>
     <!-- TODO: v-show should be used instead of v-if to avoid destroying child state -->
     <div v-if="expanded" class="inner">
       <div v-if="places === null">Loading...</div>

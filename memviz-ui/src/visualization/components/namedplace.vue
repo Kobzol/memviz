@@ -5,6 +5,7 @@ import { strToAddress } from "../../utils";
 import { formatTypeSize, type Value } from "../utils/formatting";
 import ValueComponent from "./value/value.vue";
 import { Path } from "../pointers/path";
+import TooltipContributor from "./tooltip/tooltip-contributor.vue";
 
 const props = defineProps<{
   place: Place;
@@ -25,7 +26,7 @@ const value = computed((): Value<Type> => {
 const label = computed(() => {
   return `${props.place.type.name} ${props.place.name}`;
 });
-const title = computed(() => {
+const tooltip = computed(() => {
   const type = props.place.type;
   let title = "";
   if (
@@ -51,15 +52,16 @@ const path = computed((): Path => {
 
 <template>
   <div class="place">
-    <code
-      :class="{
-        decl: true,
-        uninit: !place.initialized,
-        param: place.kind === PlaceKind.Parameter,
-      }"
-      v-tippy="title"
-      >{{ label }}</code
-    >
+    <TooltipContributor :tooltip="tooltip">
+      <code
+        :class="{
+          decl: true,
+          uninit: !place.initialized,
+          param: place.kind === PlaceKind.Parameter,
+        }"
+        >{{ label }}</code
+      >
+    </TooltipContributor>
     <ValueComponent v-if="place.initialized" :value="value" :path="path" />
   </div>
 </template>
