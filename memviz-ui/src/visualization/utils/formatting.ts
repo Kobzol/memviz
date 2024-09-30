@@ -2,11 +2,6 @@ import type { Address, Type } from "process-def";
 import { assert } from "../../utils";
 import { type TyScalar, isCharType } from "./types";
 
-export interface Value<T extends Type> {
-  type: T;
-  address: Address | null;
-}
-
 const FORMATTERS: { [key: string]: (view: DataView) => string } = {
   i1: (view: DataView) => view.getInt8(0).toString(),
   i2: (view: DataView) => view.getInt16(0, true).toString(),
@@ -46,6 +41,9 @@ export function scalarAsString(buffer: ArrayBuffer, type: TyScalar): string {
 export function formatAddress(address: Address | null): string {
   if (address === null) {
     return "<unknown address>";
+  }
+  if (address === BigInt(0)) {
+    return "NULL";
   }
   const formatted = address.toString(16).toUpperCase();
   return `0x${formatted.padStart(16, "0")}`;

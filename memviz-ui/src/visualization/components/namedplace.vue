@@ -2,13 +2,15 @@
 import { PlaceKind, type Address, type Place, type Type } from "process-def";
 import { computed } from "vue";
 import { strToAddress } from "../../utils";
-import { formatTypeSize, type Value } from "../utils/formatting";
+import { formatTypeSize } from "../utils/formatting";
 import ValueComponent from "./value/value.vue";
 import { Path } from "../pointers/path";
 import TooltipContributor from "./tooltip/tooltip-contributor.vue";
+import { Value } from "../utils/value";
 
 const props = defineProps<{
   place: Place;
+  path: Path;
 }>();
 
 const address = computed((): Address | null => {
@@ -45,23 +47,20 @@ const tooltip = computed(() => {
   title += `, declared at line ${props.place.line}`;
   return title;
 });
-const path = computed((): Path => {
-  return Path.rootStackFrame(props.place.name);
-});
 </script>
 
 <template>
   <div class="place">
-    <TooltipContributor :tooltip="tooltip">
-      <code
-        :class="{
-          decl: true,
-          uninit: !place.initialized,
-          param: place.kind === PlaceKind.Parameter,
-        }"
-        >{{ label }}</code
-      >
-    </TooltipContributor>
+    <code
+      :class="{
+        decl: true,
+        uninit: !place.initialized,
+        param: place.kind === PlaceKind.Parameter,
+      }"
+      ><TooltipContributor :tooltip="tooltip">{{
+        label
+      }}</TooltipContributor></code
+    >
     <ValueComponent v-if="place.initialized" :value="value" :path="path" />
   </div>
 </template>

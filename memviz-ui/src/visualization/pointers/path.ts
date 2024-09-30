@@ -1,7 +1,9 @@
+type Component = string;
+
 // Represents an "access point" to some value from a root (global scope/stack frame/heap)
 export class Path {
-  static rootStackFrame(name: string): Path {
-    return new Path([stackPlaceComponent(name)]);
+  static stackFrame(index: number): Path {
+    return new Path([stackFrameComponent(index)]);
   }
 
   private readonly components: ReadonlyArray<Component> = [];
@@ -10,27 +12,44 @@ export class Path {
     this.components = [...components];
   }
 
+  makeStackFramePlace(name: string): Path {
+    return this.with(stackFramePlaceComponent(name));
+  }
+
   makeArrayIndex(index: number): Path {
-    const components = this.clone();
-    components.push(arrayIndexComponent(index));
-    return new Path(components);
+    return this.with(arrayIndexComponent(index));
+  }
+
+  makeByteElement(index: number): Path {
+    return this.with(byteElementComponent(index));
   }
 
   length(): number {
     return this.components.length;
   }
 
-  private clone(): Component[] {
-    return [...this.components];
+  format(): string {
+    return this.components.join("/");
+  }
+
+  private with(component: Component): Path {
+    const components = [...this.components];
+    components.push(component);
+    return new Path(components);
   }
 }
 
-function stackPlaceComponent(name: string): Component {
-  return `s-${name}`;
+function stackFrameComponent(index: number): Component {
+  return `s-${index}`;
+}
+function stackFramePlaceComponent(name: string): Component {
+  return `p-${name}`;
 }
 
 function arrayIndexComponent(index: number): Component {
   return `i-${index}`;
 }
 
-type Component = string;
+function byteElementComponent(index: number): Component {
+  return `b-${index}`;
+}

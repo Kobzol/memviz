@@ -35,22 +35,15 @@ export function buildArray(): ProcessBuilder {
 
 export function buildPointers(): ProcessBuilder {
   const builder = new ProcessBuilder();
-  builder.startFrame("foo");
-  builder.place("p0", typeUint32(), PlaceKind.Parameter).setUint32(42);
   builder.startFrame("main");
-  builder.place("p0", typeUint32(), PlaceKind.Parameter).setUint32(42);
-  builder.place("p1", typeUint32(), PlaceKind.Parameter).setUint32(42);
   builder.place("a", typeUint32()).setUint32(42);
   const target = builder
     .place("b", typeUint32(), PlaceKind.Variable, false)
     .setUint32(43);
   builder.place("c", typeUint32()).setUint32(44);
   builder.place("d", typeUint32()).setUint32(45);
-  builder
-    .place("arr", typeArray(typeUint32(), 5))
-    .setArray((index) => makeUint32(index + 1), 5);
-  // builder.startFrame("foo");
-  // builder.place("pa", typePtr(typeUint32())).setPtr(target.address + BigInt(8));
+  builder.startFrame("foo");
+  builder.place("pa", typePtr(typeUint32())).setPtr(target.address + BigInt(8));
   return builder;
 }
 
@@ -61,5 +54,26 @@ export function buildString(): ProcessBuilder {
     .place("data", typeArray(typeChar(), 6), PlaceKind.Parameter)
     .setCString("Hello");
   builder.place("ptr", typePtr(typeChar())).setPtr(p0.address);
+  return builder;
+}
+
+export function buildComplex(): ProcessBuilder {
+  const builder = new ProcessBuilder();
+  builder.startFrame("main");
+  const p0 = builder
+    .place("data", typeArray(typeChar(), 6), PlaceKind.Parameter)
+    .setCString("Hello");
+  builder.place("ptr", typePtr(typeChar())).setPtr(p0.address);
+  builder.place("p0", typeUint32(), PlaceKind.Parameter).setUint32(42);
+  builder.place("p1", typeUint32(), PlaceKind.Parameter).setUint32(42);
+  builder.place("a", typeUint32()).setUint32(42);
+  const target = builder.place("b", typeUint32()).setUint32(43);
+  builder.startFrame("foo");
+  builder.place("pa", typePtr(typeUint32())).setPtr(target.address);
+  builder.place("pnull", typePtr(typeUint32())).setPtr(BigInt(0));
+  const size = 100;
+  builder
+    .place("a", typeArray(typeUint32(), size))
+    .setArray((index) => makeUint32(index + 1), size);
   return builder;
 }

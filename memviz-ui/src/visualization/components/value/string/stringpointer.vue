@@ -2,18 +2,15 @@
 import { type Ref, computed, ref, shallowRef, watch } from "vue";
 import { addressToStr } from "../../../../utils";
 import { appState } from "../../../store";
-import {
-  type Value,
-  bufferAsBigInt,
-  bufferToHexadecimal,
-  formatAddress,
-} from "../../../utils/formatting";
+import { bufferAsBigInt, formatAddress } from "../../../utils/formatting";
 import { Path } from "../../../pointers/path";
 import { TyStringPtr } from "../../../utils/types";
 import { Address } from "process-def";
 import String from "./string.vue";
 import Pointer from "../pointer.vue";
 import TooltipContributor from "../../tooltip/tooltip-contributor.vue";
+import { Value, valueToRegion } from "../../../utils/value";
+import PtrTarget from "../../ptrtarget.vue";
 
 const props = defineProps<{
   value: Value<TyStringPtr>;
@@ -73,10 +70,13 @@ watch(
   <TooltipContributor :tooltip="tooltip">
     <div class="wrapper" @click="toggleDisplayMode">
       <template v-if="ptrBuffer !== null">
-        <String
+        <PtrTarget
           v-if="displayMode === DisplayMode.String && ptrAsAddress !== null"
-          :address="ptrAsAddress"
-        />
+          :region="valueToRegion(value)"
+          :path="path"
+        >
+          <String :address="ptrAsAddress" />
+        </PtrTarget>
         <Pointer v-else :value="value" :path="path" />
       </template>
     </div>

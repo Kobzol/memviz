@@ -2,24 +2,22 @@
 import {
   type Ref,
   computed,
-  nextTick,
   onBeforeUnmount,
   onMounted,
-  ref,
+  onUpdated,
   shallowRef,
   watch,
-  watchEffect,
 } from "vue";
 import { addressToStr, assert } from "../../../utils";
-import { appState, componentMap, notifyComponentMap } from "../../store";
-import {
-  type Value,
-  bufferAsBigInt,
-  formatAddress,
-} from "../../utils/formatting";
+import { appState, componentMap } from "../../store";
+import { bufferAsBigInt, formatAddress } from "../../utils/formatting";
 import { Path } from "../../pointers/path";
 import { Address, TyPtr } from "process-def";
 import { LeaderLine } from "leader-line";
+import { withDisabledPanZoom } from "../../utils/panzoom";
+import { ComponentWithAddress } from "../../pointers/component-map";
+import { Value, valueToRegion } from "../../utils/value";
+import PtrTarget from "../ptrtarget.vue";
 
 const props = defineProps<{
   value: Value<TyPtr>;
@@ -35,9 +33,6 @@ async function loadData() {
     addressToStr(address),
     props.value.type.size
   );
-  await nextTick();
-  // notifyComponentMap();
-  tryAddArrow();
 }
 
 function formatAsString(): string {
@@ -46,33 +41,74 @@ function formatAsString(): string {
 }
 
 function tryAddArrow() {
-  // TODO: re-enable pointers
-  return;
-  // if (elementRef.value === null || targetAddress.value === null) {
-  //   tryRemoveArrow();
-  //   return;
-  // }
+  if (
+    elementRef.value === null ||
+    targetAddress.value === null ||
+    targetAddress.value === BigInt(0)
+  ) {
+    tryRemoveArrow();
+    return;
+  }
+  const target = selectTarget(
+    componentMap.value.getComponentsAt(targetAddress.value)
+  );
+  if (target === null) {
+    tryRemoveArrow();
+    return;
+  }
+  // console.log(
+  //   targetAddress.value,
+  //   target.address,
+  //   target.element,
+  //   target.element.getBoundingClientRect(),
+  //   target.path.format()
+  // );
+  if (arrow.value !== null) {
+    tryRemoveArrow();
+  }
 
-  // const targets = componentMap.value.getComponentsAt(targetAddress.value);
-  // if (targets.length === 0) {
-  //   tryRemoveArrow();
-  //   return;
-  // }
+  //TODO: Mutation observer to dynamically react to target location changes?
+  // Hack: allow LeaderLine to calculate positions correctly with panzoom
+  withDisabledPanZoom(() => {
+    const source = elementRef.value!;
+    arrow.value = new LeaderLine(
+      LeaderLine.pointAnchor(source, {
+        x: source.clientWidth + 10,
+        y: "50%",
+      }),
+      LeaderLine.pointAnchor(target.element, { x: -10, y: "50%" }),
+      {
+        path: "grid",
+        startSocket: "right",
+        endSocket: "left",
+        startPlug: "disc",
+        startPlugSize: 1.25,
+        // startPlugColor: "black",
+        startPlugOutline: true,
+        startPlugOutlineSize: 2,
+        startPlugOutlineColor: "black",
+        endPlug: "arrow2",
+        endPlugSize: 1.25,
+        // endPlugColor: "black",
+        color: "coral",
+        size: 4,
+        // dash: { len: 4, gap: 4, animation: true },
+        dropShadow: { dx: 1, dy: 1, blur: 2 },
+      }
+    );
+  });
+}
 
-  // // TODO: select by deepest path
-  // const target = targets[0];
-  // if (arrow.value !== null) {
-  //   tryRemoveArrow();
-  // }
-
-  // // Hack: allow LeaderLine to calculate positions correctly
-  // const transform = document.body.style.removeProperty("transform");
-  // arrow.value = new LeaderLine(elementRef.value, target.element, {
-  //   path: "straight",
-  //   startSocket: "right",
-  //   endSocket: "left",
-  // });
-  // document.body.style.setProperty("transform", transform);
+function selectTarget(
+  components: ComponentWithAddress[]
+): ComponentWithAddress | null {
+  let target: ComponentWithAddress | null = null;
+  for (const component of components) {
+    if (target === null || target.path.length() < component.path.length()) {
+      target = component;
+    }
+  }
+  return target;
 }
 
 function tryRemoveArrow() {
@@ -103,17 +139,25 @@ watch(
 watch(componentMap, () => {
   tryAddArrow();
 });
-onMounted(() => tryAddArrow());
 
+onMounted(() => {
+  tryAddArrow();
+});
+onUpdated(() => {
+  tryAddArrow();
+});
 onBeforeUnmount(() => tryRemoveArrow());
+// TODO: tooltip (pointing to ...)
 </script>
 
 <template>
   <div class="ptr" :ref="(el: any) => elementRef = el">
     <template v-if="buffer !== null">
-      <span class="string">
-        {{ formatAsString() }}
-      </span>
+      <PtrTarget :region="valueToRegion(value)" :path="path">
+        <span class="string">
+          {{ formatAsString() }}
+        </span>
+      </PtrTarget>
     </template>
   </div>
 </template>

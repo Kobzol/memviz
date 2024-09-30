@@ -2,11 +2,13 @@
 import { type Ref, computed, ref, watch } from "vue";
 import { addressToStr, assert } from "../../../../utils";
 import { appState } from "../../../store";
-import { pluralize, type Value } from "../../../utils/formatting";
+import { pluralize } from "../../../utils/formatting";
 import { TyArray, Type } from "process-def";
 import ValueComponent from "../value.vue";
 import { Path } from "../../../pointers/path";
 import TooltipContributor from "../../tooltip/tooltip-contributor.vue";
+import PtrTarget from "../../ptrtarget.vue";
+import { Value, valueToRegion } from "../../../utils/value";
 
 const props = defineProps<{
   value: Value<TyArray>;
@@ -122,9 +124,18 @@ watch(
           {{ precedingCount }} more
         </TooltipContributor>
       </div>
-      <div class="element" v-for="(_, index) in activeCount">
-        <ValueComponent :value="createValue(index)" :path="createPath(index)" />
-      </div>
+      <PtrTarget
+        class="element-wrapper"
+        :region="valueToRegion(value)"
+        :path="path"
+      >
+        <div class="element" v-for="(_, index) in activeCount">
+          <ValueComponent
+            :value="createValue(index)"
+            :path="createPath(index)"
+          />
+        </div>
+      </PtrTarget>
       <div class="offset" v-if="followingCount > 0" @click="moveNext">
         <TooltipContributor :tooltip="nextTitle()">
           {{ followingCount }} more
@@ -143,8 +154,15 @@ watch(
   padding: 0px 5px;
 }
 
+.element-wrapper {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
 .element {
   min-width: 40px;
+  padding: 1px;
   border: 1px solid #000000;
   display: flex;
   justify-content: center;
