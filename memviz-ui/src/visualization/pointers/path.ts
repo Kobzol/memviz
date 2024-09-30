@@ -1,3 +1,5 @@
+type Component = string;
+
 // Represents an "access point" to some value from a root (global scope/stack frame/heap)
 export class Path {
   static stackFrame(index: number): Path {
@@ -14,17 +16,17 @@ export class Path {
   }
 
   makeArrayIndex(index: number): Path {
-    const components = this.clone();
-    components.push(arrayIndexComponent(index));
-    return new Path(components);
+    return this.with(arrayIndexComponent(index));
   }
 
   length(): number {
     return this.components.length;
   }
 
-  private clone(): Component[] {
-    return [...this.components];
+  private with(component: Component): Path {
+    const components = [...this.components];
+    components.push(component);
+    return new Path(components);
   }
 }
 
@@ -38,5 +40,3 @@ function stackFramePlaceComponent(name: string): Component {
 function arrayIndexComponent(index: number): Component {
   return `i-${index}`;
 }
-
-type Component = string;

@@ -1,6 +1,7 @@
+import IntervalTree, { type NumericTuple } from "@flatten-js/interval-tree";
 import type { Address } from "process-def";
-import BTree from "sorted-btree";
 import { type ShallowRef, triggerRef } from "vue";
+import { assert } from "../../utils";
 import type { Path } from "./path";
 
 interface ComponentWithAddress {
@@ -11,84 +12,69 @@ interface ComponentWithAddress {
 
 export type ComponentUnsubscribeFn = () => void;
 
+type Interval = [bigint, bigint];
+
 // Maps addresses to components
 // This component is only shallowly reactive, to avoid unnecessary overhead
 // We mark its updates explicitly with a shallow ref parameter that is
 // passed to `addComponent`
 export class ComponentMap {
-  private map: BTree<Address, Map<number, ComponentWithAddress>> = new BTree();
-  private lastId = 0;
+  private tree: IntervalTree<ComponentWithAddress> = new IntervalTree();
 
   addComponent(
     address: Address,
     component: ComponentWithAddress,
     ref: ShallowRef<ComponentMap>,
   ): ComponentUnsubscribeFn {
-    const id = this.lastId;
-    this.lastId++;
+    if (component.size === 0) return () => {};
 
-    let entry = this.map.get(address);
-    if (entry === undefined) {
-      entry = new Map();
-      this.map.set(address, entry);
-    }
-    entry.set(id, component);
+    // Make sure that we have our own object
+    const entry = { ...component };
+    const start = address;
+    // End is inclusive
+    const end = start + BigInt(component.size - 1);
+
+    const interval: Interval = [start, end];
+    this.tree.insert(interval as any as NumericTuple, entry);
 
     triggerRef(ref);
 
-    return () => this.removeComponent(address, id, ref);
+    return () => this.removeComponent(interval, entry, ref);
   }
 
   count(): number {
-    let count = 0;
-    for (const entry of this.map.entries()) {
-      count += entry[1].size;
-    }
-    return count;
+    return this.tree.size;
   }
 
   getComponentsAt(address: Address): ComponentWithAddress[] {
-    const components: ComponentWithAddress[] = [];
-
     function matchesAddress(addr: Address, component: ComponentWithAddress) {
       return addr <= address && address < addr + BigInt(component.size);
     }
 
-    // TODO: optimize, with a hierarchical tree?
-    // https://www.npmjs.com/package/js-hierarchy
-    let current = this.map.getPairOrNextHigher(address);
-    while (current !== undefined) {
-      const [addr, submap] = current;
-      submap.forEach((component) => {
-        if (matchesAddress(addr, component)) {
-          components.push(component);
-        }
-      });
-
-      current = this.map.nextLowerPair(addr);
+    const components = [
+      ...this.tree.search([address, address] as any as NumericTuple),
+    ];
+    for (const item of components) {
+      assert(matchesAddress(address, item), "interval tree logic is wrong");
     }
 
     return components;
   }
 
   dump() {
-    for (const entry of this.map.entries()) {
-      console.log(entry[0], entry[1]);
-    }
+    console.log(this.tree.items);
   }
 
   private removeComponent(
-    address: Address,
-    id: number,
+    interval: Interval,
+    entry: ComponentWithAddress,
     ref: ShallowRef<ComponentMap>,
   ) {
-    const entry = this.map.get(address);
-    if (entry !== undefined) {
-      entry.delete(id);
-      if (entry.size === 0) {
-        this.map.delete(address);
-      }
-      triggerRef(ref);
-    }
+    const existing = this.tree.remove(interval as any as NumericTuple, entry);
+    assert(
+      existing !== undefined,
+      `interval ${interval} not found in interval tree`,
+    );
+    triggerRef(ref);
   }
 }
