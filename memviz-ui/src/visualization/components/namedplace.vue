@@ -52,16 +52,16 @@ const path = computed((): Path => {
 
 <template>
   <div class="place">
-    <TooltipContributor :tooltip="tooltip">
-      <code
-        :class="{
-          decl: true,
-          uninit: !place.initialized,
-          param: place.kind === PlaceKind.Parameter,
-        }"
-        >{{ label }}</code
-      >
-    </TooltipContributor>
+    <code
+      :class="{
+        decl: true,
+        uninit: !place.initialized,
+        param: place.kind === PlaceKind.Parameter,
+      }"
+      ><TooltipContributor :tooltip="tooltip">{{
+        label
+      }}</TooltipContributor></code
+    >
     <ValueComponent v-if="place.initialized" :value="value" :path="path" />
   </div>
 </template>

@@ -112,8 +112,8 @@ watch(
 </script>
 
 <template>
-  <div class="wrapper">
-    <PtrTarget :region="region" :path="path">
+  <div>
+    <PtrTarget :region="region" :path="path" class="wrapper">
       <TooltipContributor :tooltip="tooltip">
         <div
           :class="{ header: true, 'top-frame': isTopFrame }"
