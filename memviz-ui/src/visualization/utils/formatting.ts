@@ -42,6 +42,9 @@ export function formatAddress(address: Address | null): string {
   if (address === null) {
     return "<unknown address>";
   }
+  if (address === BigInt(0)) {
+    return "NULL";
+  }
   const formatted = address.toString(16).toUpperCase();
   return `0x${formatted.padStart(16, "0")}`;
 }

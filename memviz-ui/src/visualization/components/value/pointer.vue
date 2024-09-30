@@ -41,7 +41,11 @@ function formatAsString(): string {
 }
 
 function tryAddArrow() {
-  if (elementRef.value === null || targetAddress.value === null) {
+  if (
+    elementRef.value === null ||
+    targetAddress.value === null ||
+    targetAddress.value === BigInt(0)
+  ) {
     tryRemoveArrow();
     return;
   }
@@ -122,6 +126,7 @@ onUpdated(() => {
   tryAddArrow();
 });
 onBeforeUnmount(() => tryRemoveArrow());
+// TODO: tooltip (pointing to ...)
 </script>
 
 <template>

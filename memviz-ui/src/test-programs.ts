@@ -70,6 +70,7 @@ export function buildComplex(): ProcessBuilder {
   const target = builder.place("b", typeUint32()).setUint32(43);
   builder.startFrame("foo");
   builder.place("pa", typePtr(typeUint32())).setPtr(target.address);
+  builder.place("pnull", typePtr(typeUint32())).setPtr(BigInt(0));
   const size = 100;
   builder
     .place("a", typeArray(typeUint32(), size))
