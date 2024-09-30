@@ -4,7 +4,8 @@ import { type ShallowRef, triggerRef } from "vue";
 import { assert } from "../../utils";
 import type { Path } from "./path";
 
-interface ComponentWithAddress {
+export interface ComponentWithAddress {
+  address: Address;
   size: number;
   path: Path;
   element: HTMLElement;
@@ -22,7 +23,6 @@ export class ComponentMap {
   private tree: IntervalTree<ComponentWithAddress> = new IntervalTree();
 
   addComponent(
-    address: Address,
     component: ComponentWithAddress,
     ref: ShallowRef<ComponentMap>,
   ): ComponentUnsubscribeFn {
@@ -30,7 +30,7 @@ export class ComponentMap {
 
     // Make sure that we have our own object
     const entry = { ...component };
-    const start = address;
+    const start = component.address;
     // End is inclusive
     const end = start + BigInt(component.size - 1);
 

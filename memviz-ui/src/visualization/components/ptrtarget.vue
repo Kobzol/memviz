@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, Ref, ref, watch } from "vue";
+import {
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  onUpdated,
+  Ref,
+  ref,
+  watch,
+} from "vue";
 import { componentMap } from "../store";
 import { assert } from "../../utils";
 import { ComponentUnsubscribeFn } from "../pointers/component-map";
@@ -13,7 +21,7 @@ const props = defineProps<{
 
 // Updates the HTML element of this PointerTarget in the component map,
 // at the specified address
-function updateComponentInMap() {
+async function updateComponentInMap() {
   assert(elementRef.value !== null, "component has not been mounted yet");
 
   removeComponentFromMap();
@@ -23,15 +31,21 @@ function updateComponentInMap() {
     return;
   }
 
-  unsubscribeFn.value = componentMap.value.addComponent(
-    address,
-    {
-      element: elementRef.value,
-      size: props.region.size,
-      path: props.path,
-    },
-    componentMap
-  );
+  // This is required to wait for browser relayout, to make sure
+  // that the element has the final layout before it is registered
+  window.requestAnimationFrame(() => {
+    if (elementRef.value !== null) {
+      unsubscribeFn.value = componentMap.value.addComponent(
+        {
+          address,
+          element: elementRef.value,
+          size: props.region.size,
+          path: props.path,
+        },
+        componentMap
+      );
+    }
+  });
 }
 
 function removeComponentFromMap() {
@@ -45,6 +59,7 @@ const elementRef = ref<HTMLElement | null>(null);
 const unsubscribeFn: Ref<ComponentUnsubscribeFn | null> = ref(null);
 
 onMounted(() => updateComponentInMap());
+onUpdated(() => updateComponentInMap());
 onBeforeUnmount(() => removeComponentFromMap());
 watch(
   () => props.region,

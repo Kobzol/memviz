@@ -9,6 +9,7 @@ import TooltipContributor from "./tooltip/tooltip-contributor.vue";
 
 const props = defineProps<{
   place: Place;
+  path: Path;
 }>();
 
 const address = computed((): Address | null => {
@@ -44,9 +45,6 @@ const tooltip = computed(() => {
   title += `, <b>${props.place.initialized ? "" : "not "}initialized</b>`;
   title += `, declared at line ${props.place.line}`;
   return title;
-});
-const path = computed((): Path => {
-  return Path.stackFramePlace(props.place.name);
 });
 </script>
 

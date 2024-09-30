@@ -49,7 +49,6 @@ async function maybeLoadPlaces() {
 }
 
 const resolver = computed(() => appState.value.resolver);
-const expanded = ref(props.frame.index === 0);
 const places: Ref<Place[] | null> = ref(null);
 
 const location = computed(() =>
@@ -59,6 +58,7 @@ const tooltip = computed(() => {
   return `Stack frame of function <b>${props.frame.name}</b> located at <b>${location.value}</b>`;
 });
 const isTopFrame = computed(() => props.frame.index === 0);
+const expanded = ref(true); //isTopFrame.value);
 
 // Compute the memory region of the stack frame's parameters and locals.
 // TODO: preload the address region even without loading places.
@@ -132,6 +132,7 @@ watch(
             v-for="place in places"
             :key="place.name"
             :place="place"
+            :path="path.makeStackFramePlace(place.name)"
           />
         </div>
       </div>

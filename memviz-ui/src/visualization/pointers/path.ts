@@ -5,14 +5,15 @@ export class Path {
   static stackFrame(index: number): Path {
     return new Path([stackFrameComponent(index)]);
   }
-  static stackFramePlace(name: string): Path {
-    return new Path([stackFramePlaceComponent(name)]);
-  }
 
   private readonly components: ReadonlyArray<Component> = [];
 
   constructor(components: Component[]) {
     this.components = [...components];
+  }
+
+  makeStackFramePlace(name: string): Path {
+    return this.with(stackFramePlaceComponent(name));
   }
 
   makeArrayIndex(index: number): Path {
@@ -21,6 +22,10 @@ export class Path {
 
   length(): number {
     return this.components.length;
+  }
+
+  format(): string {
+    return this.components.join("/");
   }
 
   private with(component: Component): Path {
