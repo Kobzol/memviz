@@ -3,28 +3,29 @@ import type { ProcessResolver } from "../../resolver/resolver";
 import { addressToStr } from "../../utils";
 
 // Load a C string from the specified address. Tries to load until it encounters a zero.
-// TODO: add maximum loaded count and handle load errors
 export async function loadCString(
   resolver: ProcessResolver,
   address: Address,
+  limit = 1000,
 ): Promise<ArrayBuffer> {
-  let buffer: ArrayBuffer | null = null;
+  let buffer: ArrayBuffer = new ArrayBuffer(0);
   const segmentSize = 100;
 
-  while (true) {
-    const segment = await resolver.readMemory(
-      addressToStr(address),
-      segmentSize,
-    );
-    const originalLength = buffer?.byteLength ?? 0;
-    const zeroByteIndex = findZero(segment);
-    if (buffer === null) {
-      buffer = segment;
-    } else {
-      buffer = mergeBuffers(buffer, segment);
+  while (buffer.byteLength < limit) {
+    let segment = await resolver.readMemory(addressToStr(address), segmentSize);
+    // Some error ocurred while loading the data
+    if (segment.byteLength === 0) {
+      break;
     }
+    address += BigInt(segment.byteLength);
+
+    const zeroByteIndex = findZero(segment);
     if (zeroByteIndex !== null) {
-      buffer = buffer.slice(0, originalLength + zeroByteIndex);
+      segment = segment.slice(0, zeroByteIndex);
+    }
+
+    buffer = mergeBuffers(buffer, segment);
+    if (zeroByteIndex !== null) {
       break;
     }
   }
