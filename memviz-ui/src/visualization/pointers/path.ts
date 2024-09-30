@@ -20,6 +20,10 @@ export class Path {
     return this.with(arrayIndexComponent(index));
   }
 
+  makeByteElement(index: number): Path {
+    return this.with(byteElementComponent(index));
+  }
+
   length(): number {
     return this.components.length;
   }
@@ -44,4 +48,8 @@ function stackFramePlaceComponent(name: string): Component {
 
 function arrayIndexComponent(index: number): Component {
   return `i-${index}`;
+}
+
+function byteElementComponent(index: number): Component {
+  return `b-${index}`;
 }

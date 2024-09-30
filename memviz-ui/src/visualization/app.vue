@@ -5,9 +5,16 @@ import StackFrameComponent from "./components/stackframe.vue";
 import TooltipContent from "./components/tooltip/tooltip-content.vue";
 
 const state = computed(() => appState.value.processState);
-watch(componentMap, () => {
-  componentMap.value.dump();
-});
+
+// Code for debugging pointer targets
+// watch(componentMap, () => {
+//   document.querySelectorAll(".ptr-target").forEach((el) => {
+//     el.classList.remove("ptr-target");
+//   });
+//   for (const component of componentMap.value.getAllComponents()) {
+//     component.element.classList.add("ptr-target");
+//   }
+// });
 </script>
 
 <template>
@@ -23,6 +30,10 @@ watch(componentMap, () => {
 
 <style lang="scss">
 @import "normalize.css";
+
+.ptr-target {
+  border: 2px solid red;
+}
 
 html {
   width: 100%;

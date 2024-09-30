@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { Value } from "../../utils/formatting";
 import { Type, TyArray, TyPtr } from "process-def";
 import { Path } from "../../pointers/path";
 import {
@@ -14,22 +13,13 @@ import Array from "./array/array.vue";
 import Pointer from "./pointer.vue";
 import Scalar from "./scalar.vue";
 import StringPointer from "./string/stringpointer.vue";
-import PtrTarget from "../ptrtarget.vue";
 import CharArray from "./string/chararray.vue";
-import { AddressRegion } from "../../pointers/region";
-import { computed } from "vue";
+import { Value } from "../../utils/value";
 
 const props = defineProps<{
   value: Value<Type>;
   path: Path;
 }>();
-
-const region = computed((): AddressRegion => {
-  return {
-    address: props.value.address,
-    size: props.value.type.size,
-  };
-});
 
 function isScalar(value: Value<Type>): value is Value<TyScalar> {
   return isScalarType(value.type);
@@ -55,23 +45,21 @@ function isCharArray(value: Value<Type>): value is Value<TyCharArray> {
 </script>
 
 <template>
-  <PtrTarget :region="region" :path="path">
-    <div class="value">
-      <div v-if="value.address === null">&lt;missing address&gt;</div>
-      <Scalar v-else-if="isScalar(value)" :path="path" :value="value"></Scalar>
-      <StringPointer
-        v-else-if="isStringPtr(value)"
-        :path="path"
-        :value="value"
-      ></StringPointer>
-      <CharArray
-        v-else-if="isCharArray(value)"
-        :path="path"
-        :value="value"
-      ></CharArray>
-      <Array v-else-if="isArray(value)" :path="path" :value="value"></Array>
-      <Pointer v-else-if="isPtr(value)" :path="path" :value="value"></Pointer>
-      <div v-else>&lt;value of type {{ value.type.name }}&gt;</div>
-    </div>
-  </PtrTarget>
+  <div>
+    <div v-if="value.address === null">&lt;missing address&gt;</div>
+    <Scalar v-else-if="isScalar(value)" :path="path" :value="value"></Scalar>
+    <StringPointer
+      v-else-if="isStringPtr(value)"
+      :path="path"
+      :value="value"
+    ></StringPointer>
+    <CharArray
+      v-else-if="isCharArray(value)"
+      :path="path"
+      :value="value"
+    ></CharArray>
+    <Array v-else-if="isArray(value)" :path="path" :value="value"></Array>
+    <Pointer v-else-if="isPtr(value)" :path="path" :value="value"></Pointer>
+    <div v-else>&lt;value of type {{ value.type.name }}&gt;</div>
+  </div>
 </template>

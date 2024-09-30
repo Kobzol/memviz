@@ -3,7 +3,6 @@ import { type Ref, computed, ref, shallowRef, watch } from "vue";
 import { addressToStr } from "../../../utils";
 import { appState } from "../../store";
 import {
-  type Value,
   formatAddress,
   formatTypeSize,
   scalarAsString,
@@ -12,6 +11,8 @@ import { Path } from "../../pointers/path";
 import ByteArray from "./bytearray.vue";
 import { TyScalar } from "../../utils/types";
 import TooltipContributor from "../tooltip/tooltip-contributor.vue";
+import PtrTarget from "../ptrtarget.vue";
+import { Value, valueToRegion } from "../../utils/value";
 
 const props = defineProps<{
   value: Value<TyScalar>;
@@ -33,8 +34,6 @@ async function loadData() {
     addressToStr(address),
     props.value.type.size
   );
-  // await nextTick();
-  // notifyComponentMap();
 }
 
 function toggleDisplayMode() {
@@ -71,10 +70,21 @@ watch(
   <TooltipContributor :tooltip="tooltip">
     <div class="scalar" @click="toggleDisplayMode">
       <template v-if="buffer !== null">
-        <code class="string" v-if="displayMode === DisplayMode.String">
-          {{ bufferAsString }}
-        </code>
-        <ByteArray v-else :buffer="buffer"></ByteArray>
+        <PtrTarget
+          v-if="displayMode === DisplayMode.String"
+          :path="path"
+          :region="valueToRegion(value)"
+        >
+          <code class="string">
+            {{ bufferAsString }}
+          </code>
+        </PtrTarget>
+        <ByteArray
+          v-else
+          :buffer="buffer"
+          :region="valueToRegion(value)"
+          :path="path"
+        ></ByteArray>
       </template>
     </div>
   </TooltipContributor>

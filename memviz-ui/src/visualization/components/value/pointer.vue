@@ -2,27 +2,22 @@
 import {
   type Ref,
   computed,
-  nextTick,
   onBeforeUnmount,
   onMounted,
   onUpdated,
-  ref,
   shallowRef,
   watch,
-  watchEffect,
 } from "vue";
 import { addressToStr, assert } from "../../../utils";
-import { appState, componentMap, notifyComponentMap } from "../../store";
-import {
-  type Value,
-  bufferAsBigInt,
-  formatAddress,
-} from "../../utils/formatting";
+import { appState, componentMap } from "../../store";
+import { bufferAsBigInt, formatAddress } from "../../utils/formatting";
 import { Path } from "../../pointers/path";
 import { Address, TyPtr } from "process-def";
 import { LeaderLine } from "leader-line";
 import { withDisabledPanZoom } from "../../utils/panzoom";
 import { ComponentWithAddress } from "../../pointers/component-map";
+import { Value, valueToRegion } from "../../utils/value";
+import PtrTarget from "../ptrtarget.vue";
 
 const props = defineProps<{
   value: Value<TyPtr>;
@@ -132,9 +127,11 @@ onBeforeUnmount(() => tryRemoveArrow());
 <template>
   <div class="ptr" :ref="(el: any) => elementRef = el">
     <template v-if="buffer !== null">
-      <span class="string">
-        {{ formatAsString() }}
-      </span>
+      <PtrTarget :region="valueToRegion(value)" :path="path">
+        <span class="string">
+          {{ formatAsString() }}
+        </span>
+      </PtrTarget>
     </template>
   </div>
 </template>

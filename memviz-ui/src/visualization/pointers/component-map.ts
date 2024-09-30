@@ -46,6 +46,10 @@ export class ComponentMap {
     return this.tree.size;
   }
 
+  getAllComponents(): ComponentWithAddress[] {
+    return this.tree.values;
+  }
+
   getComponentsAt(address: Address): ComponentWithAddress[] {
     function matchesAddress(addr: Address, component: ComponentWithAddress) {
       return addr <= address && address < addr + BigInt(component.size);

@@ -36,8 +36,6 @@ export function buildArray(): ProcessBuilder {
 export function buildPointers(): ProcessBuilder {
   const builder = new ProcessBuilder();
   builder.startFrame("main");
-  builder.place("p0", typeUint32(), PlaceKind.Parameter).setUint32(42);
-  builder.place("p1", typeUint32(), PlaceKind.Parameter).setUint32(42);
   builder.place("a", typeUint32()).setUint32(42);
   const target = builder
     .place("b", typeUint32(), PlaceKind.Variable, false)
@@ -56,5 +54,25 @@ export function buildString(): ProcessBuilder {
     .place("data", typeArray(typeChar(), 6), PlaceKind.Parameter)
     .setCString("Hello");
   builder.place("ptr", typePtr(typeChar())).setPtr(p0.address);
+  return builder;
+}
+
+export function buildComplex(): ProcessBuilder {
+  const builder = new ProcessBuilder();
+  builder.startFrame("main");
+  const p0 = builder
+    .place("data", typeArray(typeChar(), 6), PlaceKind.Parameter)
+    .setCString("Hello");
+  builder.place("ptr", typePtr(typeChar())).setPtr(p0.address);
+  builder.place("p0", typeUint32(), PlaceKind.Parameter).setUint32(42);
+  builder.place("p1", typeUint32(), PlaceKind.Parameter).setUint32(42);
+  builder.place("a", typeUint32()).setUint32(42);
+  const target = builder.place("b", typeUint32()).setUint32(43);
+  builder.startFrame("foo");
+  builder.place("pa", typePtr(typeUint32())).setPtr(target.address);
+  const size = 100;
+  builder
+    .place("a", typeArray(typeUint32(), size))
+    .setArray((index) => makeUint32(index + 1), size);
   return builder;
 }
