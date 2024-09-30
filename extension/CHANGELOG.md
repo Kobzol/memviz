@@ -2,6 +2,7 @@
 
 ## Dev
 
+- Add visualization of pointers using arrays.
 - Add text visualization of string pointers and char arrays.
 - Add a configuration panel to the `Run & Debug` activity view.
 - Show a notification when an error occurs.
@@ -15,4 +16,4 @@
 
 ## 0.0.1
 
-- Visualization of scalar (int, float, bool) stack variables
+- Visualization of scalar (int, float, bool) stack variables.
