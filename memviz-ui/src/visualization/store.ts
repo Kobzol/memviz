@@ -20,6 +20,14 @@ function createDefaultState(): AppState {
 
 export const appState: Ref<AppState> = ref(createDefaultState());
 
+export interface UIConfiguration {
+  visualizePointers: boolean;
+}
+
+export const uiConfiguration: Ref<UIConfiguration> = ref({
+  visualizePointers: true,
+});
+
 export const componentMap: ShallowRef<ComponentMap> = shallowRef(
   new ComponentMap(),
 );
