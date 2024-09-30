@@ -19,7 +19,7 @@ const state = computed(() => appState.value.processState);
 
 <template>
   <TooltipContent :tooltips="tooltipStack" />
-  <div>
+  <div class="address-space">
     <StackFrameComponent
       v-for="frame in state.stackTrace.frames.slice().reverse()"
       :key="frame.id"
@@ -50,5 +50,11 @@ body {
 code {
   color: #000000;
   background-color: #ffffff;
+}
+</style>
+
+<style lang="scss" scoped>
+.address-space {
+  padding: 40px;
 }
 </style>

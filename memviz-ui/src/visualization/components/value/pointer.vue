@@ -67,14 +67,35 @@ function tryAddArrow() {
     tryRemoveArrow();
   }
 
-  //TODO: Mutation observer?
-  // Hack: allow LeaderLine to calculate positions correctly
+  //TODO: Mutation observer to dynamically react to target location changes?
+  // Hack: allow LeaderLine to calculate positions correctly with panzoom
   withDisabledPanZoom(() => {
-    arrow.value = new LeaderLine(elementRef.value!, target.element, {
-      path: "straight",
-      startSocket: "right",
-      endSocket: "left",
-    });
+    const source = elementRef.value!;
+    arrow.value = new LeaderLine(
+      LeaderLine.pointAnchor(source, {
+        x: source.clientWidth + 10,
+        y: "50%",
+      }),
+      LeaderLine.pointAnchor(target.element, { x: -10, y: "50%" }),
+      {
+        path: "grid",
+        startSocket: "right",
+        endSocket: "left",
+        startPlug: "disc",
+        startPlugSize: 1.25,
+        // startPlugColor: "black",
+        startPlugOutline: true,
+        startPlugOutlineSize: 2,
+        startPlugOutlineColor: "black",
+        endPlug: "arrow2",
+        endPlugSize: 1.25,
+        // endPlugColor: "black",
+        color: "coral",
+        size: 4,
+        // dash: { len: 4, gap: 4, animation: true },
+        dropShadow: { dx: 1, dy: 1, blur: 2 },
+      }
+    );
   });
 }
 
