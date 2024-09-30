@@ -1,38 +1,53 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, Ref, ref, watch } from "vue";
 import { useTippy } from "vue-tippy";
+import { TooltipEntry } from "../../store";
 
 const props = defineProps<{
-  tooltips: string[];
+  tooltips: TooltipEntry[];
 }>();
 
-const { x, y } = useMousePosition();
-
-const { tippy } = useTippy(() => document.body, {
-  content: computed(() => `(${x.value},${y.value})`),
-  showOnCreate: true,
-  trigger: "manual",
-  // sticky: true,// slow
-  placement: "top",
-  hideOnClick: false,
-  arrow: `<svg style="color: black;width:20px;height:20px" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd"></path></svg>`,
-  getReferenceClientRect: function () {
-    return {
-      width: 0,
-      height: 0,
-      top: y.value,
-      right: x.value,
-      bottom: y.value,
-      left: x.value,
-    };
-  },
+const content = computed(() => {
+  return props.tooltips.map((v) => v.text).join("<br />");
 });
+
+interface Tippy {
+  destroy: () => void;
+}
+
+const tippy: Ref<Tippy | null> = ref(null);
+const targetElement = computed(() => {
+  if (props.tooltips.length === 0) {
+    return null;
+  }
+  return props.tooltips[props.tooltips.length - 1].element;
+});
+
+watch(
+  targetElement,
+  () => {
+    if (tippy.value !== null) {
+      tippy.value.destroy();
+    }
+
+    // This does not allow updating the contents without changing the element
+    const text = content.value;
+    if (targetElement.value !== null && text !== "") {
+      const { destroy } = useTippy(targetElement.value, {
+        content: text,
+        showOnCreate: true,
+        maxWidth: "none",
+        placement: "right-end",
+        allowHTML: true,
+        offset: [0, 10],
+      });
+      tippy.value = {
+        destroy: () => destroy(),
+      };
+    }
+  },
+  { immediate: true }
+);
 </script>
 
-<template>
-  <div>
-    <div v-for="tooltip in tooltips">
-      {{ tooltip }}
-    </div>
-  </div>
-</template>
+<template></template>

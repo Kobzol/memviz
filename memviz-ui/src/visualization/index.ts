@@ -1,7 +1,6 @@
 import createPanZoom from "panzoom";
 import type { ProcessState } from "process-def";
 import { createApp } from "vue";
-import VueTippy from "vue-tippy";
 import type { ProcessResolver } from "../resolver/resolver";
 import App from "./app.vue";
 import { appState } from "./store";
@@ -10,17 +9,7 @@ import "tippy.js/dist/tippy.css";
 export class Memviz {
   constructor(root: HTMLElement) {
     const app = createApp(App);
-    app.use(VueTippy, {
-      directive: "tippy", // => v-tippy
-      component: "tippy", // => <tippy/>
-      defaultProps: {
-        maxWidth: "none",
-        placement: "auto-end",
-        allowHTML: true,
-      },
-    });
     app.mount(root);
-
     createPanZoom(document.body, {
       smoothScroll: false,
       onDoubleClick: (_e) => {
