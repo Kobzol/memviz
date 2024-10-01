@@ -7,6 +7,6 @@
     "test": "npm test -w memviz-ui",
     "watch": "npm run watch --workspaces",
     "package": "npm run build && npm run package -w extension",
-    "bump-version": "npm version patch -ws && npx biome format --write"
+    "bump-version": "npm version $VERSION -ws && npx biome format --write"
   }
 }
