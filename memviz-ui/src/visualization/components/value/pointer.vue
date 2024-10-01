@@ -71,16 +71,24 @@ function tryAddArrow() {
   // Hack: allow LeaderLine to calculate positions correctly with panzoom
   withDisabledPanZoom(() => {
     const source = elementRef.value!;
+
+    // A simple heuristic for deciding if the target should be pointed at from the top or the bottom
+    const targetIsDown =
+      source.getBoundingClientRect().y <
+      target.element.getBoundingClientRect().y;
+    const targetY = targetIsDown ? 0 : "100%";
+    const targetEndSocket = targetIsDown ? "top" : "bottom";
+
     arrow.value = new LeaderLine(
       LeaderLine.pointAnchor(source, {
         x: source.clientWidth + 10,
         y: "50%",
       }),
-      LeaderLine.pointAnchor(target.element, { x: "50%", y: "100%" }),
+      LeaderLine.pointAnchor(target.element, { x: "50%", y: targetY }),
       {
         path: "grid",
         startSocket: "right",
-        endSocket: "bottom",
+        endSocket: targetEndSocket,
         startPlug: "disc",
         startPlugSize: 1.25,
         // startPlugColor: "black",

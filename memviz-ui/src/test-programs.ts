@@ -65,12 +65,14 @@ export function buildComplex(): ProcessBuilder {
     .setCString("Hello");
   builder.place("ptr", typePtr(typeChar())).setPtr(p0.address);
   builder.place("p0", typeUint32(), PlaceKind.Parameter).setUint32(42);
-  builder.place("p1", typeUint32(), PlaceKind.Parameter).setUint32(42);
+  const p1 = builder.place("p1", typePtr(typeUint32()));
   builder.place("a", typeUint32()).setUint32(42);
   const target = builder.place("b", typeUint32()).setUint32(43);
   builder.startFrame("foo");
   builder.place("pa", typePtr(typeUint32())).setPtr(target.address);
+  const x = builder.place("x", typeUint32()).setUint32(50);
   builder.place("pnull", typePtr(typeUint32())).setPtr(BigInt(0));
+  p1.setPtr(x.address);
   const size = 100;
   builder
     .place("a", typeArray(typeUint32(), size))
