@@ -1,10 +1,11 @@
 # Change Log
 
-## Dev
+## 0.2.0
 
-- Add visualization of pointers using arrays.
+- Add visualization of pointers using arrows.
 - Add text visualization of string pointers and char arrays.
 - Add a configuration panel to the `Run & Debug` activity view.
+- Add simple UI configuration settings in the rendered webview.
 - Show a notification when an error occurs.
 - Improve rendering of (hierarchical) tooltips.
 
