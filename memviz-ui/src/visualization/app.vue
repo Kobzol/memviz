@@ -53,7 +53,7 @@ body {
 }
 code {
   color: #000000;
-  background-color: none;
+  background-color: transparent;
 }
 </style>
 
