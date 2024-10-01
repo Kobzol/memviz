@@ -42,7 +42,8 @@
           "fix": "safe"
         },
         "noNonNullAssertion": "off",
-        "useNodejsImportProtocol": "off"
+        "useNodejsImportProtocol": "off",
+        "noParameterAssign": "off"
       },
       "suspicious": {
         "noExplicitAny": "off"

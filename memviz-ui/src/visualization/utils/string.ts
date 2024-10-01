@@ -1,34 +1,49 @@
 import type { Address } from "process-def";
 import type { ProcessResolver } from "../../resolver/resolver";
-import { addressToStr } from "../../utils";
+import { assert, addressToStr } from "../../utils";
+
+export interface CStringLoadResult {
+  buffer: ArrayBuffer;
+  hasMore: boolean;
+}
 
 // Load a C string from the specified address. Tries to load until it encounters a zero.
-// TODO: add maximum loaded count and handle load errors
 export async function loadCString(
   resolver: ProcessResolver,
   address: Address,
-): Promise<ArrayBuffer> {
-  let buffer: ArrayBuffer | null = null;
-  const segmentSize = 100;
+  limit = 1000,
+): Promise<CStringLoadResult> {
+  let buffer: ArrayBuffer = new ArrayBuffer(0);
+  const segmentSize = 50;
+  let hasMore = true;
 
-  while (true) {
-    const segment = await resolver.readMemory(
-      addressToStr(address),
-      segmentSize,
-    );
-    const originalLength = buffer?.byteLength ?? 0;
-    const zeroByteIndex = findZero(segment);
-    if (buffer === null) {
-      buffer = segment;
-    } else {
-      buffer = mergeBuffers(buffer, segment);
+  while (buffer.byteLength < limit) {
+    const remaining = Math.min(limit - buffer.byteLength, segmentSize);
+    let segment = await resolver.readMemory(addressToStr(address), remaining);
+    // Some error ocurred while loading the data
+    if (segment.byteLength === 0) {
+      hasMore = false;
+      break;
     }
+    address += BigInt(segment.byteLength);
+
+    const zeroByteIndex = findZero(segment);
     if (zeroByteIndex !== null) {
-      buffer = buffer.slice(0, originalLength + zeroByteIndex);
+      segment = segment.slice(0, zeroByteIndex);
+    }
+
+    buffer = mergeBuffers(buffer, segment);
+    if (zeroByteIndex !== null) {
+      hasMore = false;
       break;
     }
   }
-  return buffer;
+  assert(buffer.byteLength <= limit, "buffer limit was not respected");
+
+  return {
+    buffer,
+    hasMore,
+  };
 }
 
 function findZero(buffer: ArrayBuffer): number | null {

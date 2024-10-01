@@ -3,6 +3,7 @@ import { computed, watch } from "vue";
 import { appState, componentMap, tooltipStack } from "./store";
 import StackFrameComponent from "./components/stackframe.vue";
 import TooltipContent from "./components/tooltip/tooltip-content.vue";
+import Configuration from "./components/configuration.vue";
 
 const state = computed(() => appState.value.processState);
 
@@ -18,13 +19,16 @@ const state = computed(() => appState.value.processState);
 </script>
 
 <template>
-  <TooltipContent :tooltips="tooltipStack" />
-  <div class="address-space">
-    <StackFrameComponent
-      v-for="frame in state.stackTrace.frames.slice().reverse()"
-      :key="frame.id"
-      :frame="frame"
-    />
+  <div class="app">
+    <Configuration />
+    <div class="address-space">
+      <StackFrameComponent
+        v-for="frame in state.stackTrace.frames.slice().reverse()"
+        :key="frame.id"
+        :frame="frame"
+      />
+    </div>
+    <TooltipContent :tooltips="tooltipStack" />
   </div>
 </template>
 
@@ -54,7 +58,7 @@ code {
 </style>
 
 <style lang="scss" scoped>
-.address-space {
-  padding: 40px;
+.app {
+  padding: 10px 40px;
 }
 </style>

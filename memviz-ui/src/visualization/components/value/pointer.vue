@@ -9,7 +9,7 @@ import {
   watch,
 } from "vue";
 import { addressToStr, assert } from "../../../utils";
-import { appState, componentMap } from "../../store";
+import { appState, componentMap, uiConfiguration } from "../../store";
 import { bufferAsBigInt, formatAddress } from "../../utils/formatting";
 import { Path } from "../../pointers/path";
 import { Address, TyPtr } from "process-def";
@@ -42,6 +42,7 @@ function formatAsString(): string {
 
 function tryAddArrow() {
   if (
+    !enabled ||
     elementRef.value === null ||
     targetAddress.value === null ||
     targetAddress.value === BigInt(0)
@@ -133,6 +134,9 @@ const targetAddress = computed((): Address | null => {
 });
 
 const resolver = computed(() => appState.value.resolver);
+const enabled = computed(() => {
+  return uiConfiguration.value.visualizePointers;
+});
 
 const buffer: Ref<ArrayBuffer | null> = shallowRef(null);
 const elementRef: Ref<HTMLDivElement | null> = shallowRef(null);
@@ -146,6 +150,13 @@ watch(
 
 watch(componentMap, () => {
   tryAddArrow();
+});
+watch(enabled, () => {
+  if (enabled.value) {
+    tryAddArrow();
+  } else {
+    tryRemoveArrow();
+  }
 });
 
 onMounted(() => {

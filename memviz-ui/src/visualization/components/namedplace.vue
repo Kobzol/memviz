@@ -73,7 +73,7 @@ const tooltip = computed(() => {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
 
   .decl {
     border: 3px solid #000000;
