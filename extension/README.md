@@ -31,6 +31,8 @@ When you open the `Run and Debug` container in the Activity Bar on the left, you
   - Stack frames
   - Scalars (integers, floats, chars)
   - Arrays
+  - Pointers
+  - Strings (both inline char arrays and string pointers)
 - Heap memory allocation tracking
 - Lazy loading of memory from the debugged process
 - Simple tracking of variable initialization
@@ -38,10 +40,8 @@ When you open the `Run and Debug` container in the Activity Bar on the left, you
 
 ## Planned/WIP features
 
-- Pointers
 - Structs
-- Strings (both inline array and string pointers)
-- Heap memory
+- Heap memory visualization
 
 ## Unsupported features
 
