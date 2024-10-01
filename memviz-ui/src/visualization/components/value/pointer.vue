@@ -76,11 +76,11 @@ function tryAddArrow() {
         x: source.clientWidth + 10,
         y: "50%",
       }),
-      LeaderLine.pointAnchor(target.element, { x: -10, y: "50%" }),
+      LeaderLine.pointAnchor(target.element, { x: "50%", y: "100%" }),
       {
         path: "grid",
         startSocket: "right",
-        endSocket: "left",
+        endSocket: "bottom",
         startPlug: "disc",
         startPlugSize: 1.25,
         // startPlugColor: "black",
