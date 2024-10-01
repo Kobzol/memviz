@@ -1,11 +1,8 @@
 <script setup lang="ts">
-import { computed, watch } from "vue";
-import { appState, componentMap, tooltipStack } from "./store";
-import StackFrameComponent from "./components/stackframe.vue";
+import { tooltipStack } from "./store";
 import TooltipContent from "./components/tooltip/tooltip-content.vue";
 import Configuration from "./components/configuration.vue";
-
-const state = computed(() => appState.value.processState);
+import AddressSpace from "./components/address-space.vue";
 
 // Code for debugging pointer targets
 // watch(componentMap, () => {
@@ -21,13 +18,7 @@ const state = computed(() => appState.value.processState);
 <template>
   <div class="app">
     <Configuration />
-    <div class="address-space">
-      <StackFrameComponent
-        v-for="frame in state.stackTrace.frames.slice().reverse()"
-        :key="frame.id"
-        :frame="frame"
-      />
-    </div>
+    <AddressSpace />
     <TooltipContent :tooltips="tooltipStack" />
   </div>
 </template>

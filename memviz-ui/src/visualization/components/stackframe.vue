@@ -157,7 +157,6 @@ watch(
 <style scoped lang="scss">
 .wrapper {
   min-width: 200px;
-  max-width: 500px;
   border: solid 1px #000000;
   border-top: 0;
 
