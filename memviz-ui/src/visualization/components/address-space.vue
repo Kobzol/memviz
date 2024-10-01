@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import Stack from "./stack.vue";
+import Stack from "./stack/stack.vue";
 </script>
 
 <template>

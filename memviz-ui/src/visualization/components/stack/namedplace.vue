@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { PlaceKind, type Address, type Place, type Type } from "process-def";
 import { computed } from "vue";
-import { strToAddress } from "../../utils";
-import { formatTypeSize } from "../utils/formatting";
-import ValueComponent from "./value/value.vue";
-import { Path } from "../pointers/path";
-import TooltipContributor from "./tooltip/tooltip-contributor.vue";
-import { Value } from "../utils/value";
+import { strToAddress } from "../../../utils";
+import { formatTypeSize } from "../../utils/formatting";
+import ValueComponent from "../value/value.vue";
+import { Path } from "../../pointers/path";
+import TooltipContributor from "../tooltip/tooltip-contributor.vue";
+import { Value } from "../../utils/value";
 
 const props = defineProps<{
   place: Place;
