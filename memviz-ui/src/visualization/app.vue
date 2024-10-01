@@ -49,7 +49,7 @@ body {
 }
 code {
   color: #000000;
-  background-color: #ffffff;
+  background-color: none;
 }
 </style>
 
