@@ -11,6 +11,7 @@ import type {
   ReadMemoryReq,
 } from "memviz-ui";
 import type { FrameId } from "process-def";
+import type { Settings } from "../menu/settings";
 import type { DebuggerSession } from "../session";
 import { decodeBase64 } from "../utils";
 import {
@@ -35,6 +36,7 @@ export class Reactor {
   private status: Status = {
     kind: "waiting-for-set-function-breakpoints",
   };
+  private trackDynamicAllocations: boolean;
 
   // Breakpoint management
   private stepState = StepState.Idle;
@@ -47,7 +49,10 @@ export class Reactor {
     private panel: vscode.WebviewPanel,
     private session: DebuggerSession,
     private gdbScriptPath: string,
-  ) {}
+    settings: Settings,
+  ) {
+    this.trackDynamicAllocations = settings.trackDynamicAllocations;
+  }
 
   async handleMessageFromClient(message: DebugProtocol.ProtocolMessage) {
     // The client sends setFunctionBreakpoints at the very beginning of the debug session.
@@ -243,8 +248,10 @@ export class Reactor {
     // marked as exception, so that we can distinguish them from normal breakpoints.
     // Ideally, we should do this through breakpoint IDs, but the cppdbg adapter does not
     // seem to send them.
-    for (const allocFn of MEM_ALLOC_FNS) {
-      await this.session.evaluate(`break ${allocFn}`, frameId);
+    if (this.trackDynamicAllocations) {
+      for (const allocFn of MEM_ALLOC_FNS) {
+        await this.session.evaluate(`break ${allocFn}`, frameId);
+      }
     }
 
     // We need to change the status BEFORE starting the asynchronous continue
@@ -378,7 +385,7 @@ export class Reactor {
   }
 
   private async sendMemvizEvent(msg: ExtensionToMemvizMsg) {
-    // console.log("Sending memviz event", msg);
+    console.log("Sending memviz event", msg);
     await this.panel.webview.postMessage(msg);
   }
 

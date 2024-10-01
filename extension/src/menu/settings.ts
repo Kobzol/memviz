@@ -3,4 +3,5 @@
 // Persistable settings of the extension
 export interface Settings {
   enabled: boolean;
+  trackDynamicAllocations: boolean;
 }

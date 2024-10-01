@@ -15,7 +15,6 @@ export function activate(context: vscode.ExtensionContext) {
     context.extensionUri,
     settings,
     (newSettings) => {
-      console.log("Memviz settings reloaded", newSettings);
       settings = newSettings;
       saveSettings(context, newSettings);
     },
@@ -77,7 +76,12 @@ export function activate(context: vscode.ExtensionContext) {
       null,
       context.subscriptions,
     );
-    handler = new Reactor(panel, new DebuggerSession(session), gdbScriptPath);
+    handler = new Reactor(
+      panel,
+      new DebuggerSession(session),
+      gdbScriptPath,
+      settings,
+    );
     panel.webview.onDidReceiveMessage(
       (message) => {
         if (handler !== null) {

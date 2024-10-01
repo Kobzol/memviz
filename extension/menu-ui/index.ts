@@ -5,10 +5,11 @@ import type {
 import type { Settings } from "../src/menu/settings";
 
 const vscode = acquireVsCodeApi();
+let listenersConfigured = false;
 
 const state = vscode.getState();
 if (state !== undefined) {
-  initUiWithSettings(state as Settings);
+  updateUiWithSettings(state as Settings);
 }
 
 window.addEventListener(
@@ -17,7 +18,7 @@ window.addEventListener(
     if (event.data.kind === "init-settings") {
       const settings = event.data.settings;
       vscode.setState(settings);
-      initUiWithSettings(settings);
+      updateUiWithSettings(settings);
     }
   },
 );
@@ -25,19 +26,39 @@ window.addEventListener(
 function getEnabledCheckbox(): HTMLInputElement {
   return document.getElementById("enabled") as HTMLInputElement;
 }
+function getDynAllocTrackingCheckbox(): HTMLInputElement {
+  return document.getElementById("dynalloc-tracking") as HTMLInputElement;
+}
 
-function initUiWithSettings(settings: Settings) {
-  const enabledCheckbox = getEnabledCheckbox();
-  enabledCheckbox.checked = settings.enabled;
-  enabledCheckbox.addEventListener("change", () => sendSettings());
+function updateUiWithSettings(settings: Settings) {
+  function configureCheckbox(
+    checkbox: HTMLInputElement,
+    value: boolean,
+  ): HTMLInputElement {
+    checkbox.checked = value;
+    if (!listenersConfigured) {
+      checkbox.addEventListener("change", () => sendSettings());
+    }
+    return checkbox;
+  }
 
+  configureCheckbox(getEnabledCheckbox(), settings.enabled);
+  const dynTrackingCheckbox = configureCheckbox(
+    getDynAllocTrackingCheckbox(),
+    settings.trackDynamicAllocations,
+  );
+  dynTrackingCheckbox.disabled = !settings.enabled;
+
+  listenersConfigured = true;
   document.getElementById("menu")?.classList.remove("hidden");
 }
 
 function getSettingsFromUi(): Settings {
   const enabled = getEnabledCheckbox().checked;
+  const dynAllocTracking = getDynAllocTrackingCheckbox().checked;
   return {
     enabled,
+    trackDynamicAllocations: dynAllocTracking,
   };
 }
 
@@ -49,4 +70,5 @@ function sendSettings() {
   };
   vscode.postMessage(message);
   vscode.setState(settings);
+  updateUiWithSettings(settings);
 }
