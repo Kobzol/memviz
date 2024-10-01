@@ -3,6 +3,7 @@ import { type Ref, type ShallowRef, ref, shallowRef, triggerRef } from "vue";
 import { ProcessBuilder } from "../resolver/eager";
 import type { ProcessResolver } from "../resolver/resolver";
 import { ComponentMap } from "./pointers/component-map";
+import { AllocationTracker } from "../allocation-tracker";
 
 interface AppState {
   processState: Readonly<ProcessState>;
@@ -19,6 +20,10 @@ function createDefaultState(): AppState {
 }
 
 export const appState: Ref<AppState> = ref(createDefaultState());
+
+export const allocationState: ShallowRef<AllocationTracker> = shallowRef(
+  new AllocationTracker(),
+);
 
 export interface UIConfiguration {
   visualizePointers: boolean;
