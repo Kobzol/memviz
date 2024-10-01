@@ -43,6 +43,7 @@ export function activate(context: vscode.ExtensionContext) {
             if (handler === null) {
               return;
             }
+            // TODO: request queue?
             await handler.handleMessageFromClient(message);
           },
           onDidSendMessage: (

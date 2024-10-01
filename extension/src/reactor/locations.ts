@@ -1,7 +1,7 @@
 import type { DebugProtocol } from "@vscode/debugprotocol";
 
 export interface Location {
-  source: DebugProtocol.Source;
+  source: DebugProtocol.Source | undefined;
   line: number;
 }
 

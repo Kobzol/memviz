@@ -94,15 +94,15 @@ export class Reactor {
       if (isStoppedEvent(message) && message.body.reason === "breakpoint") {
         const stopLocation = getStopLocation(message);
 
-        if (!(await this.checkDebugInfo(stopLocation))) {
-          return;
-        }
-
         // If the user also has a breakpoint here, do not ignore it
         const hasUserBreakpoint =
           this.breakpointMap.hasUserBreakpoint(stopLocation);
         if (!hasUserBreakpoint) {
-          ignoreMessage(message);
+          ignoreEvent(message);
+        }
+
+        if (!(await this.checkDebugInfo(stopLocation))) {
+          return;
         }
 
         const [threadId, frameId] =
@@ -127,25 +127,24 @@ export class Reactor {
       if (isStoppedEvent(message)) {
         const reason = message.body.reason;
         const stopLocation = getStopLocation(message);
-        if (!(await this.checkDebugInfo(stopLocation))) {
-          return;
-        }
         // console.log(
         //   "STOPPED",
         //   reason,
         //   "STEP STATE",
         //   this.stepState,
         //   "SOURCE",
-        //   `${stopLocation.source.path}:${stopLocation.line}`,
+        //   `${stopLocation.source?.path}:${stopLocation.line}`,
         // );
         // The program has stopped at a "fake" breakpoint created by us
         if (reason === "breakpoint" && this.waitingForFakeBreakpoint) {
           this.waitingForFakeBreakpoint = false;
-          // Delete the fake breakpoint
-          const breakpoints = this.breakpointMap.getSourceBreakpoints(
-            stopLocation.source,
-          );
-          await this.session.setBreakpoints(stopLocation.source, breakpoints);
+          if (stopLocation.source !== undefined) {
+            // Delete the fake breakpoint
+            const breakpoints = this.breakpointMap.getSourceBreakpoints(
+              stopLocation.source,
+            );
+            await this.session.setBreakpoints(stopLocation.source, breakpoints);
+          }
           this.stepState = StepState.Idle;
           this.lastClientLocation = stopLocation;
         } else if (reason === "exception") {
@@ -153,7 +152,7 @@ export class Reactor {
           // Ignore the event in VSCode
           // This needs to be done before the first await!
           // So that it is synchronous w.r.t. VSCode event handling
-          ignoreMessage(message);
+          ignoreEvent(message);
 
           const [threadId, frameId] =
             await this.session.getCurrentThreadAndFrameId();
@@ -174,7 +173,7 @@ export class Reactor {
               await this.session.next(threadId);
             } else {
               const breakpoints = this.breakpointMap.getSourceBreakpoints(
-                this.lastClientLocation.source,
+                this.lastClientLocation.source ?? {},
               );
               const withFakeBreakpoint = [
                 ...breakpoints,
@@ -184,7 +183,10 @@ export class Reactor {
               ];
               this.waitingForFakeBreakpoint = true;
               const source = this.lastClientLocation.source;
-              await this.session.setBreakpoints(source, withFakeBreakpoint);
+              await this.session.setBreakpoints(
+                source ?? {},
+                withFakeBreakpoint,
+              );
               await this.session.continue(threadId);
             }
           } else {
@@ -195,7 +197,7 @@ export class Reactor {
           reason === "step" &&
           this.stepState === StepState.ReactorStepInProgress
         ) {
-          ignoreMessage(message);
+          ignoreEvent(message);
         } else if (
           reason === "step" ||
           reason === "breakpoint" ||
@@ -417,14 +419,14 @@ export class Reactor {
 }
 
 // Mangles the event so that the client (VSCode) does not observe it
-function ignoreMessage(message: DebugProtocol.Event) {
+function ignoreEvent(message: DebugProtocol.Event) {
   // console.log("Ignoring message", message);
   message.type = "invalid";
 }
 
 function getStopLocation(event: DebugProtocol.StoppedEvent): Location {
   return {
-    source: (event.body as any).source as DebugProtocol.Source,
+    source: (event.body as any).source as DebugProtocol.Source | undefined,
     line: (event.body as any).line,
   };
 }
