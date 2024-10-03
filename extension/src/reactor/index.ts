@@ -309,7 +309,7 @@ export class Reactor {
   async handleWebviewMessage(message: MemvizToExtensionMsg) {
     if (message.kind === "get-stack-trace") {
       await this.performGetStackTraceRequest(message);
-    } else if (message.kind === "get-variables") {
+    } else if (message.kind === "get-places") {
       await this.performGetPlacesRequest(message);
     } else if (message.kind === "read-memory") {
       await this.performReadMemoryRequest(message);
@@ -338,7 +338,7 @@ export class Reactor {
     await this.sendMemvizResponse(message, async () => {
       const places = await this.session.getPlaces(message.frameIndex);
       return {
-        kind: "get-variables",
+        kind: "get-places",
         data: {
           places,
         },

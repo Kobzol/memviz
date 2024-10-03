@@ -13,6 +13,7 @@ import type {
   RequestId,
   ResolverId,
 } from "../messages";
+import { deserializePlaces } from "../type";
 import type { ProcessResolver } from "./resolver";
 
 type ExtractData<T extends { data: unknown }> = T["data"];
@@ -62,10 +63,10 @@ export class VsCodeResolver implements ProcessResolver {
 
   async getPlaces(frameIndex: number): Promise<Place[]> {
     const res = await this.sendRequest<GetPlacesReq, GetPlacesRes>({
-      kind: "get-variables",
+      kind: "get-places",
       frameIndex,
     });
-    return res.places;
+    return deserializePlaces(res.places);
   }
 
   async readMemory(address: AddressStr, size: number): Promise<ArrayBuffer> {

@@ -5,10 +5,16 @@ import gdb
 import dataclasses
 
 
+InternedType = int
+
+
 @dataclasses.dataclass(frozen=True)
 class Ty:
     name: str
     size: int
+
+    def make_key(self) -> Any:
+        return self
 
 
 @dataclasses.dataclass(frozen=True)
@@ -29,14 +35,14 @@ class TyFloat(Ty):
 
 @dataclasses.dataclass(frozen=True)
 class TyPtr(Ty):
-    target: int
+    target: InternedType
     kind: str = dataclasses.field(init=False, default="ptr")
 
 
 @dataclasses.dataclass(frozen=True)
 class StructField:
     name: str
-    type: int
+    type: InternedType
     offset_bits: int
 
 
@@ -45,10 +51,12 @@ class TyStruct(Ty):
     fields: Tuple[StructField]
     kind: str = dataclasses.field(init=False, default="struct")
 
+    def make_key(self) -> Any:
+        return ("struct", self.name, self.size, len(self.fields))
 
 @dataclasses.dataclass(frozen=True)
 class TyArray(Ty):
-    type: int
+    type: InternedType
     element_count: int
     kind: str = dataclasses.field(init=False, default="array")
 
@@ -129,33 +137,40 @@ def dataclass_to_json(value) -> str:
     return json.dumps(dataclasses.asdict(value))
 
 
+TypeKey = Tuple[Optional[str], Optional[int]]
+
+
 class TypeInterner:
     def __init__(self):
-        self.cache: Dict[Any, Tuple[Ty, int]] = {}
+        self.cache: Dict[TypeKey, InternedType] = {}
+        self.types: List[Ty] = []
 
-    def intern_type(self, type: Ty) -> int:
-        key = self.calculate_key(type)
-        entry = self.cache.get(key)
-        if entry is not None:
-            return entry[1]
+    def intern_type(self, ty: Ty) -> InternedType:
+        interned_ty = self.get_interned_type(ty)
+        if interned_ty is not None:
+            return interned_ty
 
-        index = len(self.cache)
-        self.cache[key] = (type, index)
+        index = len(self.types)
+        self.cache[ty.make_key()] = index
+        self.types.append(ty)
         return index
 
+    def replace_type(self, interned_ty: InternedType, ty: Ty):
+        self.types[interned_ty] = ty
+        assert self.get_interned_type(ty) == interned_ty 
+
+    def get_interned_type(self, ty: Ty) -> Optional[InternedType]:
+        return self.cache.get(ty.make_key())
+
     def get_types(self) -> List[Ty]:
-        types = sorted(self.cache.values(), key=lambda v: v[1])
-        return [ty for (ty, _) in types]
-
-    def calculate_key(self, ty: Ty) -> Any:
-        return ty
+        return self.types
 
 
-def make_type(ty: gdb.Type, interner: TypeInterner, typename: Optional[str] = None) -> int:
+def make_type(ty: gdb.Type, interner: TypeInterner, typename: Optional[str] = None) -> InternedType:
     ty = ty.unqualified()
     size = ty.sizeof
     name = ty.name
-    if name is None:
+    if typename is not None or name is None:
         name = typename
 
     if ty.code == gdb.TYPE_CODE_BOOL:
@@ -165,23 +180,33 @@ def make_type(ty: gdb.Type, interner: TypeInterner, typename: Optional[str] = No
     elif ty.code == gdb.TYPE_CODE_FLT:
         return interner.intern_type(TyFloat(name=name, size=size))
     elif ty.code == gdb.TYPE_CODE_PTR:
-        return interner.intern_type(TyPtr(name=name, size=size, target=make_type(ty.target(), interner)))
+        target = make_type(ty.target(), interner=interner)
+        ptr_ty = TyPtr(name=name, size=size, target=target)
+        return interner.intern_type(ptr_ty)
     elif ty.code == gdb.TYPE_CODE_TYPEDEF:
         return make_type(ty.strip_typedefs(), interner=interner, typename=name)
     elif ty.code == gdb.TYPE_CODE_STRUCT:
+        # This hack is needed to support recursive data structures (e.g. Node { next: Node* })
+        struct_ty = TyStruct(name=name, size=size, fields=(None,) * len(ty.fields()))
+        interned_ty = interner.get_interned_type(struct_ty)
+        if interned_ty is not None:
+            return interned_ty
+        interned_ty = interner.intern_type(struct_ty)
+
         fields = []
         for field in ty.fields():
             if field.type is None:
-                type = interner.intern_type(TyInvalid(name="unknown", size=1, error="Unknown field type"))
+                field_ty = interner.intern_type(TyInvalid(name="unknown", size=1, error="Unknown field type"))
             else:
-                type = make_type(field.type, interner=interner)
+                field_ty = make_type(field.type, interner=interner)
             field = StructField(
                 name=field.name,
-                type=type,
+                type=field_ty,
                 offset_bits=field.bitpos
             )
             fields.append(field)
-        return interner.intern_type(TyStruct(name=name, size=size, fields=tuple(fields)))
+        interner.replace_type(interned_ty, TyStruct(name=name, size=size, fields=tuple(fields)))
+        return interned_ty
     elif ty.code == gdb.TYPE_CODE_ARRAY:
         inner_type = ty.target()
         element_count = ty.sizeof // inner_type.sizeof
@@ -189,19 +214,6 @@ def make_type(ty: gdb.Type, interner: TypeInterner, typename: Optional[str] = No
         return interner.intern_type(TyArray(name=name, size=size, type=inner_type, element_count=element_count))
     else:
         return interner.intern_type(TyUnknown(name=name, size=size))
-
-
-# def parse_type(typename: str):
-#     try:
-#         ty = gdb.lookup_type(typename)
-#     except gdb.error as e:
-#         return TyInvalid(name=typename, error=str(e))
-#     return make_type(ty)
-
-
-# def type_of_val(value: str):
-#     val = gdb.parse_and_eval(value)
-#     return make_type(val.type)
 
 
 @contextlib.contextmanager
