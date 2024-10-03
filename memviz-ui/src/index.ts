@@ -14,6 +14,7 @@ export type {
   MemvizToExtensionMsg,
   ReadMemoryReq,
 } from "./messages";
+export type { InternedPlaceList } from "./type";
 export { PlaceKind } from "process-def";
 
 function runMemvizInVsCode(vscode: WebviewApi<unknown>) {

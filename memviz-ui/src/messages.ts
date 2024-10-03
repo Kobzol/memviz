@@ -1,10 +1,10 @@
 import type {
   AddressStr,
-  Place,
   ProcessState,
   StackTrace,
   ThreadId,
 } from "process-def";
+import type { InternedPlaceList } from "./type";
 
 // Events from the extension
 export interface ProcessStoppedEvent {
@@ -42,9 +42,9 @@ export interface GetStackTraceRes extends Response {
 }
 
 export interface GetPlacesRes extends Response {
-  kind: "get-variables";
+  kind: "get-places";
   data: {
-    places: Place[];
+    places: InternedPlaceList;
   };
 }
 
@@ -84,7 +84,7 @@ export interface GetStackTraceReq extends Request {
 }
 
 export interface GetPlacesReq extends Request {
-  kind: "get-variables";
+  kind: "get-places";
   frameIndex: number;
 }
 

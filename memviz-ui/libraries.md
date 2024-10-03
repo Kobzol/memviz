@@ -1,0 +1,6 @@
+- svg.js - imperative, SVG
+- snap.svg - imperative, SVG
+- Konva - imperative, canvas
+- Fabric.js
+- Two.js - https://two.js.org/docs/shapes/rectangle/
+- manual React SVG/HTML (no pan/zoom?)

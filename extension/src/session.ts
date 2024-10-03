@@ -1,13 +1,6 @@
 import type { DebugProtocol } from "@vscode/debugprotocol";
-import {
-  type AddressRange,
-  type FrameId,
-  type Place,
-  PlaceKind,
-  type StackFrame,
-  type ThreadId,
-  type Type,
-} from "process-def";
+import type { InternedPlaceList } from "memviz-ui";
+import type { AddressRange, FrameId, StackFrame, ThreadId } from "process-def";
 import type { DebugSession } from "vscode";
 import type { ExtractBody } from "./utils";
 
@@ -188,11 +181,11 @@ export class DebuggerSession {
     return await this.customRequest("variables", args);
   }
 
-  async getPlaces(frameIndex: number): Promise<Place[]> {
-    const placeResponse = await this.pythonEvaluate<PlaceList>(
+  async getPlaces(frameIndex: number): Promise<InternedPlaceList> {
+    const placeResponse = await this.pythonEvaluate<InternedPlaceList>(
       `get_frame_places(${frameIndex})`,
     );
-    return deserializePlaces(placeResponse);
+    return placeResponse;
   }
 
   private async pythonEvaluate<T>(
@@ -239,87 +232,4 @@ interface PyResult<T> {
   ok: boolean;
   value: T | null;
   error: string | null;
-}
-
-type PlaceWithInternedType = {
-  // Name
-  n: string;
-  // Address
-  a: string | null;
-  // Interned type
-  t: number;
-  // Kind
-  k: string;
-  // Initialized
-  i: boolean;
-  // Line
-  l: number;
-};
-
-interface PlaceList {
-  places: PlaceWithInternedType[];
-  types: Type[];
-}
-
-const PLACE_KIND_MAP: { [key: string]: PlaceKind } = {
-  p: PlaceKind.Parameter,
-  v: PlaceKind.Variable,
-  s: PlaceKind.ShadowedVariable,
-  g: PlaceKind.GlobalVariable,
-};
-
-function deserializePlaces(placeList: PlaceList): Place[] {
-  // Unintern types
-  const types = placeList.types;
-  for (const type of types) {
-    uninternType(type, types);
-  }
-  // Unintern and deserialize types
-  const places: Place[] = [];
-  for (const place of placeList.places) {
-    places.push({
-      kind: PLACE_KIND_MAP[place.k],
-      name: place.n,
-      address: place.a,
-      type: types[place.t],
-      initialized: place.i,
-      line: place.l,
-    });
-  }
-  return places;
-}
-
-function uninternType(type: Type, types: Type[]) {
-  if (type.kind === "ptr") {
-    if (Number.isInteger(type.target)) {
-      type.target = types[type.target as unknown as number];
-      uninternType(type.target, types);
-    }
-    fillName(type);
-  } else if (type.kind === "struct") {
-    for (const field of type.fields) {
-      if (Number.isInteger(field.type)) {
-        field.type = types[field.type as unknown as number];
-        uninternType(field.type, types);
-      }
-    }
-  } else if (type.kind === "array") {
-    if (Number.isInteger(type.type)) {
-      type.type = types[type.type as unknown as number];
-      uninternType(type.type, types);
-    }
-    fillName(type);
-  }
-}
-
-function fillName(type: Type) {
-  if (type.kind === "ptr") {
-    if (type.name === null && type.target.name !== null) {
-      type.name = `${type.target.name}*`;
-    }
-  } else if (type.kind === "array") {
-    if (type.name === null && type.type.name !== null) {
-      type.name = `${type.type.name}[${type.element_count}]`;
-    }
-  }
 }
