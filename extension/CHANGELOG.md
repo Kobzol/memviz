@@ -1,5 +1,17 @@
 # Change Log
 
+## 0.2.1
+
+- Add an option to disable dynamic allocation tracking.
+  - The tracking is not very robust yet and in certain cases it can break debugging.
+- Fix some cases where an unexpected breakpoint exception would be shown to the user
+  during debugging.
+- Add simple heuristic to make pointer arrows layout a bit smarter.
+- Fix an edge case when loading invalid C strings.
+- Add simple UI configuration.
+  - Currently it allows you to turn off displaying pointers as arrows.
+  - The configuration is currently not persisted.
+
 ## 0.2.0
 
 - Add visualization of pointers using arrows.
