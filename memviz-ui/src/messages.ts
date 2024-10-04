@@ -12,21 +12,7 @@ export interface ProcessStoppedEvent {
   state: ProcessState;
 }
 
-export interface MemoryAllocatedEvent {
-  kind: "mem-allocated";
-  address: AddressStr;
-  size: number;
-}
-
-export interface MemoryFreedEvent {
-  kind: "mem-freed";
-  address: AddressStr;
-}
-
-export type ExtensionEvent =
-  | ProcessStoppedEvent
-  | MemoryAllocatedEvent
-  | MemoryFreedEvent;
+export type ExtensionEvent = ProcessStoppedEvent;
 
 // Responses to requests to the extension
 export interface Response {
@@ -55,6 +41,26 @@ export interface ReadMemoryRes extends Response {
   };
 }
 
+export interface TakeAllocEventsRes extends Response {
+  kind: "take-alloc-events";
+  data: {
+    events: MemoryAllocEvent[];
+  };
+}
+
+interface MemoryAllocatedEvent {
+  kind: "mem-allocated";
+  address: AddressStr;
+  size: number;
+}
+
+interface MemoryFreedEvent {
+  kind: "mem-freed";
+  address: AddressStr;
+}
+
+export type MemoryAllocEvent = MemoryAllocatedEvent | MemoryFreedEvent;
+
 export interface ErrorRes extends Response {
   kind: "error";
   error: string;
@@ -64,6 +70,7 @@ export type ExtensionToMemvizResponse =
   | GetStackTraceRes
   | GetPlacesRes
   | ReadMemoryRes
+  | TakeAllocEventsRes
   | ErrorRes;
 
 // Any message from the extension
@@ -94,9 +101,12 @@ export interface ReadMemoryReq extends Request {
   size: number;
 }
 
-export type MemvizToExtensionRequest =
+export interface TakeAllocEventsReq extends Request {
+  kind: "take-alloc-events";
+}
+
+export type MemvizToExtensionMsg =
   | GetStackTraceReq
   | GetPlacesReq
-  | ReadMemoryReq;
-
-export type MemvizToExtensionMsg = MemvizToExtensionRequest;
+  | ReadMemoryReq
+  | TakeAllocEventsReq;

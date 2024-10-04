@@ -8,11 +8,12 @@ import { Memviz } from "./visualization";
 export type {
   ExtensionToMemvizMsg,
   ExtensionToMemvizResponse,
-  MemvizToExtensionRequest,
+  MemoryAllocEvent,
+  MemvizToExtensionMsg,
   GetStackTraceReq,
   GetPlacesReq,
-  MemvizToExtensionMsg,
   ReadMemoryReq,
+  TakeAllocEventsReq,
 } from "./messages";
 export type { InternedPlaceList } from "./type";
 export { PlaceKind } from "process-def";
@@ -33,11 +34,6 @@ function runMemvizInVsCode(vscode: WebviewApi<unknown>) {
         resolverId++;
         resolver = new CachingResolver(new VsCodeResolver(vscode, resolverId));
         memviz.showState(message.state, resolver);
-      } else if (message.kind === "mem-allocated") {
-        memviz.handleMemoryAllocated(message.address, message.size);
-        // TODO: handle memory allocation events
-      } else if (message.kind === "mem-freed") {
-        memviz.handleMemoryFreed(message.address);
       } else {
         resolver.inner.handleMessage(message);
       }

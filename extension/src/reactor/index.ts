@@ -6,9 +6,10 @@ import type {
   ExtensionToMemvizResponse,
   GetPlacesReq,
   GetStackTraceReq,
+  MemoryAllocEvent,
   MemvizToExtensionMsg,
-  MemvizToExtensionRequest,
   ReadMemoryReq,
+  TakeAllocEventsReq,
 } from "memviz-ui";
 import type { FrameId } from "process-def";
 import type { Settings } from "../menu/settings";
@@ -44,6 +45,8 @@ export class Reactor {
   // Last location where the process was stopped by a client action
   private lastClientLocation: Location | null = null;
   private waitingForFakeBreakpoint = false;
+
+  private pending_alloc_events: MemoryAllocEvent[] = [];
 
   constructor(
     private panel: vscode.WebviewPanel,
@@ -284,24 +287,29 @@ export class Reactor {
       } else if (fnName.endsWith("realloc")) {
         console.assert(args.length === 2);
 
-        await this.sendMemvizEvent({
+        this.addAllocEvent({
           kind: "mem-freed",
           address: args[0],
         });
         size = Number.parseInt(args[1]);
       }
 
-      await this.sendMemvizEvent({
+      this.addAllocEvent({
         kind: "mem-allocated",
         address,
         size,
       });
     } else if (fnName.endsWith("free")) {
-      await this.sendMemvizEvent({
+      this.addAllocEvent({
         kind: "mem-freed",
         address: args[0],
       });
     }
+  }
+
+  private addAllocEvent(event: MemoryAllocEvent) {
+    // console.log("Alloc event", event);
+    this.pending_alloc_events.push(event);
   }
 
   /// This method handles requests from the webview.
@@ -313,6 +321,8 @@ export class Reactor {
       await this.performGetPlacesRequest(message);
     } else if (message.kind === "read-memory") {
       await this.performReadMemoryRequest(message);
+    } else if (message.kind === "take-alloc-events") {
+      await this.performTakeAllocEventsRequest(message);
     }
   }
 
@@ -362,6 +372,19 @@ export class Reactor {
     });
   }
 
+  private async performTakeAllocEventsRequest(message: TakeAllocEventsReq) {
+    const events = this.pending_alloc_events;
+    this.pending_alloc_events = [];
+    await this.sendMemvizResponse(message, async () => {
+      return {
+        kind: "take-alloc-events",
+        data: {
+          events,
+        },
+      };
+    });
+  }
+
   private async onThreadStopped(stopLocation: Location) {
     this.stepState = StepState.Idle;
     this.lastClientLocation = stopLocation;
@@ -392,7 +415,7 @@ export class Reactor {
   }
 
   private async sendMemvizResponse(
-    request: MemvizToExtensionRequest,
+    request: MemvizToExtensionMsg,
     fn: () => Promise<
       Omit<ExtensionToMemvizResponse, "requestId" | "resolverId">
     >,
