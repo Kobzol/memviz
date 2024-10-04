@@ -6,7 +6,6 @@ import type {
   ExtensionToMemvizResponse,
   GetPlacesReq,
   GetStackTraceReq,
-  MemoryAllocEvent,
   MemvizToExtensionMsg,
   ReadMemoryReq,
   TakeAllocEventsReq,
@@ -16,22 +15,13 @@ import type { Settings } from "../menu/settings";
 import type { DebuggerSession } from "../session";
 import { decodeBase64 } from "../utils";
 import {
-  isNextRequest,
   isSetBreakpointsRequest,
   isSetFunctionBreakpointsRequest,
   isSetFunctionBreakpointsResponse,
-  isStepInRequest,
-  isStepOutRequest,
   isStoppedEvent,
 } from "./guards";
 import type { Status } from "./handlers";
 import { BreakpointMap, type Location } from "./locations";
-
-enum StepState {
-  Idle = "idle",
-  ClientStepInProgress = "client-step-in-progress",
-  ReactorStepInProgress = "reactor-step-in-progress",
-}
 
 export class Reactor {
   private status: Status = {
@@ -40,13 +30,7 @@ export class Reactor {
   private trackDynamicAllocations: boolean;
 
   // Breakpoint management
-  private stepState = StepState.Idle;
   private breakpointMap = new BreakpointMap();
-  // Last location where the process was stopped by a client action
-  private lastClientLocation: Location | null = null;
-  private waitingForFakeBreakpoint = false;
-
-  private pending_alloc_events: MemoryAllocEvent[] = [];
 
   constructor(
     private panel: vscode.WebviewPanel,
@@ -71,20 +55,11 @@ export class Reactor {
     }
 
     // Save the most recent client breakpoints for a given source file
-    if (isSetBreakpointsRequest(message) && !this.waitingForFakeBreakpoint) {
+    if (isSetBreakpointsRequest(message)) {
       this.breakpointMap.setSourceBreakpoints(
         message.arguments.source,
         message.arguments.breakpoints ?? [],
       );
-    }
-
-    // The client requested a step, take note of it
-    if (
-      isNextRequest(message) ||
-      isStepInRequest(message) ||
-      isStepOutRequest(message)
-    ) {
-      this.stepState = StepState.ClientStepInProgress;
     }
   }
 
@@ -121,7 +96,7 @@ export class Reactor {
         await this.handleMainBreakpointEvent(frameId);
 
         if (hasUserBreakpoint) {
-          await this.onThreadStopped(stopLocation);
+          await this.onThreadStopped();
         } else {
           await this.session.continue(threadId);
         }
@@ -129,84 +104,12 @@ export class Reactor {
     } else if (this.status.kind === "initialized") {
       if (isStoppedEvent(message)) {
         const reason = message.body.reason;
-        const stopLocation = getStopLocation(message);
-        // console.log(
-        //   "STOPPED",
-        //   reason,
-        //   "STEP STATE",
-        //   this.stepState,
-        //   "SOURCE",
-        //   `${stopLocation.source?.path}:${stopLocation.line}`,
-        // );
-        // The program has stopped at a "fake" breakpoint created by us
-        if (reason === "breakpoint" && this.waitingForFakeBreakpoint) {
-          this.waitingForFakeBreakpoint = false;
-          if (stopLocation.source !== undefined) {
-            // Delete the fake breakpoint
-            const breakpoints = this.breakpointMap.getSourceBreakpoints(
-              stopLocation.source,
-            );
-            await this.session.setBreakpoints(stopLocation.source, breakpoints);
-          }
-          this.stepState = StepState.Idle;
-          this.lastClientLocation = stopLocation;
-        } else if (reason === "exception") {
-          // This should be an exception within a memory allocation function
-          // Ignore the event in VSCode
-          // This needs to be done before the first await!
-          // So that it is synchronous w.r.t. VSCode event handling
-          ignoreEvent(message);
-
-          const [threadId, frameId] =
-            await this.session.getCurrentThreadAndFrameId();
-
-          const clientStepInProgress =
-            this.stepState === StepState.ClientStepInProgress;
-          this.stepState = StepState.ReactorStepInProgress;
-          await this.handleMemoryAllocationBreakpoint(frameId);
-
-          if (clientStepInProgress) {
-            // In this case, we need to continue with the previously requested step
-            // from the client. We do that by creating a temporary fake breakpoint
-            // set to the next line after the last stopped client location.
-            // Once that breakpoint is hit, we remove it.
-            this.stepState = StepState.ClientStepInProgress;
-            if (this.lastClientLocation === null) {
-              // This should not happen
-              await this.session.next(threadId);
-            } else {
-              const breakpoints = this.breakpointMap.getSourceBreakpoints(
-                this.lastClientLocation.source ?? {},
-              );
-              const withFakeBreakpoint = [
-                ...breakpoints,
-                {
-                  line: this.lastClientLocation.line + 1,
-                },
-              ];
-              this.waitingForFakeBreakpoint = true;
-              const source = this.lastClientLocation.source;
-              await this.session.setBreakpoints(
-                source ?? {},
-                withFakeBreakpoint,
-              );
-              await this.session.continue(threadId);
-            }
-          } else {
-            this.stepState = StepState.Idle;
-            await this.session.continue(threadId);
-          }
-        } else if (
-          reason === "step" &&
-          this.stepState === StepState.ReactorStepInProgress
-        ) {
-          ignoreEvent(message);
-        } else if (
+        if (
           reason === "step" ||
           reason === "breakpoint" ||
           reason === "pause"
         ) {
-          await this.onThreadStopped(stopLocation);
+          await this.onThreadStopped();
         }
       }
     }
@@ -223,8 +126,7 @@ export class Reactor {
         kind: "initialized",
       };
 
-      const [threadId, frameId] =
-        await this.session.getCurrentThreadAndFrameId();
+      const [threadId, _] = await this.session.getCurrentThreadAndFrameId();
       await this.session.continue(threadId);
       return false;
     }
@@ -246,70 +148,12 @@ export class Reactor {
     // The program has stopped at main
     // Perform all initialization actions
 
-    // Set breakpoint for known (g)libc memory allocation functions
-    const MEM_ALLOC_FNS = ["malloc", "calloc", "realloc", "free"];
-
-    // We set the breakpoint manually using GDB, so that the breaks are
-    // marked as exception, so that we can distinguish them from normal breakpoints.
-    // Ideally, we should do this through breakpoint IDs, but the cppdbg adapter does not
-    // seem to send them.
     if (this.trackDynamicAllocations) {
-      for (const allocFn of MEM_ALLOC_FNS) {
-        await this.session.evaluate(`break ${allocFn}`, frameId);
-      }
+      await this.session.initDynAllocTracking(frameId);
     }
 
     // We need to change the status BEFORE starting the asynchronous continue
     this.status = { kind: "initialized" };
-  }
-
-  private async handleMemoryAllocationBreakpoint(frameId: FrameId) {
-    const result = await this.session.evaluate(
-      "py print(gdb.selected_frame().name())",
-    );
-    const fnName = result.result.trimEnd();
-    const args = await this.session.getCurrentFnArgs(frameId);
-
-    const isAlloc =
-      fnName.endsWith("malloc") ||
-      fnName.endsWith("calloc") ||
-      fnName.endsWith("realloc");
-
-    if (isAlloc) {
-      const address =
-        await this.session.finishCurrentFnAndGetReturnValue(frameId);
-      let size = Number.parseInt(args[0]);
-      if (fnName.endsWith("malloc")) {
-        console.assert(args.length === 1);
-      } else if (fnName.endsWith("calloc")) {
-        console.assert(args.length === 2);
-        size = Number.parseInt(args[0]) * Number.parseInt(args[1]);
-      } else if (fnName.endsWith("realloc")) {
-        console.assert(args.length === 2);
-
-        this.addAllocEvent({
-          kind: "mem-freed",
-          address: args[0],
-        });
-        size = Number.parseInt(args[1]);
-      }
-
-      this.addAllocEvent({
-        kind: "mem-allocated",
-        address,
-        size,
-      });
-    } else if (fnName.endsWith("free")) {
-      this.addAllocEvent({
-        kind: "mem-freed",
-        address: args[0],
-      });
-    }
-  }
-
-  private addAllocEvent(event: MemoryAllocEvent) {
-    // console.log("Alloc event", event);
-    this.pending_alloc_events.push(event);
   }
 
   /// This method handles requests from the webview.
@@ -373,8 +217,8 @@ export class Reactor {
   }
 
   private async performTakeAllocEventsRequest(message: TakeAllocEventsReq) {
-    const events = this.pending_alloc_events;
-    this.pending_alloc_events = [];
+    const [_, frameId] = await this.session.getCurrentThreadAndFrameId();
+    const events = await this.session.takeAllocEvents(frameId);
     await this.sendMemvizResponse(message, async () => {
       return {
         kind: "take-alloc-events",
@@ -385,18 +229,14 @@ export class Reactor {
     });
   }
 
-  private async onThreadStopped(stopLocation: Location) {
-    this.stepState = StepState.Idle;
-    this.lastClientLocation = stopLocation;
-
+  private async onThreadStopped() {
     const response = await this.session.getThreads();
     const stackTrace = await this.session.getStackTrace(
       response.threads[0].id,
       true,
     );
-    const stackAddressRange = await this.session.getStackAddressRange(
-      stackTrace[0].id,
-    );
+    const frameId = stackTrace[0].id;
+    const stackAddressRange = await this.session.getStackAddressRange(frameId);
 
     this.sendMemvizEvent({
       kind: "process-stopped",
@@ -429,7 +269,7 @@ export class Reactor {
       } as ExtensionToMemvizResponse;
       await this.panel.webview.postMessage(message);
     } catch (e: any) {
-      console.log("Error while handing request", request, e);
+      console.error("Error while handing request", request, e);
       vscode.window.showErrorMessage(`Request failed: ${e}`);
       await this.panel.webview.postMessage({
         kind: "error",

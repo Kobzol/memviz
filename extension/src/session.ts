@@ -1,5 +1,5 @@
 import type { DebugProtocol } from "@vscode/debugprotocol";
-import type { InternedPlaceList } from "memviz-ui";
+import type { InternedPlaceList, MemoryAllocEvent } from "memviz-ui";
 import type { AddressRange, FrameId, StackFrame, ThreadId } from "process-def";
 import type { DebugSession } from "vscode";
 import type { ExtractBody } from "./utils";
@@ -52,6 +52,53 @@ export class DebuggerSession {
       };
     }
     return null;
+  }
+
+  async initDynAllocTracking(frameId: FrameId) {
+    await this.pythonEvaluate("configure_alloc_tracking()", frameId);
+  }
+
+  async takeAllocEvents(frameId: FrameId): Promise<MemoryAllocEvent[]> {
+    const records = await this.pythonEvaluate<FunctionCallRecord[]>(
+      "take_alloc_records()",
+      frameId,
+    );
+    const events: MemoryAllocEvent[] = [];
+    for (const record of records) {
+      if (record.name === "free") {
+        events.push({
+          kind: "mem-freed",
+          address: record.args[0] as string,
+        });
+      } else if (record.name === "malloc") {
+        events.push({
+          kind: "mem-allocated",
+          size: Number(record.args[0]),
+          address: record.return_value as string,
+        });
+      } else if (record.name === "realloc") {
+        events.push({
+          kind: "mem-freed",
+          address: record.args[0] as string,
+        });
+        events.push({
+          kind: "mem-allocated",
+          size: Number(record.args[1]),
+          address: record.return_value as string,
+        });
+      } else if (record.name === "calloc") {
+        events.push({
+          kind: "mem-allocated",
+          size: Number(record.args[0]) * Number(record.args[1]),
+          address: record.return_value as string,
+        });
+      } else {
+        throw new Error(
+          `Unknown allocation record for function ${record.name}`,
+        );
+      }
+    }
+    return events;
   }
 
   async readMemory(
@@ -226,6 +273,12 @@ export class DebuggerSession {
     // );
     return result as T;
   }
+}
+
+interface FunctionCallRecord {
+  name: string;
+  args: unknown[];
+  return_value: unknown | null;
 }
 
 interface PyResult<T> {

@@ -1,6 +1,6 @@
 import contextlib
 import json
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
 import gdb
 import dataclasses
 
@@ -198,7 +198,7 @@ def make_type(ty: gdb.Type, interner: TypeInterner, typename: Optional[str] = No
             if field.type is None:
                 field_ty = interner.intern_type(TyInvalid(name="unknown", size=1, error="Unknown field type"))
             else:
-                field_ty = make_type(field.type, interner=interner)
+                field_ty = make_type(field.type, interner)
             field = StructField(
                 name=field.name,
                 type=field_ty,
@@ -238,7 +238,7 @@ def activate_frame(index: int):
         frame.select()
 
 
-def get_frame_places(frame_index: int = 0) -> PlaceList:
+def get_frame_places(frame_index: int = 0, place_filter: Optional[Callable[[gdb.Symbol], bool]] = None) -> PlaceList:
     interner = TypeInterner()
     places = []
     seen_names = set()
@@ -250,10 +250,13 @@ def get_frame_places(frame_index: int = 0) -> PlaceList:
         while block is not None:
             if not block.is_valid():
                 break
-
             is_local_block = not (block.is_global or block.is_static)
+            if not is_local_block:
+                break
 
             for symbol in block:
+                if place_filter is not None and not place_filter(symbol):
+                    continue
                 if not (symbol.is_variable or symbol.is_argument or symbol.is_constant):
                     continue
 
@@ -282,16 +285,7 @@ def get_frame_places(frame_index: int = 0) -> PlaceList:
                 value = symbol.value(frame)
                 address = value.address
                 if address is not None:
-                    address = address.format_string(
-                        raw=True,
-                        address=True,
-                        symbols=False,
-                        pretty_arrays=False,
-                        pretty_structs=False,
-                        array_indexes=False,
-                        actual_objects=False,
-                        format="x"
-                    )
+                    address = get_pointer_from_value(address)
 
                 place = Place.create(
                     name=name,
@@ -299,7 +293,7 @@ def get_frame_places(frame_index: int = 0) -> PlaceList:
                     type=ty,
                     kind=kind,
                     init=init,
-                    line=symbol.line
+                    line=symbol.line,
                 )
                 places.append((place, (symbol.line, address or name or "")))
             block = block.superblock
@@ -322,3 +316,114 @@ def get_stack_address_range() -> Optional[Tuple[str, str]]:
                 if len(range) == 2:
                     return (f"0x{range[0]}", f"0x{range[1]}")
     return None
+
+
+@dataclasses.dataclass
+class TrackedFunction:
+    name: str
+    track_ret_value: bool = True
+
+
+@dataclasses.dataclass
+class FunctionCallRecord:
+    name: str
+    args: List[Any]
+    return_value: Optional[Any] = None
+
+
+class AllocationTracker:
+    def __init__(self, fns: List[TrackedFunction]):
+        self.tracked_fns: List[Tuple[TrackedFunction, gdb.Breakpoint]] = []
+        for fn in fns:
+            bp = TrackedFnBreakpoint(self, fn, fn.name)
+            self.tracked_fns.append((fn, bp))
+
+        self.records: List[FunctionCallRecord] = []
+
+    def handle_tracked_stop(self, fn: TrackedFunction) -> bool:
+        args = (gdb.execute("info args", to_string=True) or "").strip()
+        args = [arg.split(" = ")[1] for arg in args.splitlines(keepends=False)]
+
+        record = FunctionCallRecord(
+            name=fn.name,
+            args=args,
+            return_value=None
+        )
+
+        self.records.append(record)
+        if fn.track_ret_value:
+            RetValueBreakpoint(record, gdb.newest_frame())
+        # Do not stop at this breakpoint, continue execution
+        return False
+
+    def take_records(self) -> List[FunctionCallRecord]:
+        records = list(self.records)
+        self.records = []
+        return records
+
+    def dispose(self):
+        for (_, bp) in self.tracked_fns:
+            bp.delete()
+
+
+class TrackedFnBreakpoint(gdb.Breakpoint):
+    """
+    Breakpoint that tracks a specific function.
+    """
+    def __init__(self, tracker: AllocationTracker, fn: TrackedFunction, name: str):
+        super().__init__(name, internal=True)
+        self.tracker = tracker
+        self.fn = fn
+
+    def stop(self) -> bool:
+        return self.tracker.handle_tracked_stop(self.fn)
+
+
+class RetValueBreakpoint(gdb.FinishBreakpoint):
+    """
+    Breakpoint that assigns the return value of a function
+    to the corresponding function call record.
+    """
+    def __init__(self, record: FunctionCallRecord,
+                 frame):
+        super().__init__(frame=frame, internal=True)
+        self.record = record
+
+    def stop(self) -> bool:
+        if self.return_value is not None:
+            self.record.return_value = get_pointer_from_value(self.return_value)
+        # Do not stop at this breakpoint, continue execution
+        return False
+
+
+def get_pointer_from_value(value: gdb.Value) -> str:
+    return value.format_string(
+        raw=True,
+        address=True,
+        symbols=False,
+        pretty_arrays=False,
+        pretty_structs=False,
+        array_indexes=False,
+        actual_objects=False,
+        format="x"
+    )
+
+
+ALLOCATION_TRACKER: Optional[AllocationTracker] = None
+
+
+def configure_alloc_tracking():
+    global ALLOCATION_TRACKER
+
+    if ALLOCATION_TRACKER is not None:
+        ALLOCATION_TRACKER.dispose()
+    ALLOCATION_TRACKER = AllocationTracker([
+        TrackedFunction("malloc"),
+        TrackedFunction("calloc"),
+        TrackedFunction("realloc"),
+        TrackedFunction("free", track_ret_value=False),
+    ])
+
+
+def take_alloc_records() -> List[FunctionCallRecord]:
+    return ALLOCATION_TRACKER.take_records()
