@@ -7,7 +7,6 @@ import type {
   GetStackTraceReq,
   GetStackTraceRes,
   MemvizToExtensionMsg,
-  MemvizToExtensionRequest,
   ReadMemoryReq,
   ReadMemoryRes,
   RequestId,
@@ -79,7 +78,7 @@ export class VsCodeResolver implements ProcessResolver {
   }
 
   private sendRequest<
-    RequestType extends MemvizToExtensionRequest,
+    RequestType extends MemvizToExtensionMsg,
     ResponseType extends { data: unknown },
   >(
     request: Omit<RequestType, "requestId" | "resolverId">,
