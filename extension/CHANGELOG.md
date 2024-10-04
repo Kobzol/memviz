@@ -1,5 +1,9 @@
 # Change Log
 
+## Dev
+
+- Improve robustness of dynamic memory allocation tracking.
+
 ## 0.2.1
 
 - Add an option to disable dynamic allocation tracking.
