@@ -11,7 +11,7 @@ InternedType = int
 
 
 @dataclasses.dataclass(frozen=True)
-class Ty:
+class TyBase:
     name: str
     size: int
 
@@ -20,23 +20,23 @@ class Ty:
 
 
 @dataclasses.dataclass(frozen=True)
-class TyBool(Ty):
+class TyBool(TyBase):
     kind: str = dataclasses.field(init=False, default="bool")
 
 
 @dataclasses.dataclass(frozen=True)
-class TyInt(Ty):
+class TyInt(TyBase):
     signed: bool
     kind: str = dataclasses.field(init=False, default="int")
 
 
 @dataclasses.dataclass(frozen=True)
-class TyFloat(Ty):
+class TyFloat(TyBase):
     kind: str = dataclasses.field(init=False, default="float")
 
 
 @dataclasses.dataclass(frozen=True)
-class TyPtr(Ty):
+class TyPtr(TyBase):
     target: InternedType
     kind: str = dataclasses.field(init=False, default="ptr")
 
@@ -49,7 +49,7 @@ class StructField:
 
 
 @dataclasses.dataclass(frozen=True)
-class TyStruct(Ty):
+class TyStruct(TyBase):
     fields: Tuple[StructField]
     kind: str = dataclasses.field(init=False, default="struct")
 
@@ -57,24 +57,30 @@ class TyStruct(Ty):
         return ("struct", self.name, self.size, len(self.fields))
 
 @dataclasses.dataclass(frozen=True)
-class TyArray(Ty):
+class TyArray(TyBase):
     type: InternedType
     element_count: int
     kind: str = dataclasses.field(init=False, default="array")
 
 
 @dataclasses.dataclass(frozen=True)
-class TyUnknown(Ty):
+class TyOpaque(TyBase):
+    """Type that we do not want to expand"""
+    kind: str = dataclasses.field(init=False, default="opaque")
+
+
+@dataclasses.dataclass(frozen=True)
+class TyUnknown(TyBase):
     kind: str = dataclasses.field(init=False, default="unknown")
 
 
 @dataclasses.dataclass(frozen=True)
-class TyInvalid(Ty):
+class TyInvalid(TyBase):
     error: str
     kind: str = dataclasses.field(init=False, default="invalid")
 
 
-Ty = Union[TyBool, TyInt, TyFloat, TyPtr, TyStruct, TyArray, TyUnknown, TyInvalid]
+Ty = Union[TyBool, TyInt, TyFloat, TyPtr, TyStruct, TyArray, TyOpaque, TyUnknown, TyInvalid]
 
 
 class TypeInterner:
@@ -103,12 +109,18 @@ class TypeInterner:
         return self.types
 
 
+KNOWN_OPAQUE_TYPES = frozenset(("FILE",))
+
+
 def make_type(ty: gdb.Type, interner: TypeInterner, typename: Optional[str] = None) -> InternedType:
     ty = ty.unqualified()
     size = ty.sizeof
     name = ty.name
     if typename is not None or name is None:
         name = typename
+
+    if name is not None and name in KNOWN_OPAQUE_TYPES:
+        return interner.intern_type(TyOpaque(name=name, size=size))
 
     if ty.code == gdb.TYPE_CODE_BOOL:
         return interner.intern_type(TyBool(name=name, size=size))
