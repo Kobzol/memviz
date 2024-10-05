@@ -1,9 +1,11 @@
 import contextlib
 import json
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import gdb
 import dataclasses
 
+
+### TYPES ###
 
 InternedType = int
 
@@ -75,74 +77,9 @@ class TyInvalid(Ty):
 Ty = Union[TyBool, TyInt, TyFloat, TyPtr, TyStruct, TyArray, TyUnknown, TyInvalid]
 
 
-# The names are intentionally shortened to reduce the amount of data
-# (de)serialized from/to JSON
-@dataclasses.dataclass(frozen=True)
-class Place:
-    # Name
-    n: str
-    # Address
-    a: str
-    # Type
-    t: int
-    # Kind
-    k: str
-    # Initialized
-    i: bool
-    # Line
-    l: int
-
-    @staticmethod
-    def create(name: str, address: str, type: int, kind: str, init: bool, line: int) -> "Place":
-        return Place(
-            n=name,
-            a=address,
-            t=type,
-            k=kind,
-            i=init,
-            l=line
-        )
-
-
-@dataclasses.dataclass
-class PlaceList:
-    places: List[Place]
-    types: List[Ty]
-
-
-@dataclasses.dataclass
-class Result:
-    ok: bool
-    value: Optional[Any] = None
-    error: Optional[str] = None
-
-    @staticmethod
-    def make_ok(value: Any) -> "Result":
-        return Result(ok=True, value=value)
-
-    @staticmethod
-    def make_error(error: Any) -> "Result":
-        return Result(ok=False, error=error)
-
-
-def try_run(fn: Callable) -> Result:
-    try:
-        result = fn()
-        return dataclass_to_json(Result.make_ok(result))
-    except BaseException as e:
-        return dataclass_to_json(Result.make_error(str(e)))
-
-
-def dataclass_to_json(value) -> str:
-    return json.dumps(dataclasses.asdict(value))
-
-
-TypeKey = Tuple[Optional[str], Optional[int]]
-
-
 class TypeInterner:
     def __init__(self):
-        self.cache: Dict[TypeKey, InternedType] = {}
+        self.cache: Dict[Any, InternedType] = {}
         self.types: List[Ty] = []
 
     def intern_type(self, ty: Ty) -> InternedType:
@@ -216,26 +153,41 @@ def make_type(ty: gdb.Type, interner: TypeInterner, typename: Optional[str] = No
         return interner.intern_type(TyUnknown(name=name, size=size))
 
 
-@contextlib.contextmanager
-def activate_frame(index: int):
-    """
-    Temporarily select frame with the given index.
-    The topmost stack frame has index 0.
-    """
-    frame = gdb.selected_frame()
+### PLACES ###
 
-    current_frame = gdb.newest_frame()
-    current_index = 0
-    while current_index < index:
-        current_frame = current_frame.older()
-        if current_frame is None:
-            raise Exception(f"Frame {index} not found")
-        current_index += 1
-    try:
-        current_frame.select()
-        yield current_frame
-    finally:
-        frame.select()
+# The names are intentionally shortened to reduce the amount of data
+# (de)serialized from/to JSON
+@dataclasses.dataclass(frozen=True)
+class Place:
+    # Name
+    n: str
+    # Address
+    a: str
+    # Type
+    t: int
+    # Kind
+    k: str
+    # Initialized
+    i: bool
+    # Line
+    l: int
+
+    @staticmethod
+    def create(name: str, address: str, type: int, kind: str, init: bool, line: int) -> "Place":
+        return Place(
+            n=name,
+            a=address,
+            t=type,
+            k=kind,
+            i=init,
+            l=line
+        )
+
+
+@dataclasses.dataclass
+class PlaceList:
+    places: List[Place]
+    types: List[Ty]
 
 
 def get_frame_places(frame_index: int = 0, place_filter: Optional[Callable[[gdb.Symbol], bool]] = None) -> PlaceList:
@@ -318,6 +270,8 @@ def get_stack_address_range() -> Optional[Tuple[str, str]]:
     return None
 
 
+### DYNAMIC ALLOCATION TRACKING ###
+
 @dataclasses.dataclass
 class TrackedFunction:
     name: str
@@ -396,19 +350,6 @@ class RetValueBreakpoint(gdb.FinishBreakpoint):
         return False
 
 
-def get_pointer_from_value(value: gdb.Value) -> str:
-    return value.format_string(
-        raw=True,
-        address=True,
-        symbols=False,
-        pretty_arrays=False,
-        pretty_structs=False,
-        array_indexes=False,
-        actual_objects=False,
-        format="x"
-    )
-
-
 ALLOCATION_TRACKER: Optional[AllocationTracker] = None
 
 
@@ -427,3 +368,67 @@ def configure_alloc_tracking():
 
 def take_alloc_records() -> List[FunctionCallRecord]:
     return ALLOCATION_TRACKER.take_records()
+
+
+### UTILITIES ###
+
+@dataclasses.dataclass
+class Result:
+    ok: bool
+    value: Optional[Any] = None
+    error: Optional[str] = None
+
+    @staticmethod
+    def make_ok(value: Any) -> "Result":
+        return Result(ok=True, value=value)
+
+    @staticmethod
+    def make_error(error: Any) -> "Result":
+        return Result(ok=False, error=error)
+
+
+def try_run(fn: Callable) -> Result:
+    try:
+        result = fn()
+        return dataclass_to_json(Result.make_ok(result))
+    except BaseException as e:
+        return dataclass_to_json(Result.make_error(str(e)))
+
+
+def dataclass_to_json(value) -> str:
+    return json.dumps(dataclasses.asdict(value))
+
+
+@contextlib.contextmanager
+def activate_frame(index: int):
+    """
+    Temporarily select frame with the given index.
+    The topmost stack frame has index 0.
+    """
+    frame = gdb.selected_frame()
+
+    current_frame = gdb.newest_frame()
+    current_index = 0
+    while current_index < index:
+        current_frame = current_frame.older()
+        if current_frame is None:
+            raise Exception(f"Frame {index} not found")
+        current_index += 1
+    try:
+        current_frame.select()
+        yield current_frame
+    finally:
+        frame.select()
+
+
+def get_pointer_from_value(value: gdb.Value) -> str:
+    return value.format_string(
+        raw=True,
+        address=True,
+        symbols=False,
+        pretty_arrays=False,
+        pretty_structs=False,
+        array_indexes=False,
+        actual_objects=False,
+        format="x"
+    )
