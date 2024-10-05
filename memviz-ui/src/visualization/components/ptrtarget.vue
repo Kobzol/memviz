@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, onUpdated, Ref, ref, watch } from "vue";
+import {
+  onBeforeUnmount,
+  onMounted,
+  onUpdated,
+  ShallowRef,
+  shallowRef,
+  watch,
+} from "vue";
 import { componentMap } from "../store";
 import { assert } from "../../utils";
 import { ComponentUnsubscribeFn } from "../pointers/component-map";
@@ -47,11 +54,12 @@ function removeComponentFromMap() {
   }
 }
 
-const elementRef = ref<HTMLElement | null>(null);
-const unsubscribeFn: Ref<ComponentUnsubscribeFn | null> = ref(null);
+const elementRef = shallowRef<HTMLElement | null>(null);
+const unsubscribeFn: ShallowRef<ComponentUnsubscribeFn | null> =
+  shallowRef(null);
 
 onMounted(() => updateComponentInMap());
-onUpdated(() => updateComponentInMap());
+onUpdated(() => updateComponentInMap()); // TODO: remove?
 onBeforeUnmount(() => removeComponentFromMap());
 watch(
   () => props.region,

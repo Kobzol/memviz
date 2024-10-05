@@ -1,9 +1,10 @@
 import type { ProcessState } from "process-def";
-import { type Ref, type ShallowRef, ref, shallowRef, triggerRef } from "vue";
+import { type Ref, type ShallowRef, ref, shallowRef } from "vue";
 import { AllocationTracker } from "../allocation-tracker";
 import { ProcessBuilder } from "../resolver/eager";
 import type { ProcessResolver } from "../resolver/resolver";
 import { ComponentMap } from "./pointers/component-map";
+import { PointerMap } from "./pointers/pointer-map";
 
 interface AppState {
   processState: Readonly<ProcessState>;
@@ -36,9 +37,8 @@ export const uiConfiguration: Ref<UIConfiguration> = ref({
 export const componentMap: ShallowRef<ComponentMap> = shallowRef(
   new ComponentMap(),
 );
-export function notifyComponentMap() {
-  triggerRef(componentMap);
-}
+
+export const pointerMap: ShallowRef<PointerMap> = shallowRef(new PointerMap());
 
 export interface TooltipEntry {
   text: string;

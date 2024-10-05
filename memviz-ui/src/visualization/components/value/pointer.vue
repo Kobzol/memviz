@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {
-  type Ref,
+  ShallowRef,
   computed,
   onBeforeUnmount,
   onMounted,
@@ -9,7 +9,12 @@ import {
   watch,
 } from "vue";
 import { addressToStr, assert } from "../../../utils";
-import { appState, componentMap, uiConfiguration } from "../../store";
+import {
+  appState,
+  componentMap,
+  pointerMap,
+  uiConfiguration,
+} from "../../store";
 import { bufferAsBigInt, formatAddress } from "../../utils/formatting";
 import { Path } from "../../pointers/path";
 import { Address, TyPtr } from "process-def";
@@ -18,6 +23,7 @@ import { withDisabledPanZoom } from "../../utils/panzoom";
 import { ComponentWithAddress } from "../../pointers/component-map";
 import { Value, valueToRegion } from "../../utils/value";
 import PtrTarget from "../ptrtarget.vue";
+import { PointerUnsubscribeFn } from "../../pointers/pointer-map";
 
 const props = defineProps<{
   value: Value<TyPtr>;
@@ -127,6 +133,13 @@ function tryRemoveArrow() {
   }
 }
 
+function tryUnsubscribe() {
+  if (unsubscribeFn.value !== null) {
+    unsubscribeFn.value();
+    unsubscribeFn.value = null;
+  }
+}
+
 const targetAddress = computed((): Address | null => {
   const type = props.value.type;
   if (buffer.value === null) return null;
@@ -138,9 +151,10 @@ const enabled = computed(() => {
   return uiConfiguration.value.visualizePointers;
 });
 
-const buffer: Ref<ArrayBuffer | null> = shallowRef(null);
-const elementRef: Ref<HTMLDivElement | null> = shallowRef(null);
-const arrow: Ref<LeaderLine | null> = shallowRef(null);
+const buffer: ShallowRef<ArrayBuffer | null> = shallowRef(null);
+const elementRef: ShallowRef<HTMLDivElement | null> = shallowRef(null);
+const arrow: ShallowRef<LeaderLine | null> = shallowRef(null);
+const unsubscribeFn: ShallowRef<PointerUnsubscribeFn | null> = shallowRef(null);
 
 watch(
   () => [props.value, resolver.value],
@@ -158,6 +172,17 @@ watch(enabled, () => {
     tryRemoveArrow();
   }
 });
+watch(targetAddress, () => {
+  tryUnsubscribe();
+
+  if (targetAddress.value !== null) {
+    unsubscribeFn.value = pointerMap.value.addPointer(
+      targetAddress.value,
+      props.value.type.target,
+      pointerMap
+    );
+  }
+});
 
 onMounted(() => {
   tryAddArrow();
@@ -165,7 +190,10 @@ onMounted(() => {
 onUpdated(() => {
   tryAddArrow();
 });
-onBeforeUnmount(() => tryRemoveArrow());
+onBeforeUnmount(() => {
+  tryRemoveArrow();
+  tryUnsubscribe();
+});
 // TODO: tooltip (pointing to ...)
 </script>
 

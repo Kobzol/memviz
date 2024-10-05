@@ -60,8 +60,8 @@ export function buildString(): ProcessBuilder {
 export function buildHeap(): ProcessBuilder {
   const builder = new ProcessBuilder();
   const heap0 = builder
-    .allocHeap(BigInt(1000), 128)
-    .setArray((i) => makeUint32(i), 32);
+    .allocHeap(BigInt(1000), 4 * 4)
+    .setArray((i) => makeUint32(i), 4);
 
   builder.startFrame("main");
   builder.place("ptr", typePtr(typeUint32())).setPtr(heap0.address);

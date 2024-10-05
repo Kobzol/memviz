@@ -50,7 +50,11 @@ export function formatAddress(address: Address | null): string {
 }
 
 export function formatTypeSize(type: Type): string {
-  return `${type.size} ${pluralize("byte", type.size)}`;
+  return formatSize(type.size);
+}
+
+export function formatSize(size: number): string {
+  return `${size} ${pluralize("byte", size)}`;
 }
 
 export function formatLocation(file: string | null, line: number): string {
