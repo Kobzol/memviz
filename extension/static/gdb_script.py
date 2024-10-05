@@ -1,15 +1,17 @@
 import contextlib
 import json
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import gdb
 import dataclasses
 
+
+### TYPES ###
 
 InternedType = int
 
 
 @dataclasses.dataclass(frozen=True)
-class Ty:
+class TyBase:
     name: str
     size: int
 
@@ -18,23 +20,23 @@ class Ty:
 
 
 @dataclasses.dataclass(frozen=True)
-class TyBool(Ty):
+class TyBool(TyBase):
     kind: str = dataclasses.field(init=False, default="bool")
 
 
 @dataclasses.dataclass(frozen=True)
-class TyInt(Ty):
+class TyInt(TyBase):
     signed: bool
     kind: str = dataclasses.field(init=False, default="int")
 
 
 @dataclasses.dataclass(frozen=True)
-class TyFloat(Ty):
+class TyFloat(TyBase):
     kind: str = dataclasses.field(init=False, default="float")
 
 
 @dataclasses.dataclass(frozen=True)
-class TyPtr(Ty):
+class TyPtr(TyBase):
     target: InternedType
     kind: str = dataclasses.field(init=False, default="ptr")
 
@@ -47,7 +49,7 @@ class StructField:
 
 
 @dataclasses.dataclass(frozen=True)
-class TyStruct(Ty):
+class TyStruct(TyBase):
     fields: Tuple[StructField]
     kind: str = dataclasses.field(init=False, default="struct")
 
@@ -55,94 +57,35 @@ class TyStruct(Ty):
         return ("struct", self.name, self.size, len(self.fields))
 
 @dataclasses.dataclass(frozen=True)
-class TyArray(Ty):
+class TyArray(TyBase):
     type: InternedType
     element_count: int
     kind: str = dataclasses.field(init=False, default="array")
 
 
 @dataclasses.dataclass(frozen=True)
-class TyUnknown(Ty):
+class TyOpaque(TyBase):
+    """Type that we do not want to expand"""
+    kind: str = dataclasses.field(init=False, default="opaque")
+
+
+@dataclasses.dataclass(frozen=True)
+class TyUnknown(TyBase):
     kind: str = dataclasses.field(init=False, default="unknown")
 
 
 @dataclasses.dataclass(frozen=True)
-class TyInvalid(Ty):
+class TyInvalid(TyBase):
     error: str
     kind: str = dataclasses.field(init=False, default="invalid")
 
 
-Ty = Union[TyBool, TyInt, TyFloat, TyPtr, TyStruct, TyArray, TyUnknown, TyInvalid]
-
-
-# The names are intentionally shortened to reduce the amount of data
-# (de)serialized from/to JSON
-@dataclasses.dataclass(frozen=True)
-class Place:
-    # Name
-    n: str
-    # Address
-    a: str
-    # Type
-    t: int
-    # Kind
-    k: str
-    # Initialized
-    i: bool
-    # Line
-    l: int
-
-    @staticmethod
-    def create(name: str, address: str, type: int, kind: str, init: bool, line: int) -> "Place":
-        return Place(
-            n=name,
-            a=address,
-            t=type,
-            k=kind,
-            i=init,
-            l=line
-        )
-
-
-@dataclasses.dataclass
-class PlaceList:
-    places: List[Place]
-    types: List[Ty]
-
-
-@dataclasses.dataclass
-class Result:
-    ok: bool
-    value: Optional[Any] = None
-    error: Optional[str] = None
-
-    @staticmethod
-    def make_ok(value: Any) -> "Result":
-        return Result(ok=True, value=value)
-
-    @staticmethod
-    def make_error(error: Any) -> "Result":
-        return Result(ok=False, error=error)
-
-
-def try_run(fn: Callable) -> Result:
-    try:
-        result = fn()
-        return dataclass_to_json(Result.make_ok(result))
-    except BaseException as e:
-        return dataclass_to_json(Result.make_error(str(e)))
-
-
-def dataclass_to_json(value) -> str:
-    return json.dumps(dataclasses.asdict(value))
-
-
-TypeKey = Tuple[Optional[str], Optional[int]]
+Ty = Union[TyBool, TyInt, TyFloat, TyPtr, TyStruct, TyArray, TyOpaque, TyUnknown, TyInvalid]
 
 
 class TypeInterner:
     def __init__(self):
-        self.cache: Dict[TypeKey, InternedType] = {}
+        self.cache: Dict[Any, InternedType] = {}
         self.types: List[Ty] = []
 
     def intern_type(self, ty: Ty) -> InternedType:
@@ -166,12 +109,18 @@ class TypeInterner:
         return self.types
 
 
+KNOWN_OPAQUE_TYPES = frozenset(("FILE",))
+
+
 def make_type(ty: gdb.Type, interner: TypeInterner, typename: Optional[str] = None) -> InternedType:
     ty = ty.unqualified()
     size = ty.sizeof
     name = ty.name
     if typename is not None or name is None:
         name = typename
+
+    if name is not None and name in KNOWN_OPAQUE_TYPES:
+        return interner.intern_type(TyOpaque(name=name, size=size))
 
     if ty.code == gdb.TYPE_CODE_BOOL:
         return interner.intern_type(TyBool(name=name, size=size))
@@ -216,26 +165,41 @@ def make_type(ty: gdb.Type, interner: TypeInterner, typename: Optional[str] = No
         return interner.intern_type(TyUnknown(name=name, size=size))
 
 
-@contextlib.contextmanager
-def activate_frame(index: int):
-    """
-    Temporarily select frame with the given index.
-    The topmost stack frame has index 0.
-    """
-    frame = gdb.selected_frame()
+### PLACES ###
 
-    current_frame = gdb.newest_frame()
-    current_index = 0
-    while current_index < index:
-        current_frame = current_frame.older()
-        if current_frame is None:
-            raise Exception(f"Frame {index} not found")
-        current_index += 1
-    try:
-        current_frame.select()
-        yield current_frame
-    finally:
-        frame.select()
+# The names are intentionally shortened to reduce the amount of data
+# (de)serialized from/to JSON
+@dataclasses.dataclass(frozen=True)
+class Place:
+    # Name
+    n: str
+    # Address
+    a: str
+    # Type
+    t: int
+    # Kind
+    k: str
+    # Initialized
+    i: bool
+    # Line
+    l: int
+
+    @staticmethod
+    def create(name: str, address: str, type: int, kind: str, init: bool, line: int) -> "Place":
+        return Place(
+            n=name,
+            a=address,
+            t=type,
+            k=kind,
+            i=init,
+            l=line
+        )
+
+
+@dataclasses.dataclass
+class PlaceList:
+    places: List[Place]
+    types: List[Ty]
 
 
 def get_frame_places(frame_index: int = 0, place_filter: Optional[Callable[[gdb.Symbol], bool]] = None) -> PlaceList:
@@ -318,6 +282,8 @@ def get_stack_address_range() -> Optional[Tuple[str, str]]:
     return None
 
 
+### DYNAMIC ALLOCATION TRACKING ###
+
 @dataclasses.dataclass
 class TrackedFunction:
     name: str
@@ -396,19 +362,6 @@ class RetValueBreakpoint(gdb.FinishBreakpoint):
         return False
 
 
-def get_pointer_from_value(value: gdb.Value) -> str:
-    return value.format_string(
-        raw=True,
-        address=True,
-        symbols=False,
-        pretty_arrays=False,
-        pretty_structs=False,
-        array_indexes=False,
-        actual_objects=False,
-        format="x"
-    )
-
-
 ALLOCATION_TRACKER: Optional[AllocationTracker] = None
 
 
@@ -427,3 +380,67 @@ def configure_alloc_tracking():
 
 def take_alloc_records() -> List[FunctionCallRecord]:
     return ALLOCATION_TRACKER.take_records()
+
+
+### UTILITIES ###
+
+@dataclasses.dataclass
+class Result:
+    ok: bool
+    value: Optional[Any] = None
+    error: Optional[str] = None
+
+    @staticmethod
+    def make_ok(value: Any) -> "Result":
+        return Result(ok=True, value=value)
+
+    @staticmethod
+    def make_error(error: Any) -> "Result":
+        return Result(ok=False, error=error)
+
+
+def try_run(fn: Callable) -> Result:
+    try:
+        result = fn()
+        return dataclass_to_json(Result.make_ok(result))
+    except BaseException as e:
+        return dataclass_to_json(Result.make_error(str(e)))
+
+
+def dataclass_to_json(value) -> str:
+    return json.dumps(dataclasses.asdict(value))
+
+
+@contextlib.contextmanager
+def activate_frame(index: int):
+    """
+    Temporarily select frame with the given index.
+    The topmost stack frame has index 0.
+    """
+    frame = gdb.selected_frame()
+
+    current_frame = gdb.newest_frame()
+    current_index = 0
+    while current_index < index:
+        current_frame = current_frame.older()
+        if current_frame is None:
+            raise Exception(f"Frame {index} not found")
+        current_index += 1
+    try:
+        current_frame.select()
+        yield current_frame
+    finally:
+        frame.select()
+
+
+def get_pointer_from_value(value: gdb.Value) -> str:
+    return value.format_string(
+        raw=True,
+        address=True,
+        symbols=False,
+        pretty_arrays=False,
+        pretty_structs=False,
+        array_indexes=False,
+        actual_objects=False,
+        format="x"
+    )

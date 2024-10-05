@@ -38,6 +38,10 @@ export interface TyArray extends TyBase {
   element_count: number;
 }
 
+interface TyOpaque extends TyBase {
+  kind: "opaque";
+}
+
 interface TyUnknown extends TyBase {
   kind: "unknown";
 }
@@ -54,5 +58,6 @@ export type Type =
   | TyPtr
   | TyStruct
   | TyArray
+  | TyOpaque
   | TyUnknown
   | TyInvalid;

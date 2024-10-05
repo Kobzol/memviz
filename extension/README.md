@@ -4,6 +4,7 @@ This extension is designed to visualize the address space of (primarily C) progr
 It has been created as an education tool for the [Introduction to Programming](https://github.com/geordi/upr-course) at VSB-TUO, but it can be used as a general visualization tool.
 
 > The extension is currently only compatible with x64 Linux programs and the GDB debugger.
+> It requires GDB 12.1 or newer!
 
 ![](./img/screen-1.png)
 
