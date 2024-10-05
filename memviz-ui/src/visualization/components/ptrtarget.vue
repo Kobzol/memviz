@@ -1,13 +1,5 @@
 <script setup lang="ts">
-import {
-  nextTick,
-  onBeforeUnmount,
-  onMounted,
-  onUpdated,
-  Ref,
-  ref,
-  watch,
-} from "vue";
+import { onBeforeUnmount, onMounted, onUpdated, Ref, ref, watch } from "vue";
 import { componentMap } from "../store";
 import { assert } from "../../utils";
 import { ComponentUnsubscribeFn } from "../pointers/component-map";

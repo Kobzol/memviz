@@ -1,8 +1,8 @@
 import type { AddressStr, Place } from "process-def";
 import { MemoryMap } from "../memory-map";
+import type { MemoryAllocEvent } from "../messages";
 import { strToAddress } from "../utils";
 import type { ProcessResolver } from "./resolver";
-import type { MemoryAllocEvent } from "../messages";
 
 export class CachingResolver<T extends ProcessResolver>
   implements ProcessResolver

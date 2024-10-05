@@ -11,6 +11,10 @@ export interface HeapAllocation {
 export class AllocationTracker {
   private allocations: BTree<Address, HeapAllocation> = new BTree();
 
+  getAllocations(): HeapAllocation[] {
+    return this.allocations.valuesArray();
+  }
+
   getAllocationContaining(address: Address): HeapAllocation | null {
     const entry = this.allocations.getPairOrNextLower(address);
     if (entry === undefined) return null;

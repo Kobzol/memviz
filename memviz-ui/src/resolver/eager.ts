@@ -11,12 +11,12 @@ import {
   type Type,
 } from "process-def";
 import type { Place } from "process-def/src";
+import type { HeapAllocation } from "../allocation-tracker";
 import { MemoryMap } from "../memory-map";
+import type { MemoryAllocEvent } from "../messages";
 import { assert, addressToStr, strToAddress } from "../utils";
 import type { TyChar } from "../visualization/utils/types";
 import type { ProcessResolver } from "./resolver";
-import type { HeapAllocation } from "../allocation-tracker";
-import type { MemoryAllocEvent } from "../messages";
 
 export interface FullProcessState extends ProcessState {
   stackTrace: FullStackTrace;
