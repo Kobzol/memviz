@@ -1,10 +1,12 @@
 import createPanZoom from "panzoom";
 import type { ProcessState } from "process-def";
-import { createApp } from "vue";
+import { createApp, triggerRef } from "vue";
 import type { ProcessResolver } from "../resolver/resolver";
 import App from "./app.vue";
-import { appState } from "./store";
+import { allocationState, appState } from "./store";
 import "tippy.js/dist/tippy.css";
+import type { MemoryAllocEvent } from "../messages";
+import { strToAddress } from "../utils";
 
 export class Memviz {
   constructor(root: HTMLElement) {
@@ -30,6 +32,23 @@ export class Memviz {
       processState,
       resolver,
     };
-    // TODO: read heap memory from the resolver
+
+    const events = await resolver.takeAllocEvents();
+    processAllocEvents(events);
+  }
+}
+
+function processAllocEvents(events: MemoryAllocEvent[]) {
+  if (events.length > 0) {
+    const tracker = allocationState.value;
+    for (const event of events) {
+      if (event.kind === "mem-allocated") {
+        tracker.allocateMemory(strToAddress(event.address), event.size);
+      } else if (event.kind === "mem-freed") {
+        tracker.freeMemory(strToAddress(event.address));
+      }
+    }
+
+    triggerRef(allocationState);
   }
 }

@@ -2,19 +2,34 @@ import type { Address } from "process-def";
 import BTree from "sorted-btree";
 import { assert } from "./utils";
 
-interface Allocation {
+export interface HeapAllocation {
   address: Address;
   size: number;
 }
 
+// Tracks dynamic memory allocations on the heap
 export class AllocationTracker {
-  private allocations: BTree<Address, Allocation> = new BTree();
+  private allocations: BTree<Address, HeapAllocation> = new BTree();
+
+  getAllocationContaining(address: Address): HeapAllocation | null {
+    const entry = this.allocations.getPairOrNextLower(address);
+    if (entry === undefined) return null;
+    const allocation = entry[1];
+
+    const end = allocation.address + BigInt(allocation.size);
+    if (end <= address) return null;
+    assert(
+      allocation.address <= address && address < end,
+      "allocation was not in the expected location",
+    );
+    return allocation;
+  }
 
   allocateMemory(address: bigint, size: number) {
     this.allocations.set(address, {
       address,
       size,
-    } satisfies Allocation);
+    } satisfies HeapAllocation);
   }
   freeMemory(address: bigint) {
     assert(
