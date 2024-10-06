@@ -9,6 +9,7 @@ import { TyArray, Type } from "process-def";
 import { Value } from "../../utils/value";
 import PtrTarget from "../ptr-target.vue";
 import ValueComponent from "../value/value.vue";
+import TooltipContributor from "../tooltip/tooltip-contributor.vue";
 
 const props = defineProps<{
   allocation: HeapAllocation;
@@ -17,14 +18,29 @@ const props = defineProps<{
 function checkPointerSource() {
   const source = pointerMap.value.getPointerForRegion(region.value);
   if (source === null) {
-    activeType.value = null;
+    assumedType.value = null;
     return;
   }
 
-  activeType.value = source.type;
+  assumedType.value = computeAssumedType(source.type);
 }
 
-const activeType: ShallowRef<Type | null> = shallowRef(null);
+function computeAssumedType(typeBeingPointedTo: Type): Type | null {
+  const elementCount = props.allocation.size / typeBeingPointedTo.size;
+  if (elementCount === 1) {
+    return typeBeingPointedTo;
+  }
+
+  return {
+    kind: "array",
+    name: `${typeBeingPointedTo.name}[${elementCount}]`,
+    size: props.allocation.size,
+    type: typeBeingPointedTo,
+    element_count: elementCount,
+  } satisfies TyArray;
+}
+
+const assumedType: ShallowRef<Type | null> = shallowRef(null);
 
 const region = computed(
   (): AddressRegion => ({
@@ -34,22 +50,24 @@ const region = computed(
 );
 const path = computed((): Path => Path.heapAlloc(props.allocation.address));
 const value = computed((): Value<Type> | null => {
-  const innerType = activeType.value;
-  if (innerType === null) return null;
-
-  const elementCount = props.allocation.size / innerType.size;
-  const derivedType: TyArray = {
-    kind: "array",
-    name: `${innerType.name}[${elementCount}]`,
-    size: props.allocation.size,
-    type: innerType,
-    element_count: elementCount,
-  };
-
+  if (assumedType.value === null) return null;
   return {
     address: props.allocation.address,
-    type: derivedType,
+    type: assumedType.value,
   };
+});
+const tooltip = computed(() => {
+  let tooltip = `Heap allocation at ${formatAddress(
+    props.allocation.address
+  )}, ${formatSize(props.allocation.size)}, `;
+
+  if (assumedType.value !== null) {
+    tooltip += `assumed to be of type <b>${assumedType.value.name}</b>`;
+  } else {
+    tooltip += `unknown type`;
+  }
+
+  return tooltip;
 });
 
 watchEffect(() => {
@@ -58,16 +76,23 @@ watchEffect(() => {
 </script>
 
 <template>
-  <PtrTarget :region="region" :path="path">
-    <div v-if="value !== null">
-      <ValueComponent :path="path" :value="value" />
-    </div>
-    <div v-else>
-      {{ formatAddress(props.allocation.address) }} ({{
-        formatSize(allocation.size)
-      }})
-    </div>
-  </PtrTarget>
+  <TooltipContributor :tooltip="tooltip">
+    <PtrTarget :region="region" :path="path">
+      <div class="allocation">
+        <div v-if="value !== null">
+          <ValueComponent :path="path" :value="value" />
+        </div>
+        <div v-else>Heap allocation ({{ allocation.size }}B)</div>
+      </div>
+    </PtrTarget>
+  </TooltipContributor>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+.allocation {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 5px;
+}
+</style>

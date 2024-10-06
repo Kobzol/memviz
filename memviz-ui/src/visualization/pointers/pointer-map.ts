@@ -17,11 +17,9 @@ export class PointerMap {
     type: Type,
     ref: ShallowRef<PointerMap>,
   ): PointerUnsubscribeFn {
-    console.log(`Tracking pointer at ${address} (${type})`);
     this.activePointers.set(address, { type });
     triggerRef(ref);
     return () => {
-      console.log(`Untracking pointer at ${address}`);
       this.activePointers.delete(address);
       triggerRef(ref);
     };

@@ -3,6 +3,7 @@ import type { Address } from "process-def";
 import { type ShallowRef, triggerRef } from "vue";
 import { assert } from "../../utils";
 import type { Path } from "./path";
+import { formatAddress } from "../utils/formatting";
 
 export interface ComponentWithAddress {
   address: Address;
@@ -66,7 +67,13 @@ export class ComponentMap {
   }
 
   dump() {
-    console.log(this.tree.items);
+    console.log(`Component map has ${this.tree.size} element(s)`);
+    for (const item of this.tree.items) {
+      console.log(
+        `${item.key}: ${item.value.path.format()}`,
+        item.value.element,
+      );
+    }
   }
 
   private removeComponent(
@@ -77,7 +84,7 @@ export class ComponentMap {
     const existing = this.tree.remove(interval as any as NumericTuple, entry);
     assert(
       existing !== undefined,
-      `interval ${interval} not found in interval tree`,
+      `interval (${formatAddress(interval[0])}, ${formatAddress(interval[1])}) not found in interval tree`,
     );
     triggerRef(ref);
   }

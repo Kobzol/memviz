@@ -16,10 +16,11 @@ watch(
 </script>
 
 <template>
-  <div class="heap">
+  <div class="heap" v-if="allocations.length > 0">
     <div class="header">Heap</div>
     <HeapAllocationComponent
       v-for="allocation in allocations"
+      class="entry"
       :key="allocation.address.toString(16)"
       :allocation="allocation"
     />
@@ -38,5 +39,11 @@ watch(
   border-radius: 10px 10px 0 0;
   border: 1px solid black;
   background-color: #8ccdff;
+}
+.entry {
+  border: 2px solid black;
+  &:not(:first-child) {
+    border-top: 0;
+  }
 }
 </style>
