@@ -8,10 +8,10 @@ import {
   scalarAsString,
 } from "../../utils/formatting";
 import { Path } from "../../pointers/path";
-import ByteArray from "./bytearray.vue";
+import ByteArray from "./byte-array.vue";
 import { TyScalar } from "../../utils/types";
 import TooltipContributor from "../tooltip/tooltip-contributor.vue";
-import PtrTarget from "../ptrtarget.vue";
+import PtrTarget from "../ptr-target.vue";
 import { Value, valueToRegion } from "../../utils/value";
 
 const props = defineProps<{

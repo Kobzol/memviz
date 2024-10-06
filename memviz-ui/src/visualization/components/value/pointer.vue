@@ -22,7 +22,7 @@ import { LeaderLine } from "leader-line";
 import { withDisabledPanZoom } from "../../utils/panzoom";
 import { ComponentWithAddress } from "../../pointers/component-map";
 import { Value, valueToRegion } from "../../utils/value";
-import PtrTarget from "../ptrtarget.vue";
+import PtrTarget from "../ptr-target.vue";
 import { PointerUnsubscribeFn } from "../../pointers/pointer-map";
 
 const props = defineProps<{

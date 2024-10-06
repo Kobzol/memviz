@@ -3,7 +3,7 @@ import { computed } from "vue";
 import { bufferToByteArray } from "../../../utils";
 import { AddressRegion } from "../../pointers/region";
 import { Path } from "../../pointers/path";
-import PtrTarget from "../ptrtarget.vue";
+import PtrTarget from "../ptr-target.vue";
 
 const props = defineProps<{
   buffer: ArrayBuffer;

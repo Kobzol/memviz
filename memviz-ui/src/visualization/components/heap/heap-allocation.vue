@@ -7,7 +7,7 @@ import { formatAddress, formatSize } from "../../utils/formatting";
 import { pointerMap } from "../../store";
 import { TyArray, Type } from "process-def";
 import { Value } from "../../utils/value";
-import PtrTarget from "../ptrtarget.vue";
+import PtrTarget from "../ptr-target.vue";
 import ValueComponent from "../value/value.vue";
 
 const props = defineProps<{

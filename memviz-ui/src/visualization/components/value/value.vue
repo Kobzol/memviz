@@ -12,8 +12,8 @@ import {
 import Array from "./array/array.vue";
 import Pointer from "./pointer.vue";
 import Scalar from "./scalar.vue";
-import StringPointer from "./string/stringpointer.vue";
-import CharArray from "./string/chararray.vue";
+import StringPointer from "./string/string-pointer.vue";
+import CharArray from "./string/char-array.vue";
 import { Value } from "../../utils/value";
 
 const props = defineProps<{

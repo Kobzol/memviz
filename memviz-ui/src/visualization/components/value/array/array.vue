@@ -7,7 +7,7 @@ import { TyArray, Type } from "process-def";
 import ValueComponent from "../value.vue";
 import { Path } from "../../../pointers/path";
 import TooltipContributor from "../../tooltip/tooltip-contributor.vue";
-import PtrTarget from "../../ptrtarget.vue";
+import PtrTarget from "../../ptr-target.vue";
 import { Value, valueToRegion } from "../../../utils/value";
 
 const props = defineProps<{

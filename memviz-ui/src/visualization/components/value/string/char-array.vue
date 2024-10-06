@@ -4,7 +4,7 @@ import { Path } from "../../../pointers/path";
 import { TyCharArray } from "../../../utils/types";
 import String from "./string.vue";
 import Array from "../array/array.vue";
-import PtrTarget from "../../ptrtarget.vue";
+import PtrTarget from "../../ptr-target.vue";
 import { Value, valueToRegion } from "../../../utils/value";
 
 const props = defineProps<{
