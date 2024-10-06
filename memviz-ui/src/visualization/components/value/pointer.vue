@@ -39,6 +39,7 @@ async function loadData() {
     addressToStr(address),
     props.value.type.size
   );
+  updatePointerMap();
 }
 
 function formatAsString(): string {
@@ -133,6 +134,18 @@ function tryRemoveArrow() {
   }
 }
 
+function updatePointerMap() {
+  tryUnsubscribe();
+
+  if (targetAddress.value !== null) {
+    unsubscribeFn.value = pointerMap.value.addPointer(
+      targetAddress.value,
+      props.value.type.target,
+      pointerMap
+    );
+  }
+}
+
 function tryUnsubscribe() {
   if (unsubscribeFn.value !== null) {
     unsubscribeFn.value();
@@ -170,17 +183,6 @@ watch(enabled, () => {
     tryAddArrow();
   } else {
     tryRemoveArrow();
-  }
-});
-watch(targetAddress, () => {
-  tryUnsubscribe();
-
-  if (targetAddress.value !== null) {
-    unsubscribeFn.value = pointerMap.value.addPointer(
-      targetAddress.value,
-      props.value.type.target,
-      pointerMap
-    );
   }
 });
 
