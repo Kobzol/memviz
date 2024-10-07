@@ -2,7 +2,10 @@
 import { type Ref, computed, ref, shallowRef, watch } from "vue";
 import { addressToStr } from "../../../../utils";
 import { appState } from "../../../store";
-import { bufferAsBigInt, formatAddress } from "../../../utils/formatting";
+import {
+  bufferAsBigUnsignedInt,
+  formatAddress,
+} from "../../../utils/formatting";
 import { Path } from "../../../pointers/path";
 import { TyStringPtr } from "../../../utils/types";
 import { Address } from "process-def";
@@ -52,7 +55,7 @@ const ptrFormatted = computed(() => {
 });
 const ptrAsAddress = computed((): Address | null => {
   if (ptrBuffer.value === null) return null;
-  return bufferAsBigInt(ptrBuffer.value, props.value.type.size);
+  return bufferAsBigUnsignedInt(ptrBuffer.value, props.value.type.size);
 });
 
 const tooltip = computed(() => {

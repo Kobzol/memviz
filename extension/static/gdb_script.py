@@ -56,6 +56,19 @@ class TyStruct(TyBase):
     def make_key(self) -> Any:
         return ("struct", self.name, self.size, len(self.fields))
 
+
+@dataclasses.dataclass(frozen=True)
+class EnumField:
+    name: str
+    value: int
+
+
+@dataclasses.dataclass(frozen=True)
+class TyEnum(TyBase):
+    fields: Tuple[EnumField]
+    kind: str = dataclasses.field(init=False, default="enum")
+
+
 @dataclasses.dataclass(frozen=True)
 class TyArray(TyBase):
     type: InternedType
@@ -80,7 +93,7 @@ class TyInvalid(TyBase):
     kind: str = dataclasses.field(init=False, default="invalid")
 
 
-Ty = Union[TyBool, TyInt, TyFloat, TyPtr, TyStruct, TyArray, TyOpaque, TyUnknown, TyInvalid]
+Ty = Union[TyBool, TyInt, TyFloat, TyPtr, TyStruct, TyEnum, TyArray, TyOpaque, TyUnknown, TyInvalid]
 
 
 class TypeInterner:
@@ -156,6 +169,11 @@ def make_type(ty: gdb.Type, interner: TypeInterner, typename: Optional[str] = No
             fields.append(field)
         interner.replace_type(interned_ty, TyStruct(name=name, size=size, fields=tuple(fields)))
         return interned_ty
+    elif ty.code == gdb.TYPE_CODE_ENUM:
+        fields = []
+        for field in ty.fields():
+            fields.append(EnumField(name=field.name, value=field.enumval))
+        return interner.intern_type(TyEnum(name=name, size=size, fields=tuple(fields)))
     elif ty.code == gdb.TYPE_CODE_ARRAY:
         inner_type = ty.target()
         element_count = ty.sizeof // inner_type.sizeof

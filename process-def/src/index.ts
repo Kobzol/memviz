@@ -1,6 +1,14 @@
 import type { Type } from "./type";
 
-export type { Type, TyArray, TyBool, TyFloat, TyInt, TyPtr } from "./type";
+export type {
+  Type,
+  TyArray,
+  TyBool,
+  TyFloat,
+  TyInt,
+  TyPtr,
+  TyEnum,
+} from "./type";
 
 export type ThreadId = number;
 

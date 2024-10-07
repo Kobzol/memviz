@@ -34,6 +34,7 @@ When you open the `Run and Debug` container in the Activity Bar on the left, you
   - Arrays
   - Pointers
   - Strings (both inline char arrays and string pointers)
+  - Enums
 - Heap allocation visualization
   - Visualization of heap allocations based on data type of pointers pointing to them
   - `malloc`/`free` tracking using GDB
@@ -46,7 +47,6 @@ When you open the `Run and Debug` container in the Activity Bar on the left, you
 
 - Structs
 - Dark/light mode that reacts to VSCode theme
-- Enums
 
 ## Unsupported features
 
