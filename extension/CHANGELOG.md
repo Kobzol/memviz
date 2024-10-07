@@ -1,6 +1,6 @@
 # Change Log
 
-## Dev
+## 0.3.0
 
 - Improve robustness of dynamic memory allocation tracking.
   - It should now work properly, without causing debugging issues.
