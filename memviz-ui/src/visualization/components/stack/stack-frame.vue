@@ -78,7 +78,7 @@ const tooltip = computed(() => {
   return `Stack frame of function <b>${props.frame.name}</b> located at <b>${location.value}</b>`;
 });
 const isTopFrame = computed(() => props.frame.index === 0);
-const expanded = ref(true); //isTopFrame.value);
+const expanded = ref(isTopFrame.value);
 
 // Compute the memory region of the stack frame's parameters and locals.
 // TODO: preload the address region even without loading places.
