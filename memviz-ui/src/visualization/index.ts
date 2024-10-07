@@ -12,6 +12,7 @@ export class Memviz {
   constructor(root: HTMLElement) {
     const app = createApp(App);
     app.mount(root);
+
     createPanZoom(document.body, {
       smoothScroll: false,
       onDoubleClick: (_e) => {

@@ -1,6 +1,7 @@
 import { PlaceKind } from ".";
 import {
   ProcessBuilder,
+  StructBuilder,
   makeUint32,
   typeArray,
   typeChar,
@@ -57,6 +58,17 @@ export function buildString(): ProcessBuilder {
   return builder;
 }
 
+export function buildStruct(): ProcessBuilder {
+  const builder = new ProcessBuilder();
+
+  builder.startFrame("main");
+  new StructBuilder("Person")
+    .field("age", typeUint32(), (p) => p.setUint32(42))
+    .field("friend_count", typeUint32(), (p) => p.setUint32(20))
+    .placeStack(builder, "karel");
+  return builder;
+}
+
 export function buildHeap(): ProcessBuilder {
   const builder = new ProcessBuilder();
   const heap0 = builder
@@ -90,5 +102,14 @@ export function buildComplex(): ProcessBuilder {
   builder
     .place("a", typeArray(typeUint32(), size))
     .setArray((index) => makeUint32(index + 1), size);
+  return builder;
+}
+
+export function buildStress(): ProcessBuilder {
+  const builder = new ProcessBuilder();
+  builder.startFrame("main");
+  for (let i = 0; i < 1000; i++) {
+    builder.place(`v${i}`, typeUint32()).setUint32(i);
+  }
   return builder;
 }

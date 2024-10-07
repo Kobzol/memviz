@@ -19,7 +19,8 @@ const state = computed(() => appState.value.processState);
 
 <style lang="scss" scoped>
 .stack {
-  max-width: 500px;
+  min-width: 300px;
+  max-width: 600px;
 }
 .header {
   padding: 4px 0;

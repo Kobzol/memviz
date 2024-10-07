@@ -79,7 +79,7 @@ const tooltip = computed(() => {
     border: 3px solid #000000;
     padding: 3px;
     margin-right: 5px;
-    font-size: 1.1em;
+    font-size: 1.2em;
     background-color: #a4c5ea;
     border-radius: 5px;
 

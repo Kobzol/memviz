@@ -25,6 +25,10 @@ export class Path {
     return this.with(arrayIndexComponent(index));
   }
 
+  makeStructField(name: string): Path {
+    return this.with(structFieldComponent(name));
+  }
+
   makeByteElement(index: number): Path {
     return this.with(byteElementComponent(index));
   }
@@ -53,6 +57,10 @@ function stackFramePlaceComponent(name: string): Component {
 
 function arrayIndexComponent(index: number): Component {
   return `i-${index}`;
+}
+
+function structFieldComponent(name: string): Component {
+  return `f-${name}`;
 }
 
 function byteElementComponent(index: number): Component {

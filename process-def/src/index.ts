@@ -8,6 +8,7 @@ export type {
   TyInt,
   TyPtr,
   TyEnum,
+  TyStruct,
 } from "./type";
 
 export type ThreadId = number;
