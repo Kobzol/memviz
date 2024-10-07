@@ -6,11 +6,14 @@ import type {
   GetPlacesRes,
   GetStackTraceReq,
   GetStackTraceRes,
+  MemoryAllocEvent,
   MemvizToExtensionMsg,
   ReadMemoryReq,
   ReadMemoryRes,
   RequestId,
   ResolverId,
+  TakeAllocEventsReq,
+  TakeAllocEventsRes,
 } from "../messages";
 import { deserializePlaces } from "../type";
 import type { ProcessResolver } from "./resolver";
@@ -75,6 +78,13 @@ export class VsCodeResolver implements ProcessResolver {
       size,
     });
     return res.data;
+  }
+
+  async takeAllocEvents(): Promise<MemoryAllocEvent[]> {
+    const res = await this.sendRequest<TakeAllocEventsReq, TakeAllocEventsRes>({
+      kind: "take-alloc-events",
+    });
+    return res.events;
   }
 
   private sendRequest<

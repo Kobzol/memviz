@@ -1,5 +1,6 @@
 import type { AddressStr, Place } from "process-def";
 import { MemoryMap } from "../memory-map";
+import type { MemoryAllocEvent } from "../messages";
 import { strToAddress } from "../utils";
 import type { ProcessResolver } from "./resolver";
 
@@ -29,5 +30,9 @@ export class CachingResolver<T extends ProcessResolver>
     const result = await this.inner.readMemory(address, size);
     this.map.set(strToAddress(address), result);
     return result;
+  }
+
+  async takeAllocEvents(): Promise<MemoryAllocEvent[]> {
+    return await this.inner.takeAllocEvents();
   }
 }

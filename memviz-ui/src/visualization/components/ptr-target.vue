@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import {
-  nextTick,
   onBeforeUnmount,
   onMounted,
   onUpdated,
-  Ref,
-  ref,
+  ShallowRef,
+  shallowRef,
   watch,
 } from "vue";
 import { componentMap } from "../store";
@@ -24,16 +23,16 @@ const props = defineProps<{
 async function updateComponentInMap() {
   assert(elementRef.value !== null, "component has not been mounted yet");
 
-  removeComponentFromMap();
-
-  const address = props.region.address;
-  if (address === null) {
-    return;
-  }
-
   // This is required to wait for browser relayout, to make sure
   // that the element has the final layout before it is registered
   window.requestAnimationFrame(() => {
+    const address = props.region.address;
+    if (address === null) {
+      return;
+    }
+
+    removeComponentFromMap();
+
     if (elementRef.value !== null) {
       unsubscribeFn.value = componentMap.value.addComponent(
         {
@@ -55,8 +54,9 @@ function removeComponentFromMap() {
   }
 }
 
-const elementRef = ref<HTMLElement | null>(null);
-const unsubscribeFn: Ref<ComponentUnsubscribeFn | null> = ref(null);
+const elementRef = shallowRef<HTMLElement | null>(null);
+const unsubscribeFn: ShallowRef<ComponentUnsubscribeFn | null> =
+  shallowRef(null);
 
 onMounted(() => updateComponentInMap());
 onUpdated(() => updateComponentInMap());

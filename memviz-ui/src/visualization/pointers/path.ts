@@ -1,7 +1,12 @@
+import { formatAddress } from "../utils/formatting";
+
 type Component = string;
 
 // Represents an "access point" to some value from a root (global scope/stack frame/heap)
 export class Path {
+  static heapAlloc(address: bigint): Path {
+    return new Path([heapAllocComponent(address)]);
+  }
   static stackFrame(index: number): Path {
     return new Path([stackFrameComponent(index)]);
   }
@@ -52,4 +57,8 @@ function arrayIndexComponent(index: number): Component {
 
 function byteElementComponent(index: number): Component {
   return `b-${index}`;
+}
+
+function heapAllocComponent(address: bigint): Component {
+  return `h-${formatAddress(address)}`;
 }

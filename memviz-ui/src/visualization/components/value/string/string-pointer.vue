@@ -10,7 +10,7 @@ import String from "./string.vue";
 import Pointer from "../pointer.vue";
 import TooltipContributor from "../../tooltip/tooltip-contributor.vue";
 import { Value, valueToRegion } from "../../../utils/value";
-import PtrTarget from "../../ptrtarget.vue";
+import PtrTarget from "../../ptr-target.vue";
 
 const props = defineProps<{
   value: Value<TyStringPtr>;

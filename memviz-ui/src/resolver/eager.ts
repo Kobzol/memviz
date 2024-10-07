@@ -11,7 +11,9 @@ import {
   type Type,
 } from "process-def";
 import type { Place } from "process-def/src";
+import type { HeapAllocation } from "../allocation-tracker";
 import { MemoryMap } from "../memory-map";
+import type { MemoryAllocEvent } from "../messages";
 import { assert, addressToStr, strToAddress } from "../utils";
 import type { TyChar } from "../visualization/utils/types";
 import type { ProcessResolver } from "./resolver";
@@ -19,6 +21,7 @@ import type { ProcessResolver } from "./resolver";
 export interface FullProcessState extends ProcessState {
   stackTrace: FullStackTrace;
   memory: MemoryMap;
+  heapAllocations: HeapAllocation[];
 }
 
 interface FullStackTrace {
@@ -47,6 +50,25 @@ export class EagerResolver implements ProcessResolver {
   async getPlaces(frameIndex: number): Promise<Place[]> {
     return this.state.stackTrace.frames[frameIndex].places;
   }
+
+  async takeAllocEvents(): Promise<MemoryAllocEvent[]> {
+    return this.state.heapAllocations.flatMap(({ address, size, active }) => {
+      const events: MemoryAllocEvent[] = [
+        {
+          kind: "mem-allocated",
+          address: addressToStr(address),
+          size,
+        },
+      ];
+      if (!active) {
+        events.push({
+          kind: "mem-freed",
+          address: addressToStr(address),
+        });
+      }
+      return events;
+    });
+  }
 }
 
 type BuilderFrame = Omit<FullStackFrame, "id" | "index"> & {
@@ -58,9 +80,11 @@ export class ProcessBuilder {
   private map: MemoryMap = new MemoryMap();
   private frames: BuilderFrame[] = [];
   private activeFrame: BuilderFrame | null = null;
+  private heapAllocations: HeapAllocation[] = [];
 
   // Move stack a bit up to avoid data sitting at address 0
   private baseStackAddress: Address = BigInt(1000);
+  private baseHeapAddress: Address = BigInt(100 * 1000 * 1000);
 
   startFrame(
     name: string,
@@ -130,6 +154,16 @@ export class ProcessBuilder {
     this.activeFrame = null;
   }
 
+  allocHeap(address: Address, size: number, active = true): PlaceBuilder {
+    address += this.baseHeapAddress;
+    this.heapAllocations.push({
+      address,
+      size,
+      active,
+    });
+    return new PlaceBuilder(address, this.map);
+  }
+
   build(): [FullProcessState, EagerResolver] {
     if (this.activeFrame !== null) {
       this.endFrame();
@@ -146,6 +180,7 @@ export class ProcessBuilder {
         end: "0x1000",
       },
       memory: this.map,
+      heapAllocations: this.heapAllocations,
     };
     return [processState, new EagerResolver(processState)];
   }
@@ -216,13 +251,13 @@ export function typeFloat32(name = "float"): TyFloat {
   };
 }
 
-export function typeArray(type: Type, element_count: number): TyArray {
+export function typeArray(type: Type, elementCount: number): TyArray {
   return {
-    name: `${type.name}[${element_count}]`,
+    name: `${type.name}[${elementCount}]`,
     kind: "array",
-    size: type.size * element_count,
+    size: type.size * elementCount,
     type,
-    element_count,
+    element_count: elementCount,
   };
 }
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {
-  type Ref,
+  ShallowRef,
   computed,
   onBeforeUnmount,
   onMounted,
@@ -9,7 +9,13 @@ import {
   watch,
 } from "vue";
 import { addressToStr, assert } from "../../../utils";
-import { appState, componentMap, uiConfiguration } from "../../store";
+import {
+  allocationState,
+  appState,
+  componentMap,
+  pointerMap,
+  uiConfiguration,
+} from "../../store";
 import { bufferAsBigInt, formatAddress } from "../../utils/formatting";
 import { Path } from "../../pointers/path";
 import { Address, TyPtr } from "process-def";
@@ -17,7 +23,8 @@ import { LeaderLine } from "leader-line";
 import { withDisabledPanZoom } from "../../utils/panzoom";
 import { ComponentWithAddress } from "../../pointers/component-map";
 import { Value, valueToRegion } from "../../utils/value";
-import PtrTarget from "../ptrtarget.vue";
+import PtrTarget from "../ptr-target.vue";
+import { PointerUnsubscribeFn } from "../../pointers/pointer-map";
 
 const props = defineProps<{
   value: Value<TyPtr>;
@@ -33,6 +40,7 @@ async function loadData() {
     addressToStr(address),
     props.value.type.size
   );
+  updatePointerMap();
 }
 
 function formatAsString(): string {
@@ -80,6 +88,13 @@ function tryAddArrow() {
     const targetY = targetIsDown ? 0 : "100%";
     const targetEndSocket = targetIsDown ? "top" : "bottom";
 
+    let endPlug: LeaderLine.PlugType = "arrow2";
+    let endPlugColor = "coral";
+    if (pointsToExpiredHeapAllocation(target)) {
+      endPlug = "square";
+      endPlugColor = "red";
+    }
+
     arrow.value = new LeaderLine(
       LeaderLine.pointAnchor(source, {
         x: source.clientWidth + 10,
@@ -96,9 +111,9 @@ function tryAddArrow() {
         startPlugOutline: true,
         startPlugOutlineSize: 2,
         startPlugOutlineColor: "black",
-        endPlug: "arrow2",
+        endPlug,
         endPlugSize: 1.25,
-        // endPlugColor: "black",
+        endPlugColor,
         color: "coral",
         size: 4,
         // dash: { len: 4, gap: 4, animation: true },
@@ -120,10 +135,37 @@ function selectTarget(
   return target;
 }
 
+function pointsToExpiredHeapAllocation(target: ComponentWithAddress): boolean {
+  const allocation = allocationState.value.getAllocationContaining(
+    target.address
+  );
+  if (allocation === null) return false;
+  return !allocation.active;
+}
+
 function tryRemoveArrow() {
   if (arrow.value !== null) {
     arrow.value.remove();
     arrow.value = null;
+  }
+}
+
+function updatePointerMap() {
+  tryUnsubscribe();
+
+  if (targetAddress.value !== null) {
+    unsubscribeFn.value = pointerMap.value.addPointer(
+      targetAddress.value,
+      props.value.type.target,
+      pointerMap
+    );
+  }
+}
+
+function tryUnsubscribe() {
+  if (unsubscribeFn.value !== null) {
+    unsubscribeFn.value();
+    unsubscribeFn.value = null;
   }
 }
 
@@ -138,9 +180,10 @@ const enabled = computed(() => {
   return uiConfiguration.value.visualizePointers;
 });
 
-const buffer: Ref<ArrayBuffer | null> = shallowRef(null);
-const elementRef: Ref<HTMLDivElement | null> = shallowRef(null);
-const arrow: Ref<LeaderLine | null> = shallowRef(null);
+const buffer: ShallowRef<ArrayBuffer | null> = shallowRef(null);
+const elementRef: ShallowRef<HTMLDivElement | null> = shallowRef(null);
+const arrow: ShallowRef<LeaderLine | null> = shallowRef(null);
+const unsubscribeFn: ShallowRef<PointerUnsubscribeFn | null> = shallowRef(null);
 
 watch(
   () => [props.value, resolver.value],
@@ -165,7 +208,10 @@ onMounted(() => {
 onUpdated(() => {
   tryAddArrow();
 });
-onBeforeUnmount(() => tryRemoveArrow());
+onBeforeUnmount(() => {
+  tryRemoveArrow();
+  tryUnsubscribe();
+});
 // TODO: tooltip (pointing to ...)
 </script>
 
