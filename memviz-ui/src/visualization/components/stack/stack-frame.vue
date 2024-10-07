@@ -107,6 +107,15 @@ const path = computed(() => {
 });
 
 watch(
+  () => props.frame,
+  (newFrame: StackFrame, oldFrame: StackFrame) => {
+    if (newFrame.index != oldFrame.index || newFrame.name != oldFrame.name) {
+      expanded.value = isTopFrame.value;
+    }
+  }
+);
+
+watch(
   () => [props.frame, resolver],
   () => {
     places.value = null;
