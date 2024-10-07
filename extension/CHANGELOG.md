@@ -2,6 +2,7 @@
 
 ## Dev
 
+- Added support for visualizing structures.
 - Added support for visualizing enums.
 
 ## 0.3.0

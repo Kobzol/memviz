@@ -192,6 +192,10 @@ export class PlaceBuilder {
     private map: MemoryMap,
   ) {}
 
+  offset(offset: number): PlaceBuilder {
+    return new PlaceBuilder(this.address + BigInt(offset), this.map);
+  }
+
   setArray(
     generator: (index: number) => ArrayBuffer,
     count: number,
@@ -222,6 +226,56 @@ export class PlaceBuilder {
   setPtr(value: Address): PlaceBuilder {
     this.map.set(this.address, makeUint64(value));
     return this;
+  }
+}
+
+export class StructBuilder {
+  private fields: {
+    name: string;
+    type: Type;
+    offset: number;
+    build_fn: (builder: PlaceBuilder) => void;
+  }[] = [];
+  private offset = 0;
+
+  constructor(private name: string) {}
+
+  field(
+    name: string,
+    type: Type,
+    build_fn: (builder: PlaceBuilder) => void,
+    offset: number | null = null,
+  ): StructBuilder {
+    if (offset === null) {
+      offset = this.offset;
+      this.offset += type.size;
+    } else {
+      this.offset = offset;
+    }
+    this.fields.push({
+      name,
+      type,
+      offset,
+      build_fn,
+    });
+    return this;
+  }
+
+  placeStack(process: ProcessBuilder, name: string) {
+    const builder = process.place(name, {
+      kind: "struct",
+      size: this.fields.reduce((v, f) => v + f.type.size, 0),
+      name: this.name,
+      fields: this.fields.map((f) => ({
+        name: f.name,
+        offset_bits: f.offset * 8,
+        type: f.type,
+      })),
+    });
+    for (const field of this.fields) {
+      const fieldBuilder = builder.offset(field.offset);
+      field.build_fn(fieldBuilder);
+    }
   }
 }
 

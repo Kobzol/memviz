@@ -27,7 +27,7 @@ interface StructField {
   offset_bits: number;
 }
 
-interface TyStruct extends TyBase {
+export interface TyStruct extends TyBase {
   kind: "struct";
   fields: StructField[];
 }
