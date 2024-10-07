@@ -87,12 +87,14 @@ watch(
 .struct {
   display: flex;
   flex-direction: column;
-  align-items: end;
+  align-items: start;
 }
 
 .field {
+  width: 100%;
   display: flex;
   flex-direction: row;
+  justify-content: space-between;
   align-items: center;
   margin-bottom: 5px;
 }
