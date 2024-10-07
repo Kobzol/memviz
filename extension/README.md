@@ -28,13 +28,16 @@ When you open the `Run and Debug` container in the Activity Bar on the left, you
 
 ## Features
 
-- Stack trace visualization
+- Memory visualization
   - Stack frames
   - Scalars (integers, floats, chars)
   - Arrays
   - Pointers
   - Strings (both inline char arrays and string pointers)
-- Heap memory allocation tracking
+- Heap allocation visualization
+  - Visualization of heap allocations based on data type of pointers pointing to them
+  - `malloc`/`free` tracking using GDB
+  - Highlighting of released heap allocations
 - Lazy loading of memory from the debugged process
 - Simple tracking of variable initialization
   - Note that the initialization tracking is offset by one line, i.e. the variable is assumed to be initialized on the line where it is declared.
@@ -42,13 +45,19 @@ When you open the `Run and Debug` container in the Activity Bar on the left, you
 ## Planned/WIP features
 
 - Structs
-- Heap memory visualization
+- Dark/light mode that reacts to VSCode theme
+- Enums
 
 ## Unsupported features
 
 - Multiple threads
 - Bitfields
-- Enums
+
+## Examples
+
+- Heap memory tracking
+
+  ![](./img/heap-alloc.gif)
 
 ## Development
 

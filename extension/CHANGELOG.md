@@ -3,6 +3,9 @@
 ## Dev
 
 - Improve robustness of dynamic memory allocation tracking.
+  - It should now work properly, without causing debugging issues.
+- Added visualization of allocations on the heap.
+- Added highlighting of freed heap allocations.
 
 ## 0.2.1
 
