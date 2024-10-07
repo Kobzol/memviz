@@ -1,3 +1,5 @@
+import { formatAddress } from "../utils/formatting";
+
 type Component = string;
 
 // Represents an "access point" to some value from a root (global scope/stack frame/heap)
@@ -58,5 +60,5 @@ function byteElementComponent(index: number): Component {
 }
 
 function heapAllocComponent(address: bigint): Component {
-  return `h-${address}`;
+  return `h-${formatAddress(address)}`;
 }

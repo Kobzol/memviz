@@ -60,11 +60,13 @@ export function buildString(): ProcessBuilder {
 export function buildHeap(): ProcessBuilder {
   const builder = new ProcessBuilder();
   const heap0 = builder
-    .allocHeap(BigInt(1000), 4 * 4)
+    .allocHeap(BigInt(1000), 4 * 4, false)
     .setArray((i) => makeUint32(i), 4);
+  const heap1 = builder.allocHeap(BigInt(2004), 16).setCString("hello");
 
   builder.startFrame("main");
   builder.place("ptr", typePtr(typeUint32())).setPtr(heap0.address);
+  builder.place("ptr2", typePtr(typeChar())).setPtr(heap1.address);
   return builder;
 }
 

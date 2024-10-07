@@ -52,11 +52,22 @@ export class EagerResolver implements ProcessResolver {
   }
 
   async takeAllocEvents(): Promise<MemoryAllocEvent[]> {
-    return this.state.heapAllocations.map(({ address, size }) => ({
-      kind: "mem-allocated",
-      address: addressToStr(address),
-      size,
-    }));
+    return this.state.heapAllocations.flatMap(({ address, size, active }) => {
+      const events: MemoryAllocEvent[] = [
+        {
+          kind: "mem-allocated",
+          address: addressToStr(address),
+          size,
+        },
+      ];
+      if (!active) {
+        events.push({
+          kind: "mem-freed",
+          address: addressToStr(address),
+        });
+      }
+      return events;
+    });
   }
 }
 
@@ -143,11 +154,12 @@ export class ProcessBuilder {
     this.activeFrame = null;
   }
 
-  allocHeap(address: Address, size: number): PlaceBuilder {
+  allocHeap(address: Address, size: number, active = true): PlaceBuilder {
     address += this.baseHeapAddress;
     this.heapAllocations.push({
       address,
       size,
+      active,
     });
     return new PlaceBuilder(address, this.map);
   }

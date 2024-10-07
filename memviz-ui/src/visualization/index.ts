@@ -43,8 +43,12 @@ function processAllocEvents(events: MemoryAllocEvent[]) {
     const tracker = allocationState.value;
     for (const event of events) {
       if (event.kind === "mem-allocated") {
+        console.debug(
+          `Heap memory allocated at ${event.address} (${event.size}B)`,
+        );
         tracker.allocateMemory(strToAddress(event.address), event.size);
       } else if (event.kind === "mem-freed") {
+        console.debug(`Heap memory freed at ${event.address}`);
         tracker.freeMemory(strToAddress(event.address));
       }
     }

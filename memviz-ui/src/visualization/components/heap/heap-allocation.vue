@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ShallowRef, shallowRef, watchEffect } from "vue";
+import { computed, ShallowRef, shallowRef, watch, watchEffect } from "vue";
 import { HeapAllocation } from "../../../allocation-tracker";
 import { AddressRegion } from "../../pointers/region";
 import { Path } from "../../pointers/path";
@@ -66,10 +66,23 @@ const tooltip = computed(() => {
   } else {
     tooltip += `unknown type`;
   }
+  if (!props.allocation.active) {
+    tooltip += ". This allocation has been RELEASED!";
+  }
 
   return tooltip;
 });
-
+const text = computed(() => {
+  let text = "";
+  if (props.allocation.active) {
+    text += "Heap allocation";
+  } else {
+    text += "RELEASED heap allocation";
+  }
+  text += ` (${props.allocation.size}B)`;
+  return text;
+});
+1;
 watchEffect(() => {
   checkPointerSource();
 });
@@ -78,11 +91,11 @@ watchEffect(() => {
 <template>
   <TooltipContributor :tooltip="tooltip">
     <PtrTarget :region="region" :path="path">
-      <div class="allocation">
-        <div v-if="value !== null">
+      <div :class="{ allocation: true, freed: !allocation.active }">
+        <div v-if="value !== null && allocation.active">
           <ValueComponent :path="path" :value="value" />
         </div>
-        <div v-else>Heap allocation ({{ allocation.size }}B)</div>
+        <div v-else>{{ text }}</div>
       </div>
     </PtrTarget>
   </TooltipContributor>
@@ -94,5 +107,11 @@ watchEffect(() => {
   flex-direction: row;
   align-items: center;
   padding: 5px;
+  background: white;
+
+  &.freed {
+    opacity: 0.5;
+    border: 3px dashed red;
+  }
 }
 </style>

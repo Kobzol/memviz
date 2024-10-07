@@ -17,6 +17,6 @@ import Heap from "./heap/heap.vue";
   justify-content: start;
 }
 .stack {
-  margin-right: 200px;
+  margin-right: 100px;
 }
 </style>

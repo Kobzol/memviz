@@ -6,6 +6,7 @@ import AddressSpace from "./components/address-space.vue";
 
 // Code for debugging pointer targets
 // watch(componentMap, () => {
+//   // componentMap.value.dump();
 //   document.querySelectorAll(".ptr-target").forEach((el) => {
 //     el.classList.remove("ptr-target");
 //   });

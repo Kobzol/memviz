@@ -10,6 +10,7 @@ import {
 } from "vue";
 import { addressToStr, assert } from "../../../utils";
 import {
+  allocationState,
   appState,
   componentMap,
   pointerMap,
@@ -87,6 +88,13 @@ function tryAddArrow() {
     const targetY = targetIsDown ? 0 : "100%";
     const targetEndSocket = targetIsDown ? "top" : "bottom";
 
+    let endPlug: LeaderLine.PlugType = "arrow2";
+    let endPlugColor = "coral";
+    if (pointsToExpiredHeapAllocation(target)) {
+      endPlug = "square";
+      endPlugColor = "red";
+    }
+
     arrow.value = new LeaderLine(
       LeaderLine.pointAnchor(source, {
         x: source.clientWidth + 10,
@@ -103,9 +111,9 @@ function tryAddArrow() {
         startPlugOutline: true,
         startPlugOutlineSize: 2,
         startPlugOutlineColor: "black",
-        endPlug: "arrow2",
+        endPlug,
         endPlugSize: 1.25,
-        // endPlugColor: "black",
+        endPlugColor,
         color: "coral",
         size: 4,
         // dash: { len: 4, gap: 4, animation: true },
@@ -125,6 +133,14 @@ function selectTarget(
     }
   }
   return target;
+}
+
+function pointsToExpiredHeapAllocation(target: ComponentWithAddress): boolean {
+  const allocation = allocationState.value.getAllocationContaining(
+    target.address
+  );
+  if (allocation === null) return false;
+  return !allocation.active;
 }
 
 function tryRemoveArrow() {
