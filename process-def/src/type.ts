@@ -32,6 +32,16 @@ interface TyStruct extends TyBase {
   fields: StructField[];
 }
 
+interface EnumField {
+  name: string;
+  value: number;
+}
+
+export interface TyEnum extends TyBase {
+  kind: "enum";
+  fields: EnumField[];
+}
+
 export interface TyArray extends TyBase {
   kind: "array";
   type: Type;
@@ -57,6 +67,7 @@ export type Type =
   | TyFloat
   | TyPtr
   | TyStruct
+  | TyEnum
   | TyArray
   | TyOpaque
   | TyUnknown

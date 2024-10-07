@@ -16,7 +16,7 @@ import {
   pointerMap,
   uiConfiguration,
 } from "../../store";
-import { bufferAsBigInt, formatAddress } from "../../utils/formatting";
+import { bufferAsBigUnsignedInt, formatAddress } from "../../utils/formatting";
 import { Path } from "../../pointers/path";
 import { Address, TyPtr } from "process-def";
 import { LeaderLine } from "leader-line";
@@ -172,7 +172,7 @@ function tryUnsubscribe() {
 const targetAddress = computed((): Address | null => {
   const type = props.value.type;
   if (buffer.value === null) return null;
-  return bufferAsBigInt(buffer.value, type.size);
+  return bufferAsBigUnsignedInt(buffer.value, type.size);
 });
 
 const resolver = computed(() => appState.value.resolver);

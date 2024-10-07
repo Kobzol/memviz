@@ -1,5 +1,9 @@
 # Change Log
 
+## Dev
+
+- Added support for visualizing enums.
+
 ## 0.3.0
 
 - Improve robustness of dynamic memory allocation tracking.

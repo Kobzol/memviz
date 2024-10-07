@@ -1,5 +1,4 @@
 import type { Address, Type } from "process-def";
-import { assert } from "../../utils";
 import { type TyScalar, isCharType } from "./types";
 
 const FORMATTERS: { [key: string]: (view: DataView) => string } = {
@@ -66,9 +65,10 @@ export function formatLocation(file: string | null, line: number): string {
   return `${result ?? "<unknown-file>"}:${line}`;
 }
 
-export function bufferAsBigInt(buffer: ArrayBuffer, size: number): bigint {
-  assert(size === 4 || size === 8, "only 4 and 8 byte pointers are supported");
-
+export function bufferAsBigUnsignedInt(
+  buffer: ArrayBuffer,
+  size: number,
+): bigint {
   const view = new DataView(buffer);
   if (size === 8) {
     return view.getBigUint64(0, true);
@@ -76,7 +76,15 @@ export function bufferAsBigInt(buffer: ArrayBuffer, size: number): bigint {
   if (size === 4) {
     return BigInt(view.getUint32(0, true));
   }
-  return BigInt(0);
+  if (size === 2) {
+    return BigInt(view.getUint16(0, true));
+  }
+  if (size === 1) {
+    return BigInt(view.getUint8(0));
+  }
+  throw new Error(
+    "Only 1/2/4/8 bytes are supported for bufferAsBigUnsignedInt",
+  );
 }
 
 export function bufferToHexadecimal(buffer: ArrayBuffer): string {
