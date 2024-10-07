@@ -5,10 +5,10 @@ import { appState } from "../../../store";
 import { Type, TyStruct } from "process-def";
 import { Path } from "../../../pointers/path";
 import { Value } from "../../../utils/value";
-
-import ValueComponent from "../value.vue";
-import TooltipContributor from "../../tooltip/tooltip-contributor.vue";
 import { pluralize } from "../../../utils/formatting";
+
+import LazyValue from "../lazy-value.vue";
+import TooltipContributor from "../../tooltip/tooltip-contributor.vue";
 
 const props = defineProps<{
   value: Value<TyStruct>;
@@ -76,10 +76,7 @@ watch(
       <template v-for="field in fields" :key="field.name">
         <TooltipContributor class="field" :tooltip="getTooltip(field)">
           <code class="decl">{{ field.type.name }} {{ field.name }}</code>
-          <ValueComponent
-            :value="createValue(field)"
-            :path="createPath(field)"
-          />
+          <LazyValue :value="createValue(field)" :path="createPath(field)" />
         </TooltipContributor>
       </template>
     </div>
@@ -90,12 +87,14 @@ watch(
 .struct {
   display: flex;
   flex-direction: column;
-  align-items: end;
+  align-items: start;
 }
 
 .field {
+  width: 100%;
   display: flex;
   flex-direction: row;
+  justify-content: space-between;
   align-items: center;
   margin-bottom: 5px;
 }
