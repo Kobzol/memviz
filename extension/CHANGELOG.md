@@ -1,6 +1,6 @@
 # Change Log
 
-## Dev
+## 0.3.1
 
 - Added support for visualizing structures.
 - Added support for visualizing enums.
