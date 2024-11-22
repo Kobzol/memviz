@@ -15,7 +15,6 @@ export type ThreadId = number;
 
 export interface ProcessState {
   stackTrace: StackTrace;
-  stackAddressRange: AddressRange | null;
 }
 
 export interface StackTrace {

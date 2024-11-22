@@ -1,6 +1,10 @@
 {
   "name": "memviz-workspace",
-  "workspaces": ["process-def", "memviz-ui", "extension"],
+  "workspaces": [
+    "process-def",
+    "memviz-ui",
+    "extension"
+  ],
   "scripts": {
     "build": "npm run build --workspaces",
     "fix": "npm run fix --workspaces",
@@ -8,5 +12,8 @@
     "watch": "npm run watch --workspaces",
     "package": "npm run build && npm run package -w extension",
     "bump-version": "npm version $VERSION -ws && npx biome format --write"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1"
   }
 }

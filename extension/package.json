@@ -49,8 +49,8 @@
     "watch": "node esbuild.js --watch",
     "watch:extension": "npm run watch",
     "package": "vsce package --no-dependencies",
-    "publish": "vsce publish --no-dependencies --target linux-x64 --baseImagesUrl https://github.com/kobzol/memviz/raw/main/extension/",
-    "vscode:prepublish": "rm -rf dist && npm run build --prefix ../"
+    "publish": "vsce publish --no-dependencies --baseImagesUrl https://github.com/kobzol/memviz/raw/main/extension/",
+    "vscode:prepublish": "rimraf -rf dist && npm run build --prefix ../"
   },
   "devDependencies": {
     "@types/node": "20.x",
