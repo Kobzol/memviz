@@ -175,10 +175,6 @@ export class ProcessBuilder {
       stackTrace: {
         frames: frames.map((f, index) => ({ ...f, id: index, index })),
       },
-      stackAddressRange: {
-        start: "0x0",
-        end: "0x1000",
-      },
       memory: this.map,
       heapAllocations: this.heapAllocations,
     };

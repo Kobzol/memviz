@@ -236,7 +236,6 @@ export class Reactor {
       true,
     );
     const frameId = stackTrace[0].id;
-    const stackAddressRange = await this.session.getStackAddressRange(frameId);
 
     this.sendMemvizEvent({
       kind: "process-stopped",
@@ -244,7 +243,6 @@ export class Reactor {
         stackTrace: {
           frames: stackTrace,
         },
-        stackAddressRange,
       },
     });
   }

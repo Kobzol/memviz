@@ -1,6 +1,6 @@
 import type { DebugProtocol } from "@vscode/debugprotocol";
 import type { InternedPlaceList, MemoryAllocEvent } from "memviz-ui";
-import type { AddressRange, FrameId, StackFrame, ThreadId } from "process-def";
+import type { FrameId, StackFrame, ThreadId } from "process-def";
 import type { DebugSession } from "vscode";
 import type { ExtractBody } from "./utils";
 
@@ -37,21 +37,6 @@ export class DebuggerSession {
       context: "repl",
     };
     return await this.customRequest("evaluate", args);
-  }
-
-  async getStackAddressRange(frameId: FrameId): Promise<AddressRange | null> {
-    const result = await this.pythonEvaluate<string[] | null>(
-      "get_stack_address_range()",
-      frameId,
-    );
-    if (result !== null) {
-      const [start, end] = result;
-      return {
-        start,
-        end,
-      };
-    }
-    return null;
   }
 
   async initDynAllocTracking(frameId: FrameId) {

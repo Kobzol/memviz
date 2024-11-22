@@ -284,22 +284,6 @@ def get_frame_places(frame_index: int = 0, place_filter: Optional[Callable[[gdb.
     return PlaceList(places=places, types=interner.get_types())
 
 
-def get_stack_address_range() -> Optional[Tuple[str, str]]:
-    pid = gdb.selected_inferior().pid
-    with open(f"/proc/{pid}/maps") as f:
-        for line in f:
-            f = line.strip()
-            parts = f.split()
-            if len(parts) < 6:
-                continue
-            location = parts[5].strip()
-            if location == "[stack]":
-                range = parts[0].split("-")
-                if len(range) == 2:
-                    return (f"0x{range[0]}", f"0x{range[1]}")
-    return None
-
-
 ### DYNAMIC ALLOCATION TRACKING ###
 
 @dataclasses.dataclass
