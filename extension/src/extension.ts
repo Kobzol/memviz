@@ -6,6 +6,7 @@ import { loadSettings, saveSettings } from "./menu/storage";
 import { Reactor } from "./reactor";
 import { getFileUri, getStaticFilePath, loadStaticFile } from "./resources";
 import { DebuggerSession } from "./session";
+import { MessageQueue, MessageType } from "./messageQueue"
 
 export function activate(context: vscode.ExtensionContext) {
   let settings = loadSettings(context);
@@ -33,32 +34,31 @@ export function activate(context: vscode.ExtensionContext) {
     "gdb_script.py",
   );
 
-  const trackerDisposable = vscode.debug.registerDebugAdapterTrackerFactory(
-    "cppdbg",
-    {
-      createDebugAdapterTracker(session: vscode.DebugSession) {
-        if (!settings.enabled) return undefined;
-        return {
-          onWillReceiveMessage: async (message: DebugProtocol.Request) => {
-            if (handler === null) {
-              return;
-            }
-            // TODO: request queue?
-            await handler.handleMessageFromClient(message);
-          },
-          onDidSendMessage: (
-            message: DebugProtocol.Event | DebugProtocol.Response,
-          ) => {
-            if (handler === null) {
-              return;
-            }
-            handler.handleMessageToClient(message);
-          },
-        };
+  const messageQueue = new MessageQueue();
+
+  function createTrackerFactory(debuggerType: string): vscode.Disposable {
+    return vscode.debug.registerDebugAdapterTrackerFactory(
+      debuggerType,
+      {
+        createDebugAdapterTracker(session: vscode.DebugSession) {
+          if (!settings.enabled) return undefined;
+          return {
+            onWillReceiveMessage: async (message: DebugProtocol.Request) => {
+              messageQueue.enqueue(message, MessageType.Incoming);
+            },
+            onDidSendMessage: (
+              message: DebugProtocol.Event | DebugProtocol.Response,
+            ) => {
+              messageQueue.enqueue(message, MessageType.Outgoing);
+            },
+          };
+        },
       },
-    },
-  );
-  context.subscriptions.push(trackerDisposable);
+    );
+  }
+
+  context.subscriptions.push(createTrackerFactory("cppdbg"));
+  context.subscriptions.push(createTrackerFactory("debugpy"));
 
   const startDisposable = vscode.debug.onDidStartDebugSession((session) => {
     if (!settings.enabled) return;
@@ -66,6 +66,7 @@ export function activate(context: vscode.ExtensionContext) {
     if (handler !== null) {
       handler.dispose();
     }
+    
     console.log("Opening memviz");
 
     const panel = createPanel(context);
@@ -77,12 +78,15 @@ export function activate(context: vscode.ExtensionContext) {
       null,
       context.subscriptions,
     );
+
     handler = new Reactor(
       panel,
-      new DebuggerSession(session),
+      new DebuggerSession(session, scriptPathConfig),
       gdbScriptPath,
       settings,
     );
+    messageQueue.setHandler(handler);
+
     panel.webview.onDidReceiveMessage(
       (message) => {
         if (handler !== null) {
