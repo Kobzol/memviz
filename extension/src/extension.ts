@@ -4,9 +4,10 @@ import type { DebugProtocol } from "@vscode/debugprotocol";
 import { MenuViewProvider } from "./menu/menu";
 import { loadSettings, saveSettings } from "./menu/storage";
 import { Reactor } from "./reactor";
-import { getFileUri, getStaticFilePath, loadStaticFile } from "./resources";
+import { getFileUri, loadStaticFile } from "./resources";
 import { DebuggerSession } from "./session";
 import { MessageQueue, MessageType } from "./messageQueue"
+import { ScriptPathProvider } from "./session/scriptPathProvider";
 
 export function activate(context: vscode.ExtensionContext) {
   let settings = loadSettings(context);
@@ -28,11 +29,6 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   let handler: Reactor | null = null;
-
-  const gdbScriptPath = getStaticFilePath(
-    context.extensionUri,
-    "gdb_script.py",
-  );
 
   const messageQueue = new MessageQueue();
 
@@ -66,7 +62,7 @@ export function activate(context: vscode.ExtensionContext) {
     if (handler !== null) {
       handler.dispose();
     }
-    
+
     console.log("Opening memviz");
 
     const panel = createPanel(context);
@@ -81,8 +77,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     handler = new Reactor(
       panel,
-      new DebuggerSession(session, scriptPathConfig),
-      gdbScriptPath,
+      new DebuggerSession(session, new ScriptPathProvider(context.extensionUri)),
       settings,
     );
     messageQueue.setHandler(handler);

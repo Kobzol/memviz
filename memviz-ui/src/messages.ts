@@ -1,17 +1,17 @@
 import type {
   AddressStr,
-  ProcessState,
+  GDBProcessState,
   StackTrace,
   ThreadId,
 } from "process-def";
 import type { InternedPlaceList } from "./type";
 
-// Events from the extension
-export interface ProcessStoppedEvent {
-  kind: "process-stopped";
-  state: ProcessState;
-}
+export type GDBProcessStoppedEvent = { kind: "process-stopped"; type: "gdb"; state: GDBProcessState };
+export type DebugpyProcessStoppedEvent = { kind: "process-stopped"; type: "debugpy" };
 
+export type ProcessStoppedEvent = GDBProcessStoppedEvent | DebugpyProcessStoppedEvent;
+
+// Events from the extension
 export type ExtensionEvent = ProcessStoppedEvent;
 
 // Responses to requests to the extension

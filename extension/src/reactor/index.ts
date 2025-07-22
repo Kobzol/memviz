@@ -12,7 +12,7 @@ import type {
 } from "memviz-ui";
 import type { FrameId } from "process-def";
 import type { Settings } from "../menu/settings";
-import type { DebuggerSession } from "../session";
+import type { DebuggerSession, DebugpyDebuggerSession, GDBDebuggerSession } from "../session";
 import { decodeBase64 } from "../utils";
 import {
   isSetBreakpointsRequest,
@@ -22,6 +22,166 @@ import {
 } from "./guards";
 import type { Status } from "./handlers";
 import { BreakpointMap, type Location } from "./locations";
+import path from "path";
+import { SessionType } from "../session/sessionType";
+import type { DebugpyProcessStoppedEvent, GDBProcessStoppedEvent, ProcessStoppedEvent } from "memviz-ui/dist/messages";
+
+interface WebviewMessageHandler<T extends DebuggerSession> {
+  getHandleCallback(message: MemvizToExtensionMsg, session: T): (() => Promise<Omit<ExtensionToMemvizResponse, "requestId" | "resolverId">>) | null;
+  getProcessStoppedMessage(session: T): Promise<ProcessStoppedEvent>;
+}
+
+class GDBWebviewMessageHandler implements WebviewMessageHandler<GDBDebuggerSession> {
+  public getHandleCallback(message: MemvizToExtensionMsg, session: GDBDebuggerSession) {
+    if (message.kind === "get-stack-trace") {
+      return this.performGetStackTraceRequest(message, session);
+    } if (message.kind === "get-places") {
+      return this.performGetPlacesRequest(message, session);
+    } if (message.kind === "read-memory") {
+      return this.performReadMemoryRequest(message, session);
+    } if (message.kind === "take-alloc-events") {
+      return this.performTakeAllocEventsRequest(message, session);
+    }
+    return null;
+  }
+
+  public async getProcessStoppedMessage(session: GDBDebuggerSession): Promise<GDBProcessStoppedEvent> {
+    const response = await session.getThreads();
+    const stackTrace = await session.getStackTrace(
+      response.threads[0].id,
+      true,
+    );
+    const frameId = stackTrace[0].id;
+    const stackAddressRange = await session.getStackAddressRange(frameId);
+
+    return {
+      kind: "process-stopped",
+      type: "gdb",
+      state: {
+        stackTrace: {
+          frames: stackTrace,
+        },
+        stackAddressRange,
+      },
+    } as const;
+  }
+
+  private performGetStackTraceRequest(message: GetStackTraceReq, session: GDBDebuggerSession): () => Promise<Omit<ExtensionToMemvizResponse, "requestId" | "resolverId">> {
+    return async () => {
+      const frames = await session.getStackTrace(message.threadId);
+      return {
+        kind: "get-stack-trace",
+        data: {
+          stackTrace: {
+            frames,
+          },
+        },
+      };
+    }
+  }
+
+  private performGetPlacesRequest(message: GetPlacesReq, session: GDBDebuggerSession): () => Promise<Omit<ExtensionToMemvizResponse, "requestId" | "resolverId">> {
+    return async () => {
+      const places = await session.getPlaces(message.frameIndex);
+      return {
+        kind: "get-places",
+        data: {
+          places,
+        },
+      };
+    }
+  }
+
+  private performReadMemoryRequest(message: ReadMemoryReq, session: GDBDebuggerSession): () => Promise<Omit<ExtensionToMemvizResponse, "requestId" | "resolverId">> {
+    return async () => {
+      const result = await session.readMemory(
+        message.address,
+        message.size,
+      );
+      const data = await decodeBase64(result.data ?? "");
+      return {
+        kind: "read-memory",
+        data: {
+          data,
+        },
+      };
+    }
+  }
+
+  private performTakeAllocEventsRequest(message: TakeAllocEventsReq, session: GDBDebuggerSession): () => Promise<Omit<ExtensionToMemvizResponse, "requestId" | "resolverId">> {
+    return async () => {
+      const [_, frameId] = await session.getCurrentThreadAndFrameId();
+      const events = await session.takeAllocEvents(frameId);
+      return {
+        kind: "take-alloc-events",
+        data: {
+          events,
+        },
+      };
+    };
+  }
+}
+
+class PythonWebviewMessageHandler implements WebviewMessageHandler<DebugpyDebuggerSession> {
+  public getHandleCallback(message: MemvizToExtensionMsg, session: DebugpyDebuggerSession) {
+    if (message.kind === "get-places") {
+      return this.performGetPlacesRequest(message, session);
+    }
+    return null;
+  }
+  private async fetchVariables(variablesReference: number, session: DebugpyDebuggerSession): Promise<any[]> {
+    const { variables } = await session.getVariables(variablesReference);
+
+    return Promise.all(
+      variables.map(async (v) => {
+        const children = (v.variablesReference !== 0 && v.name !== "special variables" && v.name !== "function variables")
+          ? await this.fetchVariables(v.variablesReference, session)
+          : [];
+        return { ...v, children };
+      })
+    );
+  }
+  public async getProcessStoppedMessage(session: DebugpyDebuggerSession): Promise<DebugpyProcessStoppedEvent> {
+    const response = await session.getThreads();
+    const stackTrace = await session.getStackTrace(
+      response.threads[0].id,
+      true,
+    );
+
+    const frameId = stackTrace[0].id;
+    const scopes = await session.getScopes(frameId);
+    const variables = await Promise.all(
+      scopes.scopes.map(async (scope) => ({
+        scope,
+        variables: await this.fetchVariables(
+          scope.variablesReference,
+          session
+        ),
+      }))
+    );
+    console.log("variables", variables);
+
+    const places = await session.getPlaces(frameId);
+    console.log(`places: ${places}`);
+
+    return {
+      kind: "process-stopped",
+      type: "debugpy",
+    } as const;
+  }
+  private performGetPlacesRequest(message: GetPlacesReq, session: DebugpyDebuggerSession): () => Promise<Omit<ExtensionToMemvizResponse, "requestId" | "resolverId">> {
+    return async () => {
+      const places = await session.getPlaces(message.frameIndex);
+      console.log(`places: ${places}`);
+      return {
+        kind: "get-places",
+        data: {
+          places,
+        },
+      };
+    }
+  }
+}
 
 export class Reactor {
   private status: Status = {
@@ -32,13 +192,23 @@ export class Reactor {
   // Breakpoint management
   private breakpointMap = new BreakpointMap();
 
+  private webviewMessageHandler: WebviewMessageHandler<DebuggerSession>;
+
   constructor(
     private panel: vscode.WebviewPanel,
     private session: DebuggerSession,
-    private gdbScriptPath: string,
     settings: Settings,
   ) {
     this.trackDynamicAllocations = settings.trackDynamicAllocations;
+
+    const sessionType = session.getSessionType();
+    if (sessionType === SessionType.GDB) {
+      this.webviewMessageHandler = new GDBWebviewMessageHandler();
+    } else if (sessionType === SessionType.Debugpy) {
+      this.webviewMessageHandler = new PythonWebviewMessageHandler();
+    } else {
+      throw new Error(`Unsupported session type: ${sessionType}`);
+    }
   }
 
   async handleMessageFromClient(message: DebugProtocol.ProtocolMessage) {
@@ -70,7 +240,7 @@ export class Reactor {
       }
     } else if (this.status.kind === "waiting-for-main-breakpoint") {
       if (isStoppedEvent(message) && message.body.reason === "breakpoint") {
-        const stopLocation = getStopLocation(message);
+        const stopLocation = await this.getStopLocation(message);
 
         // If the user also has a breakpoint here, do not ignore it
         const hasUserBreakpoint =
@@ -86,12 +256,7 @@ export class Reactor {
         const [threadId, frameId] =
           await this.session.getCurrentThreadAndFrameId();
 
-        // TODO: check if we're using GDB
-        // Load helper GDB Python script
-        const loadResult = await this.session.evaluate(
-          `source ${this.gdbScriptPath}`,
-          frameId,
-        );
+        const loadResult = await this.session.initEvaluator(frameId);
         console.assert(loadResult.result.trim() === "");
         await this.handleMainBreakpointEvent(frameId);
 
@@ -159,94 +324,18 @@ export class Reactor {
   /// This method handles requests from the webview.
   /// It asks DAP for information and sends responses back to the webview.
   async handleWebviewMessage(message: MemvizToExtensionMsg) {
-    if (message.kind === "get-stack-trace") {
-      await this.performGetStackTraceRequest(message);
-    } else if (message.kind === "get-places") {
-      await this.performGetPlacesRequest(message);
-    } else if (message.kind === "read-memory") {
-      await this.performReadMemoryRequest(message);
-    } else if (message.kind === "take-alloc-events") {
-      await this.performTakeAllocEventsRequest(message);
-    }
+    const messageCallback = this.webviewMessageHandler.getHandleCallback(message, this.session);
+    if (messageCallback !== null)
+      await this.sendMemvizResponse(message, messageCallback);
   }
 
   dispose() {
     this.panel.dispose();
   }
 
-  private async performGetStackTraceRequest(message: GetStackTraceReq) {
-    await this.sendMemvizResponse(message, async () => {
-      const frames = await this.session.getStackTrace(message.threadId);
-      return {
-        kind: "get-stack-trace",
-        data: {
-          stackTrace: {
-            frames,
-          },
-        },
-      };
-    });
-  }
-
-  private async performGetPlacesRequest(message: GetPlacesReq) {
-    await this.sendMemvizResponse(message, async () => {
-      const places = await this.session.getPlaces(message.frameIndex);
-      return {
-        kind: "get-places",
-        data: {
-          places,
-        },
-      };
-    });
-  }
-
-  private async performReadMemoryRequest(message: ReadMemoryReq) {
-    await this.sendMemvizResponse(message, async () => {
-      const result = await this.session.readMemory(
-        message.address,
-        message.size,
-      );
-      const data = await decodeBase64(result.data ?? "");
-      return {
-        kind: "read-memory",
-        data: {
-          data,
-        },
-      };
-    });
-  }
-
-  private async performTakeAllocEventsRequest(message: TakeAllocEventsReq) {
-    const [_, frameId] = await this.session.getCurrentThreadAndFrameId();
-    const events = await this.session.takeAllocEvents(frameId);
-    await this.sendMemvizResponse(message, async () => {
-      return {
-        kind: "take-alloc-events",
-        data: {
-          events,
-        },
-      };
-    });
-  }
-
   private async onThreadStopped() {
-    const response = await this.session.getThreads();
-    const stackTrace = await this.session.getStackTrace(
-      response.threads[0].id,
-      true,
-    );
-    const frameId = stackTrace[0].id;
-    const stackAddressRange = await this.session.getStackAddressRange(frameId);
-
-    this.sendMemvizEvent({
-      kind: "process-stopped",
-      state: {
-        stackTrace: {
-          frames: stackTrace,
-        },
-        stackAddressRange,
-      },
-    });
+    const extensionToMemvizMsg = await this.webviewMessageHandler.getProcessStoppedMessage(this.session);
+    this.sendMemvizEvent(extensionToMemvizMsg);
   }
 
   private async sendMemvizEvent(msg: ExtensionToMemvizMsg) {
@@ -279,17 +368,38 @@ export class Reactor {
       } satisfies ExtensionToMemvizResponse);
     }
   }
+
+  private async getStopLocation(event: DebugProtocol.StoppedEvent): Promise<Location> {
+    const result = {
+      source: (event.body as any).source as DebugProtocol.Source | undefined,
+      line: (event.body as any).line,
+    };
+    if (result.source === undefined) {
+      const stackTrace = await this.session.getStackTrace(
+        event.body.threadId ?? -1,
+        true,
+      );
+      const rawSource = stackTrace[0]?.file;
+      let source = undefined;
+      if (rawSource !== null) {
+        // URI may include remote prefix
+        const uri = vscode.Uri.parse(rawSource);
+        source = {
+          name: path.basename(uri.fsPath),
+          path: uri.fsPath
+        }
+      }
+      return {
+        source: source,
+        line: stackTrace[0].line
+      };
+    }
+    return result;
+  }
 }
 
 // Mangles the event so that the client (VSCode) does not observe it
 function ignoreEvent(message: DebugProtocol.Event) {
   // console.log("Ignoring message", message);
   message.type = "invalid";
-}
-
-function getStopLocation(event: DebugProtocol.StoppedEvent): Location {
-  return {
-    source: (event.body as any).source as DebugProtocol.Source | undefined,
-    line: (event.body as any).line,
-  };
 }

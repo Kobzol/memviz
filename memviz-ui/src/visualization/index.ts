@@ -1,5 +1,5 @@
 import createPanZoom from "panzoom";
-import type { ProcessState } from "process-def";
+import type { GDBProcessState } from "process-def";
 import { createApp, triggerRef } from "vue";
 import type { ProcessResolver } from "../resolver/resolver";
 import App from "./app.vue";
@@ -27,7 +27,7 @@ export class Memviz {
     });
   }
 
-  async showState(processState: ProcessState, resolver: ProcessResolver) {
+  async showState(processState: GDBProcessState, resolver: ProcessResolver) {
     console.debug("Root state changed");
     appState.value = {
       processState,
