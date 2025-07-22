@@ -2,104 +2,35 @@ import type { DebugProtocol } from "@vscode/debugprotocol";
 import type { InternedPlaceList, MemoryAllocEvent } from "memviz-ui";
 import type { AddressRange, FrameId, StackFrame, ThreadId } from "process-def";
 import type { DebugSession } from "vscode";
-import { stripOuterSingleQuotes, type ExtractBody } from "./utils";
-import type { ScriptPathProvider } from "./session/scriptPathProvider";
-import { SessionType } from "./session/sessionType";
-
-
-abstract class Evaluator {
-  constructor(
-    protected session: DebugSession,
-    protected scriptPath: string
-  ) { }
-
-  abstract init(frameId: FrameId): Promise<ExtractBody<DebugProtocol.EvaluateResponse>>;
-  abstract evaluate(expression: string, frameId?: FrameId): Promise<ExtractBody<DebugProtocol.EvaluateResponse>>;
-
-  public async customRequest<T>(request: string, args?: unknown): Promise<T> {
-    const start = performance.now();
-    const result = await this.session.customRequest(request, args);
-    const duration = performance.now() - start;
-    // console.debug(
-    // `Command ${request} took ${duration.toFixed(2)}ms, args:`,
-    // args,
-    // );
-    return result as T;
-  }
-
-  protected getExpression(expression: string): string {
-    return expression;
-  }
-
-  protected async evaluateInner(
-    expression: string,
-    frameId?: FrameId,
-  ): Promise<ExtractBody<DebugProtocol.EvaluateResponse>> {
-    const args: DebugProtocol.EvaluateArguments = {
-      expression: this.getExpression(expression),
-      frameId,
-      context: "repl",
-    };
-    return await this.customRequest("evaluate", args);
-  }
-}
-
-class GDBEvaluator extends Evaluator {
-  async init(frameId: FrameId) {
-    return await this.evaluateInner(
-      `source ${this.scriptPath}`,
-      frameId,
-    );
-  }
-
-  async evaluate(
-    expression: string,
-    frameId?: FrameId,
-  ): Promise<ExtractBody<DebugProtocol.EvaluateResponse>> {
-    return await this.evaluateInner(
-      `py print(try_run(lambda: ${expression}))`
-    );
-  }
-
-  protected getExpression(expression: string): string {
-    return `-exec ${expression}`;
-  }
-}
-
-class DebugpyEvaluator extends Evaluator {
-  async init(frameId: FrameId) {
-    return await this.evaluateInner(
-      `exec(open("${this.scriptPath}").read(), {'__file__': '${this.scriptPath}'})`
-    );
-  }
-
-  async evaluate(
-    expression: string,
-    frameId?: FrameId,
-  ): Promise<ExtractBody<DebugProtocol.EvaluateResponse>> {
-    const result = await this.evaluateInner(
-      `__import__('memviz_get_variables_info').try_run(lambda: __import__('memviz_get_variables_info').${expression})`,
-      frameId,
-    );
-    result.result = stripOuterSingleQuotes(result.result);
-    return result;
-  }
-}
+import type { ExtractBody } from "../utils";
+import type { ScriptPathProvider } from "./scriptPathProvider";
+import { SessionType } from "./sessionType";
+import { GDBEvaluator } from "./evaluator/gdb";
+import { DebugpyEvaluator } from "./evaluator/debugpy";
+import type { Evaluator } from "./evaluator/evaluator";
 
 export class DebuggerSession {
   private evaluator: Evaluator;
 
   constructor(
     private session: DebugSession,
-    scriptPathProvider: ScriptPathProvider
+    scriptPathProvider: ScriptPathProvider,
   ) {
     const sessionType = this.getSessionType();
     if (sessionType === SessionType.GDB) {
-      this.evaluator = new GDBEvaluator(session, scriptPathProvider.getInitScriptPath(SessionType.GDB));
+      this.evaluator = new GDBEvaluator(
+        session,
+        scriptPathProvider.getInitScriptPath(SessionType.GDB),
+      );
     } else if (sessionType === SessionType.Debugpy) {
-      this.evaluator = new DebugpyEvaluator(session, scriptPathProvider.getInitScriptPath(SessionType.Debugpy));
+      this.evaluator = new DebugpyEvaluator(
+        session,
+        scriptPathProvider.getInitScriptPath(SessionType.Debugpy),
+      );
     } else {
-      throw new Error(`Unsupported session type: ${this.session.configuration.type}`);
+      throw new Error(
+        `Unsupported session type: ${this.session.configuration.type}`,
+      );
     }
   }
 
@@ -110,7 +41,9 @@ export class DebuggerSession {
       case "debugpy":
         return SessionType.Debugpy;
       default:
-        throw new Error(`Unsupported session type: ${this.session.configuration.type}`);
+        throw new Error(
+          `Unsupported session type: ${this.session.configuration.type}`,
+        );
     }
   }
 
@@ -330,7 +263,7 @@ export class DebuggerSession {
   async getPlaces(frameIndex: number): Promise<InternedPlaceList> {
     const placeResponse = await this.pythonEvaluate<InternedPlaceList>(
       `get_frame_places(${frameIndex})`,
-      frameIndex
+      frameIndex,
     );
     return placeResponse;
   }
@@ -340,10 +273,7 @@ export class DebuggerSession {
     frameId?: FrameId,
   ): Promise<T> {
     const start = performance.now();
-    const gdbResult = await this.evaluator.evaluate(
-      command,
-      frameId,
-    );
+    const gdbResult = await this.evaluator.evaluate(command, frameId);
     const duration = performance.now() - start;
     // console.debug(
     // `Py command ${command} took ${duration.toFixed(2)}ms, response size: ${gdbResult.result.length}`,
@@ -362,13 +292,9 @@ export class DebuggerSession {
     }
     return pyResult.value as T;
   }
-
 }
-export class GDBDebuggerSession extends DebuggerSession {
-
-}
-export class DebugpyDebuggerSession extends DebuggerSession {
-}
+export class GDBDebuggerSession extends DebuggerSession {}
+export class DebugpyDebuggerSession extends DebuggerSession {}
 interface FunctionCallRecord {
   name: string;
   args: unknown[];

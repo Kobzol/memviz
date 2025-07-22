@@ -5,9 +5,9 @@ import { MenuViewProvider } from "./menu/menu";
 import { loadSettings, saveSettings } from "./menu/storage";
 import { Reactor } from "./reactor";
 import { getFileUri, loadStaticFile } from "./resources";
-import { DebuggerSession } from "./session";
-import { MessageQueue, MessageType } from "./messageQueue"
+import { MessageQueue, MessageType } from "./messageQueue";
 import { ScriptPathProvider } from "./session/scriptPathProvider";
+import { DebuggerSession } from "./session/session";
 
 export function activate(context: vscode.ExtensionContext) {
   let settings = loadSettings(context);
@@ -33,24 +33,21 @@ export function activate(context: vscode.ExtensionContext) {
   const messageQueue = new MessageQueue();
 
   function createTrackerFactory(debuggerType: string): vscode.Disposable {
-    return vscode.debug.registerDebugAdapterTrackerFactory(
-      debuggerType,
-      {
-        createDebugAdapterTracker(session: vscode.DebugSession) {
-          if (!settings.enabled) return undefined;
-          return {
-            onWillReceiveMessage: async (message: DebugProtocol.Request) => {
-              messageQueue.enqueue(message, MessageType.Incoming);
-            },
-            onDidSendMessage: (
-              message: DebugProtocol.Event | DebugProtocol.Response,
-            ) => {
-              messageQueue.enqueue(message, MessageType.Outgoing);
-            },
-          };
-        },
+    return vscode.debug.registerDebugAdapterTrackerFactory(debuggerType, {
+      createDebugAdapterTracker(session: vscode.DebugSession) {
+        if (!settings.enabled) return undefined;
+        return {
+          onWillReceiveMessage: async (message: DebugProtocol.Request) => {
+            messageQueue.enqueue(message, MessageType.Incoming);
+          },
+          onDidSendMessage: (
+            message: DebugProtocol.Event | DebugProtocol.Response,
+          ) => {
+            messageQueue.enqueue(message, MessageType.Outgoing);
+          },
+        };
       },
-    );
+    });
   }
 
   context.subscriptions.push(createTrackerFactory("cppdbg"));
@@ -77,7 +74,10 @@ export function activate(context: vscode.ExtensionContext) {
 
     handler = new Reactor(
       panel,
-      new DebuggerSession(session, new ScriptPathProvider(context.extensionUri)),
+      new DebuggerSession(
+        session,
+        new ScriptPathProvider(context.extensionUri),
+      ),
       settings,
     );
     messageQueue.setHandler(handler);

@@ -18,5 +18,5 @@ export async function decodeBase64(base64Bytes: string): Promise<ArrayBuffer> {
 }
 
 export function stripOuterSingleQuotes(str: string): string {
-  return str.replace(/^'(.*)'$/, '$1');
+  return str.replace(/^'(.*)'$/, "$1");
 }
