@@ -153,7 +153,10 @@ export class Reactor {
     // The program has stopped at main
     // Perform all initialization actions
 
-    if (this.trackDynamicAllocations) {
+    if (
+      this.session.getSessionType() === SessionType.GDB &&
+      this.trackDynamicAllocations
+    ) {
       await this.session.initDynAllocTracking(frameId);
     }
 
