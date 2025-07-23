@@ -14,30 +14,30 @@ interface QueueTask {
 
 export class MessageQueue {
   private prepQueue: QueueTask[] = [];
-  private queue = async.queue<QueueTask>(
-    (task: QueueTask, completed: () => void) => {
-      if (!this.handler) return;
-
-      const { type, message } = task;
-
-      (async () => {
-        try {
-          if (type === MessageType.Incoming) {
-            await this.handler?.handleMessageFromClient(message);
-          } else {
-            this.handler?.handleMessageToClient(message);
-          }
-        } catch (err) {
-          console.error("Error processing message", err);
-        } finally {
-          completed();
-        }
-      })();
-    },
-    1,
-  );
-
+  private queue = this.createQueue();
   private handler: Reactor | null = null;
+
+  private createQueue() {
+    return async.queue<QueueTask>(this.worker.bind(this), 1);
+  }
+
+  private async worker(task: QueueTask, completed: () => void) {
+    if (!this.handler) return;
+
+    const { type, message } = task;
+
+    try {
+      if (type === MessageType.Incoming) {
+        await this.handler.handleMessageFromClient(message);
+      } else {
+        await this.handler.handleMessageToClient(message);
+      }
+    } catch (err) {
+      console.error("Error processing message", err);
+    } finally {
+      completed();
+    }
+  }
 
   setHandler(handler: Reactor) {
     this.handler = handler;
@@ -53,7 +53,15 @@ export class MessageQueue {
     if (!this.handler) {
       this.prepQueue.push(task);
     } else {
+      this.handler.applyMessageChanges(message);
       this.queue.push(task);
     }
+  }
+
+  clear() {
+    this.handler = null;
+    this.queue.kill();
+    this.queue = this.createQueue();
+    this.prepQueue = [];
   }
 }

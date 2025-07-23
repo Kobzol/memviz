@@ -56,9 +56,6 @@ export class DebugpyWebviewMessageHandler
     );
     console.log("variables", variables);
 
-    const places = await session.getPlaces(frameId);
-    console.log(`places: ${places}`);
-
     return {
       kind: "process-stopped",
       type: "debugpy",

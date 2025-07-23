@@ -51,19 +51,18 @@ export class Reactor {
     }
   }
 
-  async handleMessageFromClient(message: DebugProtocol.ProtocolMessage) {
+  applyMessageChanges(message: DebugProtocol.ProtocolMessage): void {
     // The client sends setFunctionBreakpoints at the very beginning of the debug session.
     // Add main to the list, so that we can perform some basic initialization at the start
     // of the debugged program.
-    if (
-      isSetFunctionBreakpointsRequest(message) &&
-      this.status.kind === "waiting-for-set-function-breakpoints"
-    ) {
+    if (isSetFunctionBreakpointsRequest(message)) {
       message.arguments.breakpoints.push({
         name: "main",
       });
     }
+  }
 
+  async handleMessageFromClient(message: DebugProtocol.ProtocolMessage) {
     // Save the most recent client breakpoints for a given source file
     if (isSetBreakpointsRequest(message)) {
       this.breakpointMap.setSourceBreakpoints(
@@ -141,9 +140,11 @@ export class Reactor {
   private handleSetFunctionBreakpointsResponse(
     message: DebugProtocol.SetFunctionBreakpointsResponse,
   ) {
-    // The last breakpoint is the one we artificially created
-    const breakpoints = message.body.breakpoints;
-    console.assert(breakpoints.length > 0);
+    if (this.session.getSessionType() === SessionType.GDB) {
+      // The last breakpoint is the one we artificially created
+      const breakpoints = message.body.breakpoints;
+      console.assert(breakpoints.length > 0);
+    }
     this.status = {
       kind: "waiting-for-main-breakpoint",
     };
@@ -152,7 +153,6 @@ export class Reactor {
   private async handleMainBreakpointEvent(frameId: FrameId) {
     // The program has stopped at main
     // Perform all initialization actions
-
     if (
       this.session.getSessionType() === SessionType.GDB &&
       this.trackDynamicAllocations

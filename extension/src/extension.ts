@@ -100,6 +100,7 @@ export function activate(context: vscode.ExtensionContext) {
       handler.dispose();
       handler = null;
     }
+    messageQueue.clear();
   });
   context.subscriptions.push(endDisposable);
 }
