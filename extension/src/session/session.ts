@@ -3,11 +3,11 @@ import type { InternedPlaceList, MemoryAllocEvent } from "memviz-ui";
 import type { AddressRange, FrameId, StackFrame, ThreadId } from "process-def";
 import type { DebugSession } from "vscode";
 import type { ExtractBody } from "../utils";
-import type { ScriptPathProvider } from "./scriptPathProvider";
-import { SessionType } from "./sessionType";
-import { GDBEvaluator } from "./evaluator/gdb";
 import { DebugpyEvaluator } from "./evaluator/debugpy";
 import type { Evaluator } from "./evaluator/evaluator";
+import { GDBEvaluator } from "./evaluator/gdb";
+import type { ScriptPathProvider } from "./scriptPathProvider";
+import { SessionType } from "./sessionType";
 
 export class DebuggerSession {
   private evaluator: Evaluator;

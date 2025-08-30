@@ -1,7 +1,7 @@
+import type { DebugProtocol } from "@vscode/debugprotocol";
 import type { FrameId } from "process-def";
 import type { DebugSession } from "vscode";
 import type { ExtractBody } from "../../utils";
-import type { DebugProtocol } from "@vscode/debugprotocol";
 
 export abstract class Evaluator {
   constructor(

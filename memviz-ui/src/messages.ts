@@ -6,10 +6,19 @@ import type {
 } from "process-def";
 import type { InternedPlaceList } from "./type";
 
-export type GDBProcessStoppedEvent = { kind: "process-stopped"; type: "gdb"; state: GDBProcessState };
-export type DebugpyProcessStoppedEvent = { kind: "process-stopped"; type: "debugpy" };
+export type GDBProcessStoppedEvent = {
+  kind: "process-stopped";
+  type: "gdb";
+  state: GDBProcessState;
+};
+export type DebugpyProcessStoppedEvent = {
+  kind: "process-stopped";
+  type: "debugpy";
+};
 
-export type ProcessStoppedEvent = GDBProcessStoppedEvent | DebugpyProcessStoppedEvent;
+export type ProcessStoppedEvent =
+  | GDBProcessStoppedEvent
+  | DebugpyProcessStoppedEvent;
 
 // Events from the extension
 export type ExtensionEvent = ProcessStoppedEvent;

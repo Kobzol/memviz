@@ -1,11 +1,11 @@
 import type { MemvizToExtensionMsg } from "memviz-ui";
-import type { DebugpyDebuggerSession } from "../../session/session";
-import type { WebviewMessageHandler } from "./webviewMessageHandler";
 import type {
   DebugpyProcessStoppedEvent,
   ExtensionToMemvizResponse,
   GetPlacesReq,
 } from "memviz-ui/dist/messages";
+import type { DebugpyDebuggerSession } from "../../session/session";
+import type { WebviewMessageHandler } from "./webviewMessageHandler";
 
 export class DebugpyWebviewMessageHandler
   implements WebviewMessageHandler<DebugpyDebuggerSession>

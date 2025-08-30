@@ -1,7 +1,7 @@
-import { Evaluator } from "./evaluator";
+import type { DebugProtocol } from "@vscode/debugprotocol";
 import type { FrameId } from "process-def";
 import { type ExtractBody, stripOuterSingleQuotes } from "../../utils";
-import type { DebugProtocol } from "@vscode/debugprotocol";
+import { Evaluator } from "./evaluator";
 
 export class DebugpyEvaluator extends Evaluator {
   async init(frameId: FrameId) {

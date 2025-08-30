@@ -3,9 +3,9 @@ import * as vscode from "vscode";
 import type { DebugProtocol } from "@vscode/debugprotocol";
 import { MenuViewProvider } from "./menu/menu";
 import { loadSettings, saveSettings } from "./menu/storage";
+import { MessageQueue, MessageType } from "./messageQueue";
 import { Reactor } from "./reactor";
 import { getFileUri, loadStaticFile } from "./resources";
-import { MessageQueue, MessageType } from "./messageQueue";
 import { ScriptPathProvider } from "./session/scriptPathProvider";
 import { DebuggerSession } from "./session/session";
 

@@ -1,6 +1,4 @@
 import type { MemvizToExtensionMsg } from "memviz-ui";
-import type { GDBDebuggerSession } from "../../session/session";
-import type { WebviewMessageHandler } from "./webviewMessageHandler";
 import type {
   ExtensionToMemvizResponse,
   GDBProcessStoppedEvent,
@@ -9,7 +7,9 @@ import type {
   ReadMemoryReq,
   TakeAllocEventsReq,
 } from "memviz-ui/dist/messages";
+import type { GDBDebuggerSession } from "../../session/session";
 import { decodeBase64 } from "../../utils";
+import type { WebviewMessageHandler } from "./webviewMessageHandler";
 
 export class GDBWebviewMessageHandler
   implements WebviewMessageHandler<GDBDebuggerSession>

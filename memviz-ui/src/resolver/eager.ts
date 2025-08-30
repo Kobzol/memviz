@@ -1,8 +1,8 @@
 import {
   type Address,
   type AddressStr,
-  PlaceKind,
   type GDBProcessState,
+  PlaceKind,
   type StackFrame,
   type TyArray,
   type TyFloat,

@@ -35,8 +35,7 @@ function runMemvizInVsCode(vscode: WebviewApi<unknown>) {
         resolverId++;
         const innerResolver = new VsCodeResolver(vscode, resolverId);
         resolver = new CachingResolver(innerResolver);
-        if (message.type === "gdb")
-          memviz.showState(message.state, resolver);
+        if (message.type === "gdb") memviz.showState(message.state, resolver);
         else if (message.type === "debugpy") {
         }
       } else {

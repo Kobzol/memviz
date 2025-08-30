@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 
+import path from "path";
 import type { DebugProtocol } from "@vscode/debugprotocol";
 import type {
   ExtensionToMemvizMsg,
@@ -9,6 +10,7 @@ import type {
 import type { FrameId } from "process-def";
 import type { Settings } from "../menu/settings";
 import type { DebuggerSession } from "../session/session";
+import { SessionType } from "../session/sessionType";
 import {
   isSetBreakpointsRequest,
   isSetFunctionBreakpointsRequest,
@@ -17,10 +19,8 @@ import {
 } from "./guards";
 import type { Status } from "./handlers";
 import { BreakpointMap, type Location } from "./locations";
-import path from "path";
-import { SessionType } from "../session/sessionType";
-import { GDBWebviewMessageHandler } from "./webviewMessageHandler/gdb";
 import { DebugpyWebviewMessageHandler } from "./webviewMessageHandler/debugpy";
+import { GDBWebviewMessageHandler } from "./webviewMessageHandler/gdb";
 import type { WebviewMessageHandler } from "./webviewMessageHandler/webviewMessageHandler";
 
 export class Reactor {

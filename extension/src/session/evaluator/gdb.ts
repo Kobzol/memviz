@@ -1,6 +1,6 @@
+import type { DebugProtocol } from "@vscode/debugprotocol";
 import type { FrameId } from "process-def";
 import type { ExtractBody } from "../../utils";
-import type { DebugProtocol } from "@vscode/debugprotocol";
 import { Evaluator } from "./evaluator";
 
 export class GDBEvaluator extends Evaluator {
