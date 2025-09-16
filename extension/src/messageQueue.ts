@@ -1,5 +1,4 @@
 import type { DebugProtocol } from "@vscode/debugprotocol";
-import async from "async";
 import type { Reactor } from "./reactor";
 
 export enum MessageType {
@@ -14,54 +13,48 @@ interface QueueTask {
 
 export class MessageQueue {
   private prepQueue: QueueTask[] = [];
-  private queue = this.createQueue();
   private handler: Reactor | null = null;
-
-  private createQueue() {
-    return async.queue<QueueTask>(this.worker.bind(this), 1);
-  }
-
-  private async worker(task: QueueTask, completed: () => void) {
-    if (!this.handler) return;
-
-    const { type, message } = task;
-
-    try {
-      if (type === MessageType.Incoming) {
-        await this.handler.handleMessageFromClient(message);
-      } else {
-        await this.handler.handleMessageToClient(message);
-      }
-    } catch (err) {
-      console.error("Error processing message", err);
-    } finally {
-      completed();
-    }
-  }
+  private last: Promise<void> = Promise.resolve();
 
   setHandler(handler: Reactor) {
     this.handler = handler;
 
     while (this.prepQueue.length > 0) {
-      this.queue.push(this.prepQueue.shift()!);
+      const task = this.prepQueue.shift();
+      if (task) {
+        this.enqueue(task.message, task.type);
+      }
     }
   }
 
-  async enqueue(message: DebugProtocol.ProtocolMessage, type: MessageType) {
+  enqueue(message: DebugProtocol.ProtocolMessage, type: MessageType) {
     const task: QueueTask = { type, message };
 
     if (!this.handler) {
       this.prepQueue.push(task);
-    } else {
-      this.handler.applyMessageChanges(message);
-      this.queue.push(task);
+      return;
     }
+
+    this.handler.applyMessageChanges(message);
+
+    this.last = this.last.then(async () => {
+      if (!this.handler) return;
+
+      try {
+        if (task.type === MessageType.Incoming) {
+          await this.handler.handleMessageFromClient(task.message);
+        } else {
+          await this.handler.handleMessageToClient(task.message);
+        }
+      } catch (err) {
+        console.error("Error processing message", err);
+      }
+    });
   }
 
   clear() {
     this.handler = null;
-    this.queue.kill();
-    this.queue = this.createQueue();
     this.prepQueue = [];
+    this.last = Promise.resolve();
   }
 }

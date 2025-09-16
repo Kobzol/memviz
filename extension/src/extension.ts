@@ -37,7 +37,7 @@ export function activate(context: vscode.ExtensionContext) {
       createDebugAdapterTracker(session: vscode.DebugSession) {
         if (!settings.enabled) return undefined;
         return {
-          onWillReceiveMessage: async (message: DebugProtocol.Request) => {
+          onWillReceiveMessage: (message: DebugProtocol.Request) => {
             messageQueue.enqueue(message, MessageType.Incoming);
           },
           onDidSendMessage: (
