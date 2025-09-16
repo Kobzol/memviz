@@ -3,7 +3,7 @@ import type {
   DebugpyProcessStoppedEvent,
   ExtensionToMemvizResponse,
   GetPlacesReq,
-} from "memviz-ui/dist/messages";
+} from "memviz-ui/src/messages";
 import type { DebugpyDebuggerSession } from "../../session/session";
 import type { WebviewMessageHandler } from "./webviewMessageHandler";
 

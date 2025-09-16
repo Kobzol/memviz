@@ -6,7 +6,7 @@ import type {
   GetStackTraceReq,
   ReadMemoryReq,
   TakeAllocEventsReq,
-} from "memviz-ui/dist/messages";
+} from "memviz-ui/src/messages";
 import type { GDBDebuggerSession } from "../../session/session";
 import { decodeBase64 } from "../../utils";
 import type { WebviewMessageHandler } from "./webviewMessageHandler";

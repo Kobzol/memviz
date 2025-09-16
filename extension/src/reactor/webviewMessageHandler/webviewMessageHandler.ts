@@ -2,7 +2,7 @@ import type {
   ExtensionToMemvizResponse,
   MemvizToExtensionMsg,
 } from "memviz-ui";
-import type { ProcessStoppedEvent } from "memviz-ui/dist/messages";
+import type { ProcessStoppedEvent } from "memviz-ui/src/messages";
 import type { DebuggerSession } from "../../session/session";
 
 export interface WebviewMessageHandler<T extends DebuggerSession> {
