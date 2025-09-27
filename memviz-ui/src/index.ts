@@ -8,6 +8,7 @@ import { Memviz } from "./visualization";
 export type {
   ExtensionToMemvizMsg,
   ExtensionToMemvizResponse,
+  GetStackTraceRes,
   MemoryAllocEvent,
   MemvizToExtensionMsg,
   GetStackTraceReq,
@@ -32,8 +33,11 @@ function runMemvizInVsCode(vscode: WebviewApi<unknown>) {
       if (message.kind === "process-stopped") {
         // We need to reset the resolver to break caches
         resolverId++;
-        resolver = new CachingResolver(new VsCodeResolver(vscode, resolverId));
-        memviz.showState(message.state, resolver);
+        const innerResolver = new VsCodeResolver(vscode, resolverId);
+        resolver = new CachingResolver(innerResolver);
+        if (message.type === "gdb") memviz.showState(message.state, resolver);
+        else if (message.type === "debugpy") {
+        }
       } else {
         resolver.inner.handleMessage(message);
       }

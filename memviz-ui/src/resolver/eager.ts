@@ -1,8 +1,8 @@
 import {
   type Address,
   type AddressStr,
+  type GDBProcessState,
   PlaceKind,
-  type ProcessState,
   type StackFrame,
   type TyArray,
   type TyFloat,
@@ -18,7 +18,7 @@ import { assert, addressToStr, strToAddress } from "../utils";
 import type { TyChar } from "../visualization/utils/types";
 import type { ProcessResolver } from "./resolver";
 
-export interface FullProcessState extends ProcessState {
+export interface FullGDBProcessState extends GDBProcessState {
   stackTrace: FullStackTrace;
   memory: MemoryMap;
   heapAllocations: HeapAllocation[];
@@ -33,7 +33,7 @@ interface FullStackFrame extends StackFrame {
 }
 
 export class EagerResolver implements ProcessResolver {
-  constructor(private state: FullProcessState) {}
+  constructor(private state: FullGDBProcessState) {}
 
   async readMemory(address: AddressStr, size: number): Promise<ArrayBuffer> {
     console.log(`Resolving address ${address} (${size} bytes)`);
@@ -164,14 +164,14 @@ export class ProcessBuilder {
     return new PlaceBuilder(address, this.map);
   }
 
-  build(): [FullProcessState, EagerResolver] {
+  build(): [FullGDBProcessState, EagerResolver] {
     if (this.activeFrame !== null) {
       this.endFrame();
     }
 
     const frames = this.frames.slice().reverse();
 
-    const processState: FullProcessState = {
+    const processState: FullGDBProcessState = {
       stackTrace: {
         frames: frames.map((f, index) => ({ ...f, id: index, index })),
       },

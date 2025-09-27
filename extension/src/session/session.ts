@@ -2,10 +2,54 @@ import type { DebugProtocol } from "@vscode/debugprotocol";
 import type { InternedPlaceList, MemoryAllocEvent } from "memviz-ui";
 import type { AddressRange, FrameId, StackFrame, ThreadId } from "process-def";
 import type { DebugSession } from "vscode";
-import type { ExtractBody } from "./utils";
+import type { ExtractBody } from "../utils";
+import { DebugpyEvaluator } from "./evaluator/debugpy";
+import type { Evaluator } from "./evaluator/evaluator";
+import { GDBEvaluator } from "./evaluator/gdb";
+import type { ScriptPathProvider } from "./scriptPathProvider";
+import { SessionType } from "./sessionType";
 
 export class DebuggerSession {
-  constructor(private session: DebugSession) {}
+  private evaluator: Evaluator;
+
+  constructor(
+    private session: DebugSession,
+    scriptPathProvider: ScriptPathProvider,
+  ) {
+    const sessionType = this.getSessionType();
+    if (sessionType === SessionType.GDB) {
+      this.evaluator = new GDBEvaluator(
+        session,
+        scriptPathProvider.getInitScriptPath(SessionType.GDB),
+      );
+    } else if (sessionType === SessionType.Debugpy) {
+      this.evaluator = new DebugpyEvaluator(
+        session,
+        scriptPathProvider.getInitScriptPath(SessionType.Debugpy),
+      );
+    } else {
+      throw new Error(
+        `Unsupported session type: ${this.session.configuration.type}`,
+      );
+    }
+  }
+
+  public getSessionType(): SessionType {
+    switch (this.session.configuration.type) {
+      case "cppdbg":
+        return SessionType.GDB;
+      case "debugpy":
+        return SessionType.Debugpy;
+      default:
+        throw new Error(
+          `Unsupported session type: ${this.session.configuration.type}`,
+        );
+    }
+  }
+
+  public initEvaluator(frameId: FrameId) {
+    return this.evaluator.init(frameId);
+  }
 
   async setBreakpoints(
     source: DebugProtocol.Source,
@@ -15,7 +59,7 @@ export class DebuggerSession {
       source,
       breakpoints,
     };
-    return await this.customRequest("setBreakpoints", args);
+    return await this.evaluator.customRequest("setBreakpoints", args);
   }
 
   async setFunctionBreakpoints(
@@ -24,19 +68,7 @@ export class DebuggerSession {
     const args: DebugProtocol.SetFunctionBreakpointsArguments = {
       breakpoints,
     };
-    return await this.customRequest("setFunctionBreakpoints", args);
-  }
-
-  async evaluate(
-    expression: string,
-    frameId?: FrameId,
-  ): Promise<ExtractBody<DebugProtocol.EvaluateResponse>> {
-    const args: DebugProtocol.EvaluateArguments = {
-      expression: `-exec ${expression}`,
-      frameId,
-      context: "repl",
-    };
-    return await this.customRequest("evaluate", args);
+    return await this.evaluator.customRequest("setFunctionBreakpoints", args);
   }
 
   async getStackAddressRange(frameId: FrameId): Promise<AddressRange | null> {
@@ -109,7 +141,7 @@ export class DebuggerSession {
       memoryReference: address,
       count: size,
     };
-    return await this.customRequest("readMemory", args);
+    return await this.evaluator.customRequest("readMemory", args);
   }
 
   async next(threadId: ThreadId) {
@@ -117,7 +149,7 @@ export class DebuggerSession {
       threadId,
       granularity: "line",
     };
-    return await this.customRequest("next", args);
+    return await this.evaluator.customRequest("next", args);
   }
 
   async stepOut(threadId: ThreadId) {
@@ -125,14 +157,14 @@ export class DebuggerSession {
       threadId,
       granularity: "line",
     };
-    return await this.customRequest("stepOut", args);
+    return await this.evaluator.customRequest("stepOut", args);
   }
 
   async continue(threadId: ThreadId) {
     const args: DebugProtocol.ContinueArguments = {
       threadId,
     };
-    return await this.customRequest("continue", args);
+    return await this.evaluator.customRequest("continue", args);
   }
 
   async goto(threadId: ThreadId, gotoTargetId: number) {
@@ -140,7 +172,7 @@ export class DebuggerSession {
       threadId,
       targetId: gotoTargetId,
     };
-    return await this.customRequest("goto", args);
+    return await this.evaluator.customRequest("goto", args);
   }
 
   async getGotoTargets(
@@ -151,11 +183,11 @@ export class DebuggerSession {
       source,
       line,
     };
-    return await this.customRequest("gotoTargets", args);
+    return await this.evaluator.customRequest("gotoTargets", args);
   }
 
   async getThreads(): Promise<ExtractBody<DebugProtocol.ThreadsResponse>> {
-    return await this.customRequest("threads");
+    return await this.evaluator.customRequest("threads");
   }
 
   async getCurrentThreadAndFrameId(): Promise<[ThreadId, FrameId]> {
@@ -166,7 +198,7 @@ export class DebuggerSession {
   }
 
   async getCurrentFnArgs(frameId: FrameId): Promise<string[]> {
-    const result = await this.evaluate("info args", frameId);
+    const result = await this.evaluator.evaluate("info args", frameId);
     const args = [];
     for (let arg of result.result.split("\n")) {
       arg = arg.trim();
@@ -180,9 +212,9 @@ export class DebuggerSession {
 
   async finishCurrentFnAndGetReturnValue(frameId: FrameId): Promise<string> {
     // Finish the current function
-    await this.evaluate("finish", frameId);
+    await this.evaluator.evaluate("finish", frameId);
     // Get last saved value
-    const result = await this.evaluate(`printf "%p",$`);
+    const result = await this.evaluator.evaluate(`printf "%p",$`);
     return result.result.trim();
   }
 
@@ -200,7 +232,7 @@ export class DebuggerSession {
       },
     };
     const response: ExtractBody<DebugProtocol.StackTraceResponse> =
-      await this.customRequest("stackTrace", args);
+      await this.evaluator.customRequest("stackTrace", args);
     return response.stackFrames.map((frame, index) => ({
       id: frame.id,
       index,
@@ -216,7 +248,7 @@ export class DebuggerSession {
     const args: DebugProtocol.ScopesArguments = {
       frameId,
     };
-    return await this.customRequest("scopes", args);
+    return await this.evaluator.customRequest("scopes", args);
   }
 
   async getVariables(
@@ -225,12 +257,13 @@ export class DebuggerSession {
     const args: DebugProtocol.VariablesArguments = {
       variablesReference,
     };
-    return await this.customRequest("variables", args);
+    return await this.evaluator.customRequest("variables", args);
   }
 
   async getPlaces(frameIndex: number): Promise<InternedPlaceList> {
     const placeResponse = await this.pythonEvaluate<InternedPlaceList>(
       `get_frame_places(${frameIndex})`,
+      frameIndex,
     );
     return placeResponse;
   }
@@ -240,10 +273,7 @@ export class DebuggerSession {
     frameId?: FrameId,
   ): Promise<T> {
     const start = performance.now();
-    const gdbResult = await this.evaluate(
-      `py print(try_run(lambda: ${command}))`,
-      frameId,
-    );
+    const gdbResult = await this.evaluator.evaluate(command, frameId);
     const duration = performance.now() - start;
     // console.debug(
     // `Py command ${command} took ${duration.toFixed(2)}ms, response size: ${gdbResult.result.length}`,
@@ -262,19 +292,9 @@ export class DebuggerSession {
     }
     return pyResult.value as T;
   }
-
-  private async customRequest<T>(request: string, args?: unknown): Promise<T> {
-    const start = performance.now();
-    const result = await this.session.customRequest(request, args);
-    const duration = performance.now() - start;
-    // console.debug(
-    // `Command ${request} took ${duration.toFixed(2)}ms, args:`,
-    // args,
-    // );
-    return result as T;
-  }
 }
-
+export class GDBDebuggerSession extends DebuggerSession {}
+export class DebugpyDebuggerSession extends DebuggerSession {}
 interface FunctionCallRecord {
   name: string;
   args: unknown[];

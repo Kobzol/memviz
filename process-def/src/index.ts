@@ -13,7 +13,7 @@ export type {
 
 export type ThreadId = number;
 
-export interface ProcessState {
+export interface GDBProcessState {
   stackTrace: StackTrace;
   stackAddressRange: AddressRange | null;
 }
