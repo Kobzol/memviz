@@ -47,7 +47,10 @@ export class MessageQueue {
           await this.handler.handleMessageToClient(task.message);
         }
       } catch (err) {
-        console.error("Error processing message", err);
+        console.error(
+          `Error handling ${task.type} message: ${JSON.stringify(task.message)}`,
+          err,
+        );
       }
     });
   }
