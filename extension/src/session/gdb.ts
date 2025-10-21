@@ -1,5 +1,5 @@
 import type { InternedPlaceList, MemoryAllocEvent } from "memviz-ui";
-import type { AddressRange, FrameId } from "process-def";
+import type { AddressRange, FrameId, FrameIndex } from "process-def";
 import type { DebugSession } from "vscode";
 import { GDBWebviewMessageHandler } from "../reactor/webviewMessageHandler/gdb";
 import { GDBEvaluator } from "./evaluator/gdb";
@@ -105,7 +105,7 @@ export class GDBDebuggerSession extends DebuggerSession<GDBEvaluator> {
     return result.result.trim();
   }
 
-  async getPlaces(frameIndex: number): Promise<InternedPlaceList> {
+  async getPlaces(frameIndex: FrameIndex): Promise<InternedPlaceList> {
     const placeResponse = await this.pythonEvaluate<InternedPlaceList>(
       `get_frame_places(${frameIndex})`,
       frameIndex,

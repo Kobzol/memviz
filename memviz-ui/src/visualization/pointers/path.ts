@@ -1,3 +1,4 @@
+import type { FrameIndex } from "process-def";
 import { formatAddress } from "../utils/formatting";
 
 type Component = string;
@@ -7,7 +8,7 @@ export class Path {
   static heapAlloc(address: bigint): Path {
     return new Path([heapAllocComponent(address)]);
   }
-  static stackFrame(index: number): Path {
+  static stackFrame(index: FrameIndex): Path {
     return new Path([stackFrameComponent(index)]);
   }
 
@@ -48,7 +49,7 @@ export class Path {
   }
 }
 
-function stackFrameComponent(index: number): Component {
+function stackFrameComponent(index: FrameIndex): Component {
   return `s-${index}`;
 }
 function stackFramePlaceComponent(name: string): Component {

@@ -1,5 +1,3 @@
-import type { Type } from "./type";
-
 export type {
   Type,
   TyArray,
@@ -9,26 +7,32 @@ export type {
   TyPtr,
   TyEnum,
   TyStruct,
-} from "./type";
+} from "./gdb";
+
+export {
+  PlaceKind,
+  Place,
+} from "./gdb";
 
 export type ThreadId = number;
-
-export interface GDBProcessState {
-  stackTrace: StackTrace;
-  stackAddressRange: AddressRange | null;
-}
 
 export interface StackTrace {
   frames: StackFrame[];
 }
 
 export type FrameId = number;
+// Numerical index of the stack frame
+// 0 is the topmost frame (the one where the program stopped)
+export type FrameIndex = number;
+
+export interface ProcessState {
+  stackTrace: StackTrace;
+  stackAddressRange: AddressRange | null;
+}
 
 export interface StackFrame {
   id: FrameId;
-  // Numerical index of the stack frame
-  // 0 is the topmost frame (the one where the program stopped)
-  index: number;
+  index: FrameIndex;
   name: string;
   line: number;
   file: string | null;
@@ -40,20 +44,4 @@ export type Address = bigint;
 export interface AddressRange {
   start: AddressStr;
   end: AddressStr;
-}
-
-export enum PlaceKind {
-  Variable = "variable",
-  ShadowedVariable = "shadowed",
-  Parameter = "parameter",
-  GlobalVariable = "global",
-}
-
-export interface Place {
-  kind: PlaceKind;
-  name: string;
-  address: AddressStr | null;
-  type: Type;
-  initialized: boolean;
-  line: number;
 }

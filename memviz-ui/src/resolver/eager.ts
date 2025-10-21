@@ -1,8 +1,8 @@
 import {
   type Address,
   type AddressStr,
-  type GDBProcessState,
   PlaceKind,
+  type ProcessState,
   type StackFrame,
   type TyArray,
   type TyFloat,
@@ -10,7 +10,7 @@ import {
   type TyPtr,
   type Type,
 } from "process-def";
-import type { Place } from "process-def/src";
+import type { FrameIndex, Place } from "process-def";
 import type { HeapAllocation } from "../allocation-tracker";
 import { MemoryMap } from "../memory-map";
 import type { MemoryAllocEvent } from "../messages";
@@ -18,7 +18,7 @@ import { assert, addressToStr, strToAddress } from "../utils";
 import type { TyChar } from "../visualization/utils/types";
 import type { ProcessResolver } from "./resolver";
 
-export interface FullGDBProcessState extends GDBProcessState {
+export interface FullProcessState extends ProcessState {
   stackTrace: FullStackTrace;
   memory: MemoryMap;
   heapAllocations: HeapAllocation[];
@@ -33,7 +33,7 @@ interface FullStackFrame extends StackFrame {
 }
 
 export class EagerResolver implements ProcessResolver {
-  constructor(private state: FullGDBProcessState) {}
+  constructor(private state: FullProcessState) {}
 
   async readMemory(address: AddressStr, size: number): Promise<ArrayBuffer> {
     console.log(`Resolving address ${address} (${size} bytes)`);
@@ -47,7 +47,7 @@ export class EagerResolver implements ProcessResolver {
     return res;
   }
 
-  async getPlaces(frameIndex: number): Promise<Place[]> {
+  async getPlaces(frameIndex: FrameIndex): Promise<Place[]> {
     return this.state.stackTrace.frames[frameIndex].places;
   }
 
@@ -164,14 +164,14 @@ export class ProcessBuilder {
     return new PlaceBuilder(address, this.map);
   }
 
-  build(): [FullGDBProcessState, EagerResolver] {
+  build(): [FullProcessState, EagerResolver] {
     if (this.activeFrame !== null) {
       this.endFrame();
     }
 
     const frames = this.frames.slice().reverse();
 
-    const processState: FullGDBProcessState = {
+    const processState: FullProcessState = {
       stackTrace: {
         frames: frames.map((f, index) => ({ ...f, id: index, index })),
       },

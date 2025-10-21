@@ -1,6 +1,7 @@
 import type {
   AddressStr,
-  GDBProcessState,
+  FrameIndex,
+  ProcessState,
   StackTrace,
   ThreadId,
 } from "process-def";
@@ -9,7 +10,7 @@ import type { InternedPlaceList } from "./type";
 export type GDBProcessStoppedEvent = {
   kind: "process-stopped";
   type: "gdb";
-  state: GDBProcessState;
+  state: ProcessState;
 };
 export type DebugpyProcessStoppedEvent = {
   kind: "process-stopped";
@@ -101,7 +102,7 @@ export interface GetStackTraceReq extends Request {
 
 export interface GetPlacesReq extends Request {
   kind: "get-places";
-  frameIndex: number;
+  frameIndex: FrameIndex;
 }
 
 export interface ReadMemoryReq extends Request {
