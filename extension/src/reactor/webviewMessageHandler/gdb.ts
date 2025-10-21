@@ -7,7 +7,7 @@ import type {
   ReadMemoryReq,
   TakeAllocEventsReq,
 } from "memviz-ui/src/messages";
-import type { GDBDebuggerSession } from "../../session/session";
+import type { GDBDebuggerSession } from "../../session/gdb";
 import { decodeBase64 } from "../../utils";
 import type { WebviewMessageHandler } from "./webviewMessageHandler";
 

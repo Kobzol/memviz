@@ -6,8 +6,12 @@ import { loadSettings, saveSettings } from "./menu/storage";
 import { MessageQueue, MessageType } from "./messageQueue";
 import { Reactor } from "./reactor";
 import { getFileUri, loadStaticFile } from "./resources";
+import { DebugpyDebuggerSession } from "./session/debugpy";
+import type { Evaluator } from "./session/evaluator/evaluator";
+import type { GDBEvaluator } from "./session/evaluator/gdb";
+import { GDBDebuggerSession } from "./session/gdb";
 import { ScriptPathProvider } from "./session/scriptPathProvider";
-import { DebuggerSession } from "./session/session";
+import type { DebuggerSession } from "./session/session";
 
 export function activate(context: vscode.ExtensionContext) {
   let settings = loadSettings(context);
@@ -28,7 +32,7 @@ export function activate(context: vscode.ExtensionContext) {
     ),
   );
 
-  let handler: Reactor | null = null;
+  let handler: Reactor<Evaluator, DebuggerSession<Evaluator>> | null = null;
 
   const messageQueue = new MessageQueue();
 
@@ -72,14 +76,33 @@ export function activate(context: vscode.ExtensionContext) {
       context.subscriptions,
     );
 
-    handler = new Reactor(
-      panel,
-      new DebuggerSession(
+    const scriptPathProvider = new ScriptPathProvider(context.extensionUri);
+
+    if (session.type === "cppdbg") {
+      const debuggerSession = new GDBDebuggerSession(
         session,
-        new ScriptPathProvider(context.extensionUri),
-      ),
-      settings,
-    );
+        scriptPathProvider,
+      );
+      handler = new Reactor<GDBEvaluator, GDBDebuggerSession>(
+        panel,
+        debuggerSession,
+        settings,
+      );
+    } else if (session.type === "debugpy") {
+      const debuggerSession = new DebugpyDebuggerSession(
+        session,
+        scriptPathProvider,
+      );
+      handler = new Reactor<Evaluator, DebugpyDebuggerSession>(
+        panel,
+        debuggerSession,
+        settings,
+      );
+    } else {
+      console.error(`Unsupported debugger type: ${session.type}`);
+      return;
+    }
+
     messageQueue.setHandler(handler);
 
     panel.webview.onDidReceiveMessage(

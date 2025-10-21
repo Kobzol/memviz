@@ -9,6 +9,9 @@ import type {
 } from "memviz-ui";
 import type { FrameId } from "process-def";
 import type { Settings } from "../menu/settings";
+import { DebugpyDebuggerSession } from "../session/debugpy";
+import type { Evaluator } from "../session/evaluator/evaluator";
+import { GDBDebuggerSession } from "../session/gdb";
 import type { DebuggerSession } from "../session/session";
 import { SessionType } from "../session/sessionType";
 import {
@@ -19,11 +22,12 @@ import {
 } from "./guards";
 import type { Status } from "./handlers";
 import { BreakpointMap, type Location } from "./locations";
-import { DebugpyWebviewMessageHandler } from "./webviewMessageHandler/debugpy";
-import { GDBWebviewMessageHandler } from "./webviewMessageHandler/gdb";
 import type { WebviewMessageHandler } from "./webviewMessageHandler/webviewMessageHandler";
 
-export class Reactor {
+export class Reactor<
+  TEvaluator extends Evaluator,
+  TSession extends DebuggerSession<TEvaluator>,
+> {
   private status: Status = {
     kind: "waiting-for-set-function-breakpoints",
   };
@@ -32,33 +36,28 @@ export class Reactor {
   // Breakpoint management
   private breakpointMap = new BreakpointMap();
 
-  private webviewMessageHandler: WebviewMessageHandler<DebuggerSession>;
+  private webviewMessageHandler: WebviewMessageHandler<TSession>;
 
   constructor(
     private panel: vscode.WebviewPanel,
-    private session: DebuggerSession,
+    private session: TSession,
     settings: Settings,
   ) {
     this.trackDynamicAllocations = settings.trackDynamicAllocations;
 
-    const sessionType = session.getSessionType();
-    if (sessionType === SessionType.GDB) {
-      this.webviewMessageHandler = new GDBWebviewMessageHandler();
-    } else if (sessionType === SessionType.Debugpy) {
-      this.webviewMessageHandler = new DebugpyWebviewMessageHandler();
-    } else {
-      throw new Error(`Unsupported session type: ${sessionType}`);
-    }
+    this.webviewMessageHandler = session.createWebviewMessageHandler();
   }
 
   applyMessageChanges(message: DebugProtocol.ProtocolMessage): void {
-    // The client sends setFunctionBreakpoints at the very beginning of the debug session.
-    // Add main to the list, so that we can perform some basic initialization at the start
-    // of the debugged program.
-    if (isSetFunctionBreakpointsRequest(message)) {
-      message.arguments.breakpoints.push({
-        name: "main",
-      });
+    if (this.session.getSessionType() === SessionType.GDB) {
+      // The client sends setFunctionBreakpoints at the very beginning of the debug session.
+      // Add main to the list, so that we can perform some basic initialization at the start
+      // of the debugged program.
+      if (isSetFunctionBreakpointsRequest(message)) {
+        message.arguments.breakpoints.push({
+          name: "main",
+        });
+      }
     }
   }
 
@@ -150,11 +149,13 @@ export class Reactor {
     };
   }
 
-  private async handleMainBreakpointEvent(frameId: FrameId) {
+  private async handleMainBreakpointEvent(
+    frameId: FrameId,
+  ) {
     // The program has stopped at main
     // Perform all initialization actions
     if (
-      this.session.getSessionType() === SessionType.GDB &&
+      this.session instanceof GDBDebuggerSession &&
       this.trackDynamicAllocations
     ) {
       await this.session.initDynAllocTracking(frameId);
