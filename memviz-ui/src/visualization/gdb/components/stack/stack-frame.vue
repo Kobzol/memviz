@@ -2,11 +2,11 @@
 import { PlaceKind, type Place, type StackFrame } from "process-def";
 import { computed, ref, watch } from "vue";
 import type { Ref } from "vue";
-import { addressToStr, strToAddress } from "../../../utils";
-import { appState } from "../../store";
+import { addressToStr, strToAddress } from "../../../../utils";
+import { appState } from "../../../store";
 import NamedPlace from "./named-place.vue";
 import { formatLocation } from "../../utils/formatting";
-import TooltipContributor from "../tooltip/tooltip-contributor.vue";
+import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 import PtrTarget from "../ptr-target.vue";
 import { AddressRegion, EMPTY_REGION } from "../../pointers/region";
 import { Path } from "../../pointers/path";

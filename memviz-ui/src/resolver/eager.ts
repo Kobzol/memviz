@@ -11,11 +11,11 @@ import {
   type Type,
 } from "process-def";
 import type { FrameIndex, Place } from "process-def";
-import type { HeapAllocation } from "../allocation-tracker";
 import { MemoryMap } from "../memory-map";
 import type { MemoryAllocEvent } from "../messages";
 import { assert, addressToStr, strToAddress } from "../utils";
-import type { TyChar } from "../visualization/utils/types";
+import type { HeapAllocation } from "../visualization/gdb/allocation-tracker";
+import type { TyChar } from "../visualization/gdb/utils/types";
 import type { ProcessResolver } from "./resolver";
 
 export interface FullProcessState extends ProcessState {

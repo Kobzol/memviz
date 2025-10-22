@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { type Ref, computed, ref, watch } from "vue";
-import { addressToStr, assert } from "../../../../utils";
-import { appState } from "../../../store";
+import { addressToStr, assert } from "../../../../../utils";
+import { appState } from "../../../../store";
 import { pluralize } from "../../../utils/formatting";
 import { TyArray, Type } from "process-def";
 import ValueComponent from "../value.vue";
 import { Path } from "../../../pointers/path";
-import TooltipContributor from "../../tooltip/tooltip-contributor.vue";
+import TooltipContributor from "../../../../components/tooltip/tooltip-contributor.vue";
 import PtrTarget from "../../ptr-target.vue";
 import { Value, valueToRegion } from "../../../utils/value";
 

@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, watch } from "vue";
-import { addressToStr } from "../../../../utils";
-import { appState } from "../../../store";
+import { addressToStr } from "../../../../../utils";
+import { appState } from "../../../../store";
 import { Type, TyStruct } from "process-def";
 import { Path } from "../../../pointers/path";
 import { Value } from "../../../utils/value";
 import { pluralize } from "../../../utils/formatting";
 
 import LazyValue from "../lazy-value.vue";
-import TooltipContributor from "../../tooltip/tooltip-contributor.vue";
+import TooltipContributor from "../../../../components/tooltip/tooltip-contributor.vue";
 
 const props = defineProps<{
   value: Value<TyStruct>;

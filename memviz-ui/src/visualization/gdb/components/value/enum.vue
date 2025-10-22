@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { type Ref, computed, ref, shallowRef, watch } from "vue";
-import { addressToStr } from "../../../utils";
-import { appState } from "../../store";
+import { addressToStr } from "../../../../utils";
+import { appState } from "../../../store";
 import { Path } from "../../pointers/path";
 import { Value } from "../../utils/value";
 import { TyEnum } from "process-def";
-import TooltipContributor from "../tooltip/tooltip-contributor.vue";
+import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 import { bufferAsBigUnsignedInt } from "../../utils/formatting";
 
 const props = defineProps<{

@@ -8,14 +8,14 @@ import {
   shallowRef,
   watch,
 } from "vue";
-import { addressToStr, assert } from "../../../utils";
+import { addressToStr, assert } from "../../../../utils";
 import {
   allocationState,
   appState,
   componentMap,
   pointerMap,
   uiConfiguration,
-} from "../../store";
+} from "../../../store";
 import { bufferAsBigUnsignedInt, formatAddress } from "../../utils/formatting";
 import { Path } from "../../pointers/path";
 import { Address, TyPtr } from "process-def";

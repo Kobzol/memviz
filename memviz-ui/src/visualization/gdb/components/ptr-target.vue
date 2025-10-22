@@ -7,11 +7,11 @@ import {
   shallowRef,
   watch,
 } from "vue";
-import { componentMap } from "../store";
-import { assert } from "../../utils";
-import { ComponentUnsubscribeFn } from "../pointers/component-map";
-import { AddressRegion } from "../pointers/region";
-import { Path } from "../pointers/path";
+import { componentMap } from "../../store";
+import { assert } from "../../../utils";
+import { ComponentUnsubscribeFn } from "../../gdb/pointers/component-map";
+import { AddressRegion } from "../../gdb/pointers/region";
+import { Path } from "../../gdb/pointers/path";
 
 const props = defineProps<{
   region: AddressRegion;

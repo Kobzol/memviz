@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type Ref, computed, shallowRef, watch } from "vue";
-import { appState } from "../../../store";
+import { appState } from "../../../../store";
 import { Address } from "process-def";
 import { CStringLoadResult, loadCString } from "../../../utils/string";
 

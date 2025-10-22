@@ -2,7 +2,7 @@
 import { tooltipStack } from "./store";
 import TooltipContent from "./components/tooltip/tooltip-content.vue";
 import Configuration from "./components/configuration.vue";
-import AddressSpace from "./components/address-space.vue";
+import AddressSpace from "./gdb/components/address-space.vue";
 
 // Code for debugging pointer targets
 // watch(componentMap, () => {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ShallowRef, shallowRef, watch } from "vue";
-import { allocationState } from "../../store";
-import { HeapAllocation } from "../../../allocation-tracker";
+import { allocationState } from "../../../store";
+import { HeapAllocation } from "../../allocation-tracker";
 import HeapAllocationComponent from "./heap-allocation.vue";
 
 const allocations: ShallowRef<HeapAllocation[]> = shallowRef([]);

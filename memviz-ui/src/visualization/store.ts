@@ -1,13 +1,13 @@
-import type { GDBProcessState } from "process-def";
+import type { ProcessState } from "process-def";
 import { type Ref, type ShallowRef, ref, shallowRef } from "vue";
-import { AllocationTracker } from "../allocation-tracker";
 import { ProcessBuilder } from "../resolver/eager";
 import type { ProcessResolver } from "../resolver/resolver";
-import { ComponentMap } from "./pointers/component-map";
-import { PointerMap } from "./pointers/pointer-map";
+import { AllocationTracker } from "./gdb/allocation-tracker";
+import { ComponentMap } from "./gdb/pointers/component-map";
+import { PointerMap } from "./gdb/pointers/pointer-map";
 
 interface AppState {
-  processState: Readonly<GDBProcessState>;
+  processState: Readonly<ProcessState>;
   resolver: Readonly<ProcessResolver>;
 }
 

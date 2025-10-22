@@ -1,6 +1,6 @@
 import type { Address } from "process-def";
 import BTree from "sorted-btree";
-import { assert } from "./utils";
+import { assert } from "../../utils";
 
 export interface HeapAllocation {
   address: Address;

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { bufferToByteArray } from "../../../utils";
+import { bufferToByteArray } from "../../../../utils";
 import { AddressRegion } from "../../pointers/region";
 import { Path } from "../../pointers/path";
 import PtrTarget from "../ptr-target.vue";

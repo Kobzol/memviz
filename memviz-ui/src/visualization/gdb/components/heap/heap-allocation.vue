@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { computed, ShallowRef, shallowRef, watch, watchEffect } from "vue";
-import { HeapAllocation } from "../../../allocation-tracker";
+import { HeapAllocation } from "../../allocation-tracker";
 import { AddressRegion } from "../../pointers/region";
 import { Path } from "../../pointers/path";
 import { formatAddress, formatSize } from "../../utils/formatting";
-import { pointerMap } from "../../store";
+import { pointerMap } from "../../../store";
 import { TyArray, Type } from "process-def";
 import { Value } from "../../utils/value";
 import PtrTarget from "../ptr-target.vue";
 import ValueComponent from "../value/value.vue";
-import TooltipContributor from "../tooltip/tooltip-contributor.vue";
+import tooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 
 const props = defineProps<{
   allocation: HeapAllocation;

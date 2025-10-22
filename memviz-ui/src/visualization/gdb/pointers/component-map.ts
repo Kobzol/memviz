@@ -1,7 +1,7 @@
 import IntervalTree, { type NumericTuple } from "@flatten-js/interval-tree";
 import type { Address } from "process-def";
 import { type ShallowRef, triggerRef } from "vue";
-import { assert } from "../../utils";
+import { assert } from "../../../utils";
 import { formatAddress } from "../utils/formatting";
 import type { Path } from "./path";
 

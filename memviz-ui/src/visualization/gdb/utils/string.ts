@@ -1,6 +1,6 @@
 import type { Address } from "process-def";
-import type { ProcessResolver } from "../../resolver/resolver";
-import { assert, addressToStr } from "../../utils";
+import type { ProcessResolver } from "../../../resolver/resolver";
+import { assert, addressToStr } from "../../../utils";
 
 export interface CStringLoadResult {
   buffer: ArrayBuffer;

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type Ref, computed, ref, shallowRef, watch } from "vue";
-import { addressToStr } from "../../../../utils";
-import { appState } from "../../../store";
+import { addressToStr } from "../../../../../utils";
+import { appState } from "../../../../store";
 import {
   bufferAsBigUnsignedInt,
   formatAddress,
@@ -11,7 +11,7 @@ import { TyStringPtr } from "../../../utils/types";
 import { Address } from "process-def";
 import String from "./string.vue";
 import Pointer from "../pointer.vue";
-import TooltipContributor from "../../tooltip/tooltip-contributor.vue";
+import TooltipContributor from "../../../../components/tooltip/tooltip-contributor.vue";
 import { Value, valueToRegion } from "../../../utils/value";
 import PtrTarget from "../../ptr-target.vue";
 
