@@ -33,7 +33,7 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
     );
   }
 
-  async createVariableRepresentation(
+  async createVariablesRepresentation(
     frameIndex: FrameIndex,
   ): Promise<PythonVariables> {
     return await this.pythonEvaluate<PythonVariables>(
@@ -65,14 +65,14 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
     return result;
   }
 
-  async getStringValue(
+  async getStringContents(
     reference: string,
     frameIndex: number,
     startIndex: number,
     length: number,
   ): Promise<string> {
     const result = await this.pythonEvaluate<string>(
-      `get_string_value(${reference}, ${frameIndex}, ${startIndex}, ${length})`,
+      `get_string_contents(${reference}, ${frameIndex}, ${startIndex}, ${length})`,
     );
     return result;
   }

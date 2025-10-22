@@ -1,10 +1,13 @@
 import type {
   AddressStr,
   FrameIndex,
+  KeyValuePair,
+  ObjectVal,
   ProcessState,
   StackTrace,
   ThreadId,
 } from "process-def";
+import type { PythonVal, PythonVariables } from "process-def";
 import type { InternedPlaceList } from "./type";
 
 export type GDBProcessStoppedEvent = {
@@ -12,9 +15,11 @@ export type GDBProcessStoppedEvent = {
   type: "gdb";
   state: ProcessState;
 };
+
 export type DebugpyProcessStoppedEvent = {
   kind: "process-stopped";
   type: "debugpy";
+  state: ProcessState;
 };
 
 export type ProcessStoppedEvent =
@@ -41,6 +46,41 @@ export interface GetPlacesRes extends Response {
   kind: "get-places";
   data: {
     places: InternedPlaceList;
+  };
+}
+
+export interface GetPythonVariablesRepresentationRes extends Response {
+  kind: "get-python-variables-representation";
+  data: {
+    variables: PythonVariables;
+  };
+}
+
+export interface GetSequenceTypeElementsRes extends Response {
+  kind: "get-sequence-type-elements";
+  data: {
+    elements: PythonVal[];
+  };
+}
+
+export interface GetDictPairsRes extends Response {
+  kind: "get-dict-pairs";
+  data: {
+    pairs: KeyValuePair[];
+  };
+}
+
+export interface GetStringContentsRes extends Response {
+  kind: "get-string-contents";
+  data: {
+    contents: string;
+  };
+}
+
+export interface GetObjectRes extends Response {
+  kind: "get-object";
+  data: {
+    object: ObjectVal;
   };
 }
 
@@ -79,6 +119,11 @@ export interface ErrorRes extends Response {
 export type ExtensionToMemvizResponse =
   | GetStackTraceRes
   | GetPlacesRes
+  | GetPythonVariablesRepresentationRes
+  | GetSequenceTypeElementsRes
+  | GetDictPairsRes
+  | GetStringContentsRes
+  | GetObjectRes
   | ReadMemoryRes
   | TakeAllocEventsRes
   | ErrorRes;
@@ -105,6 +150,41 @@ export interface GetPlacesReq extends Request {
   frameIndex: FrameIndex;
 }
 
+export interface GetPythonVariablesRepresentationReq extends Request {
+  kind: "get-python-variables-representation";
+  frameIndex: FrameIndex;
+}
+
+export interface GetSequenceTypeElementsReq extends Request {
+  kind: "get-sequence-type-elements";
+  reference: string;
+  frameIndex: FrameIndex;
+  elementCount: number;
+  startIndex: number;
+}
+
+export interface GetDictPairsReq extends Request {
+  kind: "get-dict-pairs";
+  reference: string;
+  frameIndex: FrameIndex;
+  startIndex: number;
+  pairCount: number;
+}
+
+export interface GetStringContentsReq extends Request {
+  kind: "get-string-contents";
+  reference: string;
+  frameIndex: FrameIndex;
+  startIndex: number;
+  length: number;
+}
+
+export interface GetObjectReq extends Request {
+  kind: "get-object";
+  reference: string;
+  frameIndex: FrameIndex;
+}
+
 export interface ReadMemoryReq extends Request {
   kind: "read-memory";
   address: AddressStr;
@@ -118,5 +198,10 @@ export interface TakeAllocEventsReq extends Request {
 export type MemvizToExtensionMsg =
   | GetStackTraceReq
   | GetPlacesReq
+  | GetPythonVariablesRepresentationReq
+  | GetSequenceTypeElementsReq
+  | GetDictPairsReq
+  | GetStringContentsReq
+  | GetObjectReq
   | ReadMemoryReq
   | TakeAllocEventsReq;
