@@ -96,7 +96,7 @@ export class Reactor<
 
         const loadResult = await this.session.initEvaluator(frameId);
         console.assert(loadResult.result.trim() === "");
-        await this.handleMainBreakpointEvent(frameId);
+        await this.handleInitialBreakpointEvent(frameId, stopLocation);
 
         if (hasUserBreakpoint) {
           await this.onThreadStopped();
@@ -149,16 +149,20 @@ export class Reactor<
     };
   }
 
-  private async handleMainBreakpointEvent(
+  private async handleInitialBreakpointEvent(
     frameId: FrameId,
+    stopLocation: Location,
   ) {
-    // The program has stopped at main
+    // GDB: The program has stopped at main
+    // Debugpy: The program has stopped at the first breakpoint
     // Perform all initialization actions
     if (
       this.session instanceof GDBDebuggerSession &&
       this.trackDynamicAllocations
     ) {
       await this.session.initDynAllocTracking(frameId);
+    } else if (this.session instanceof DebugpyDebuggerSession) {
+      await this.session.configureEvaluator(frameId, stopLocation);
     }
 
     // We need to change the status BEFORE starting the asynchronous continue

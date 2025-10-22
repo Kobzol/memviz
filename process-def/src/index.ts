@@ -14,6 +14,8 @@ export {
   Place,
 } from "./gdb";
 
+export type { PythonVariables } from "./debugpy";
+
 export type ThreadId = number;
 
 export interface StackTrace {

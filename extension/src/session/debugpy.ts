@@ -1,4 +1,4 @@
-import type { FrameId, FrameIndex } from "process-def";
+import type { FrameId, FrameIndex, PythonVariables } from "process-def";
 import type { DebugSession } from "vscode";
 import type { Location } from "../reactor/locations";
 import { DebugpyWebviewMessageHandler } from "../reactor/webviewMessageHandler/debugpy";
@@ -20,5 +20,23 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
 
   override createWebviewMessageHandler() {
     return new DebugpyWebviewMessageHandler();
+  }
+
+  async configureEvaluator(
+    frameId: FrameId,
+    stopLocation: Location,
+  ): Promise<void> {
+    await this.pythonEvaluate(
+      `configure(r'${stopLocation.source?.path}')`,
+      frameId,
+    );
+  }
+
+  async createVariableRepresentation(
+    frameIndex: FrameIndex,
+  ): Promise<PythonVariables> {
+    return await this.pythonEvaluate<PythonVariables>(
+      `get_variables(${frameIndex})`,
+    );
   }
 }

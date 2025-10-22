@@ -1,6 +1,7 @@
 from abc import ABC
 import dataclasses
 import json
+import inspect
 from typing import Any, Callable, Dict, List, Optional
 
 
@@ -129,6 +130,120 @@ class ObjectVal(BaseVal):
 class Variables:
     places: List[Place]
     values: Dict[PythonId, BaseVal]
+
+
+debugged_frame_offset = None
+
+
+def configure(top_frame_file: str) -> None:
+    global debugged_frame_offset
+    stack = inspect.stack()
+    for i, frame in enumerate(stack):
+        if frame.filename == top_frame_file:
+            debugged_frame_offset = i
+            break
+    if debugged_frame_offset is None:
+        raise Exception(f"Frame file '{top_frame_file}' not found.")
+
+
+def get_size(val: Any) -> int:
+    return getattr(val, "__sizeof__", lambda: 0)()
+
+
+def make_value(val: Any, reference: str = None) -> BaseVal:
+    size = get_size(val)
+    if val is None:
+        return NoneVal(size=size)
+    elif isinstance(val, bool):
+        return BoolVal(size=size, value=val)
+    elif isinstance(val, int):
+        return IntVal(size=size, value=str(val))
+    elif isinstance(val, float):
+        return FloatVal(size=size, value=str(val))
+    elif isinstance(val, complex):
+        return ComplexVal(
+            size=size,
+            real_value=str(val.real),
+            imaginary_value=str(val.imag),
+        )
+    elif isinstance(val, str):
+        return DeferredStrVal(
+            size=size,
+            reference=reference,
+            length=len(val)
+        )
+    elif isinstance(val, dict):
+        return DeferredDictVal(
+            size=size,
+            reference=reference,
+            key_value_pair_count=len(val)
+        )
+    elif isinstance(val, list):
+        return DeferredListVal(
+            size=size,
+            reference=reference,
+            element_count=len(val)
+        )
+    elif isinstance(val, tuple):
+        return DeferredTupleVal(
+            size=size,
+            reference=reference,
+            element_count=len(val)
+        )
+    elif isinstance(val, set):
+        return DeferredSetVal(
+            size=size,
+            reference=reference,
+            element_count=len(val)
+        )
+    elif isinstance(val, frozenset):
+        return DeferredFrozenSetVal(
+            size=size,
+            reference=reference,
+            element_count=len(val),
+        )
+    elif isinstance(val, range):
+        return RangeVal(
+            size=size,
+            start=str(val.start),
+            stop=str(val.stop),
+            step=str(val.step),
+        )
+    elif inspect.isfunction(val):
+        return FunctionVal(
+            size=size,
+            name=val.__name__,
+            qualified_name=val.__qualname__,
+            module=val.__module__,
+            signature=str(inspect.signature(val)) if hasattr(inspect, "signature") else None,
+        )
+    else:
+        return DeferredObjectVal(
+            size=size,
+            reference=reference,
+            type_name=type(val).__name__,
+        )
+    
+
+def get_variables(frame_index: int) -> List[Variables]:
+    stack = inspect.stack()
+    frame_info = stack[frame_index + debugged_frame_offset]
+    frame = frame_info.frame
+
+    places = []
+    values = {}
+
+    for name, value in frame.f_locals.items():
+        value_id = str(id(value))
+        place = Place(
+            name=name,
+            id=value_id,
+        )
+        places.append(place)
+        if value_id not in values:
+            values[value_id] = make_value(value, reference=name)
+
+    return Variables(places=places, values=values)
 
 
 @dataclasses.dataclass
