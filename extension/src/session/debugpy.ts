@@ -1,4 +1,5 @@
 import type { FrameId, FrameIndex, PythonVariables } from "process-def";
+import type { KeyValuePair, ObjectVal, PythonVal } from "process-def";
 import type { DebugSession } from "vscode";
 import type { Location } from "../reactor/locations";
 import { DebugpyWebviewMessageHandler } from "../reactor/webviewMessageHandler/debugpy";
@@ -38,5 +39,48 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
     return await this.pythonEvaluate<PythonVariables>(
       `get_variables(${frameIndex})`,
     );
+  }
+
+  async getSequenceTypeElements(
+    reference: string,
+    frameIndex: number,
+    startIndex: number,
+    elementCount: number,
+  ): Promise<PythonVal[]> {
+    const result = await this.pythonEvaluate<PythonVal[]>(
+      `get_sequence_type_elements('${reference}', ${frameIndex}, ${startIndex}, ${elementCount})`,
+    );
+    return result;
+  }
+
+  async getDictPairs(
+    reference: string,
+    frameIndex: number,
+    startIndex: number,
+    pairCount: number,
+  ): Promise<KeyValuePair[]> {
+    const result = await this.pythonEvaluate<KeyValuePair[]>(
+      `get_dict_pairs(${reference}, ${frameIndex}, ${startIndex}, ${pairCount})`,
+    );
+    return result;
+  }
+
+  async getStringValue(
+    reference: string,
+    frameIndex: number,
+    startIndex: number,
+    length: number,
+  ): Promise<string> {
+    const result = await this.pythonEvaluate<string>(
+      `get_string_value(${reference}, ${frameIndex}, ${startIndex}, ${length})`,
+    );
+    return result;
+  }
+
+  async getObject(reference: string, frameIndex: number): Promise<ObjectVal> {
+    const result = await this.pythonEvaluate<ObjectVal>(
+      `get_object(${reference}, ${frameIndex})`,
+    );
+    return result;
   }
 }

@@ -120,7 +120,7 @@ class DeferredObjectVal(DeferredVal):
 
 
 @dataclasses.dataclass(frozen=True)
-class ObjectVal(BaseVal):
+class ObjectVal(DeferredObjectVal):
     kind: str = dataclasses.field(init=False, default="object")
     attributes: List[KeyValuePair] = dataclasses.field(default_factory=list)
     methods: List[str] = dataclasses.field(default_factory=list)
@@ -132,7 +132,8 @@ class Variables:
     values: Dict[PythonId, BaseVal]
 
 
-debugged_frame_offset = None
+# TODO: find a better way to get the debugged frame
+debugged_frame_offset: Optional[int] = None
 
 
 def configure(top_frame_file: str) -> None:
@@ -225,6 +226,12 @@ def make_value(val: Any, reference: str = None) -> BaseVal:
         )
     
 
+def evaluate_expression(expression: str, frame_index: int) -> Any:
+    stack = inspect.stack()
+    frame_info = stack[frame_index + debugged_frame_offset + 1]
+    return eval(expression, frame_info.frame.f_globals, frame_info.frame.f_locals)
+
+
 def get_variables(frame_index: int) -> List[Variables]:
     stack = inspect.stack()
     frame_info = stack[frame_index + debugged_frame_offset]
@@ -244,6 +251,82 @@ def get_variables(frame_index: int) -> List[Variables]:
             values[value_id] = make_value(value, reference=name)
 
     return Variables(places=places, values=values)
+
+
+def get_sequence_type_elements(reference: str, frame_index: int,  element_count: int, start_index: int) -> List[BaseVal]:
+    length = evaluate_expression(f"len({reference})", frame_index)
+    if start_index < 0 or start_index >= length:
+        raise Exception(f"start_index {start_index} out of range [0, {length}] for sequence {reference}.")
+    if start_index + element_count > length:
+        raise Exception(f"element_count {element_count} out of range [0, {length - start_index}] for sequence {reference}.")
+
+    value = evaluate_expression(f"{reference}[{start_index}:{start_index + element_count}]", frame_index)
+    assert isinstance(value, (list, tuple, set, frozenset))
+    elements = []
+    for i, element in enumerate(value):
+        elements.append(make_value(element, reference=f"{reference}[{start_index + i}]"))
+    return elements
+
+
+def get_dict_entries(reference: str, frame_index: int, start_index: int, pair_count: int) -> List[KeyValuePair]:
+    length = evaluate_expression(f"len({reference})", frame_index)
+
+    if start_index < 0 or start_index >= length:
+        raise Exception(f"start_index {start_index} out of range [0, {length}] for dict {reference}.")
+    if start_index + pair_count > length:
+        raise Exception(f"key_value_pair_count {pair_count} out of range [0, {length - start_index}] for dict {reference}.")
+
+    value = evaluate_expression(reference, frame_index)
+    assert isinstance(value, dict)
+
+    items = list(value.items())[start_index:start_index + pair_count]
+    key_value_pairs = []
+    for i, (key, val) in enumerate(items):
+        key_value_pairs.append(
+            KeyValuePair(
+                key=make_value(key, reference=f"{reference}.keys()[{start_index + i}]"),
+                value=make_value(val, reference=f"{reference}[{repr(key)}]"),
+            )
+        )
+    return key_value_pairs
+
+
+def get_string_contents(reference: str, frame_index: int, start_index: int, length: int) -> str:
+    str_length = evaluate_expression(f"len({reference})", frame_index)
+
+    if start_index < 0 or start_index >= str_length:
+        raise Exception(f"start_index {start_index} out of range [0, {str_length}] for string {reference}.")
+    if start_index + length > str_length:
+        raise Exception(f"length {length} out of range [0, {str_length - start_index}] for string {reference}.")
+
+    str_value = evaluate_expression(f"{reference}[{start_index}:{start_index + length}]", frame_index)
+    assert isinstance(str_value, str)
+    return str_value
+
+
+def get_object(reference: str, frame_index: int) -> ObjectVal:
+    obj = evaluate_expression(reference, frame_index)
+    assert obj is not None
+    attributes = []
+    methods = []
+    for attr_name in dir(obj):
+        attr_value = getattr(obj, attr_name)
+        if inspect.ismethod(attr_value) or inspect.isfunction(attr_value):
+            methods.append(attr_name)
+        else:
+            attributes.append(
+                KeyValuePair(
+                    key=make_value(attr_name, reference=f"{reference}.{attr_name}"),
+                    value=make_value(attr_value, reference=f"{reference}.{attr_name}"),
+                )
+            )
+
+    return ObjectVal(
+        size=get_size(obj),
+        type_name=type(obj).__name__,
+        attributes=attributes,
+        methods=methods,
+    )
 
 
 @dataclasses.dataclass

@@ -14,7 +14,12 @@ export {
   Place,
 } from "./gdb";
 
-export type { PythonVariables } from "./debugpy";
+export type {
+  PythonVariables,
+  PythonVal,
+  KeyValuePair,
+  ObjectVal,
+} from "./debugpy";
 
 export type ThreadId = number;
 
