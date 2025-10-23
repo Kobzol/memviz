@@ -1,4 +1,4 @@
-import type { ProcessState } from "process-def";
+import { type ProcessState, SessionType } from "process-def";
 import { type Ref, type ShallowRef, ref, shallowRef } from "vue";
 import { ProcessBuilder } from "../resolver/eager";
 import type { ProcessResolver } from "../resolver/resolver";
@@ -9,6 +9,7 @@ import { PointerMap } from "./gdb/pointers/pointer-map";
 interface AppState {
   processState: Readonly<ProcessState>;
   resolver: Readonly<ProcessResolver>;
+  sessionType: SessionType;
 }
 
 function createDefaultState(): AppState {
@@ -17,6 +18,7 @@ function createDefaultState(): AppState {
   return {
     processState,
     resolver,
+    sessionType: SessionType.GDB,
   };
 }
 

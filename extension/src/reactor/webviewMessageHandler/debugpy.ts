@@ -1,13 +1,14 @@
 import type { MemvizToExtensionMsg } from "memviz-ui";
 import type {
-  DebugpyProcessStoppedEvent,
   ExtensionToMemvizResponse,
   GetDictPairsReq,
   GetObjectReq,
   GetPythonVariablesRepresentationReq,
   GetSequenceTypeElementsReq,
   GetStringContentsReq,
+  ProcessStoppedEvent,
 } from "memviz-ui/src/messages";
+import { SessionType } from "process-def";
 import type { DebugpyDebuggerSession } from "../../session/debugpy";
 import type { WebviewMessageHandler } from "./webviewMessageHandler";
 
@@ -38,7 +39,7 @@ export class DebugpyWebviewMessageHandler
 
   public async getProcessStoppedMessage(
     session: DebugpyDebuggerSession,
-  ): Promise<DebugpyProcessStoppedEvent> {
+  ): Promise<ProcessStoppedEvent> {
     const response = await session.getThreads();
     const stackTrace = await session.getStackTrace(
       response.threads[0].id,
@@ -47,7 +48,7 @@ export class DebugpyWebviewMessageHandler
 
     return {
       kind: "process-stopped",
-      type: "debugpy",
+      sessionType: SessionType.Debugpy,
       state: {
         stackTrace: {
           frames: stackTrace,

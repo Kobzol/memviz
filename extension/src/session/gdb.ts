@@ -1,11 +1,15 @@
 import type { InternedPlaceList, MemoryAllocEvent } from "memviz-ui";
-import type { AddressRange, FrameId, FrameIndex } from "process-def";
+import {
+  type AddressRange,
+  type FrameId,
+  type FrameIndex,
+  SessionType,
+} from "process-def";
 import type { DebugSession } from "vscode";
 import { GDBWebviewMessageHandler } from "../reactor/webviewMessageHandler/gdb";
 import { GDBEvaluator } from "./evaluator/gdb";
 import type { ScriptPathProvider } from "./scriptPathProvider";
 import { DebuggerSession } from "./session";
-import { SessionType } from "./sessionType";
 
 export class GDBDebuggerSession extends DebuggerSession<GDBEvaluator> {
   protected evaluator: GDBEvaluator;

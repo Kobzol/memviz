@@ -7,13 +7,12 @@ import type {
   ExtensionToMemvizResponse,
   MemvizToExtensionMsg,
 } from "memviz-ui";
-import type { FrameId } from "process-def";
+import { type FrameId, SessionType } from "process-def";
 import type { Settings } from "../menu/settings";
 import { DebugpyDebuggerSession } from "../session/debugpy";
 import type { Evaluator } from "../session/evaluator/evaluator";
 import { GDBDebuggerSession } from "../session/gdb";
 import type { DebuggerSession } from "../session/session";
-import { SessionType } from "../session/sessionType";
 import {
   isSetBreakpointsRequest,
   isSetFunctionBreakpointsRequest,

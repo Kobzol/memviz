@@ -1,6 +1,6 @@
+import { SessionType } from "process-def";
 import type { Uri } from "vscode";
 import { getStaticFilePath } from "../resources";
-import { SessionType } from "./sessionType";
 
 export class ScriptPathProvider {
   constructor(private extensionUri: Uri) {}

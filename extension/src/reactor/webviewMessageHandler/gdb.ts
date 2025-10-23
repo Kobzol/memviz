@@ -1,12 +1,13 @@
 import type { MemvizToExtensionMsg } from "memviz-ui";
 import type {
   ExtensionToMemvizResponse,
-  GDBProcessStoppedEvent,
   GetPlacesReq,
   GetStackTraceReq,
+  ProcessStoppedEvent,
   ReadMemoryReq,
   TakeAllocEventsReq,
 } from "memviz-ui/src/messages";
+import { SessionType } from "process-def";
 import type { GDBDebuggerSession } from "../../session/gdb";
 import { decodeBase64 } from "../../utils";
 import type { WebviewMessageHandler } from "./webviewMessageHandler";
@@ -35,7 +36,7 @@ export class GDBWebviewMessageHandler
 
   public async getProcessStoppedMessage(
     session: GDBDebuggerSession,
-  ): Promise<GDBProcessStoppedEvent> {
+  ): Promise<ProcessStoppedEvent> {
     const response = await session.getThreads();
     const stackTrace = await session.getStackTrace(
       response.threads[0].id,
@@ -46,7 +47,7 @@ export class GDBWebviewMessageHandler
 
     return {
       kind: "process-stopped",
-      type: "gdb",
+      sessionType: SessionType.GDB,
       state: {
         stackTrace: {
           frames: stackTrace,

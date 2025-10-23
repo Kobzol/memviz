@@ -1,10 +1,14 @@
 import type { DebugProtocol } from "@vscode/debugprotocol";
-import type { FrameId, StackFrame, ThreadId } from "process-def";
+import {
+  type FrameId,
+  SessionType,
+  type StackFrame,
+  type ThreadId,
+} from "process-def";
 import type { DebugSession } from "vscode";
 import type { WebviewMessageHandler } from "../reactor/webviewMessageHandler/webviewMessageHandler";
 import type { ExtractBody } from "../utils";
 import type { Evaluator } from "./evaluator/evaluator";
-import { SessionType } from "./sessionType";
 
 export abstract class DebuggerSession<TEvaluator extends Evaluator> {
   protected abstract evaluator: TEvaluator;

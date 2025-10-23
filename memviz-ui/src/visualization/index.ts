@@ -1,5 +1,5 @@
 import createPanZoom from "panzoom";
-import type { ProcessState } from "process-def";
+import type { ProcessState, SessionType } from "process-def";
 import { createApp, triggerRef } from "vue";
 import type { ProcessResolver } from "../resolver/resolver";
 import App from "./app.vue";
@@ -27,11 +27,16 @@ export class Memviz {
     });
   }
 
-  async showState(processState: ProcessState, resolver: ProcessResolver) {
+  async showState(
+    processState: ProcessState,
+    resolver: ProcessResolver,
+    sessionType: SessionType,
+  ) {
     console.debug("Root state changed");
     appState.value = {
       processState,
       resolver,
+      sessionType,
     };
 
     const events = await resolver.takeAllocEvents();

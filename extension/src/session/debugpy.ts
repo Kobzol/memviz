@@ -1,4 +1,9 @@
-import type { FrameId, FrameIndex, PythonVariables } from "process-def";
+import {
+  type FrameId,
+  type FrameIndex,
+  type PythonVariables,
+  SessionType,
+} from "process-def";
 import type { KeyValuePair, ObjectVal, PythonVal } from "process-def";
 import type { DebugSession } from "vscode";
 import type { Location } from "../reactor/locations";
@@ -6,7 +11,6 @@ import { DebugpyWebviewMessageHandler } from "../reactor/webviewMessageHandler/d
 import { DebugpyEvaluator } from "./evaluator/debugpy";
 import type { ScriptPathProvider } from "./scriptPathProvider";
 import { DebuggerSession } from "./session";
-import { SessionType } from "./sessionType";
 
 export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
   protected evaluator: DebugpyEvaluator;

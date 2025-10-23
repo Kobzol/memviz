@@ -21,6 +21,11 @@ export type {
   ObjectVal,
 } from "./debugpy";
 
+export enum SessionType {
+  GDB = "GDB",
+  Debugpy = "Debugpy",
+}
+
 export type ThreadId = number;
 
 export interface StackTrace {

@@ -1,0 +1,28 @@
+<script setup lang="ts">
+import { appState } from "../store";
+import { computed } from "vue";
+import AddressSpaceGDB from "../gdb/components/address-space.vue";
+import AddressSpaceDebugpy from "../debugpy/components/address-space.vue";
+import { SessionType } from "process-def";
+
+const sessionType = computed(() => appState.value.sessionType);
+
+</script>
+
+<template>
+  <div class="address-space">
+    <AddressSpaceGDB v-if="sessionType === SessionType.GDB"></AddressSpaceGDB>
+    <AddressSpaceDebugpy v-if="sessionType === SessionType.Debugpy"></AddressSpaceDebugpy>
+  </div>
+</template>
+
+<style lang="scss" scoped>
+.address-space {
+  display: flex;
+  flex-direction: row;
+  justify-content: start;
+}
+.stack {
+  margin-right: 100px;
+}
+</style>

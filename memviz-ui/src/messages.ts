@@ -4,27 +4,18 @@ import type {
   KeyValuePair,
   ObjectVal,
   ProcessState,
+  SessionType,
   StackTrace,
   ThreadId,
 } from "process-def";
 import type { PythonVal, PythonVariables } from "process-def";
 import type { InternedPlaceList } from "./type";
 
-export type GDBProcessStoppedEvent = {
+export type ProcessStoppedEvent = {
   kind: "process-stopped";
-  type: "gdb";
+  sessionType: SessionType;
   state: ProcessState;
 };
-
-export type DebugpyProcessStoppedEvent = {
-  kind: "process-stopped";
-  type: "debugpy";
-  state: ProcessState;
-};
-
-export type ProcessStoppedEvent =
-  | GDBProcessStoppedEvent
-  | DebugpyProcessStoppedEvent;
 
 // Events from the extension
 export type ExtensionEvent = ProcessStoppedEvent;
