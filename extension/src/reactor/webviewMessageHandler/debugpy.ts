@@ -10,11 +10,9 @@ import type {
 } from "memviz-ui/src/messages";
 import { SessionType } from "process-def";
 import type { DebugpyDebuggerSession } from "../../session/debugpy";
-import type { WebviewMessageHandler } from "./webviewMessageHandler";
+import { WebviewMessageHandler } from "./webviewMessageHandler";
 
-export class DebugpyWebviewMessageHandler
-  implements WebviewMessageHandler<DebugpyDebuggerSession>
-{
+export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<DebugpyDebuggerSession> {
   public getHandleCallback(
     message: MemvizToExtensionMsg,
     session: DebugpyDebuggerSession,
@@ -34,7 +32,7 @@ export class DebugpyWebviewMessageHandler
     if (message.kind === "get-object") {
       return this.performGetObjectRequest(message, session);
     }
-    return null;
+    return super.getHandleCallback(message, session);
   }
 
   public async getProcessStoppedMessage(

@@ -2,36 +2,25 @@ import type { MemvizToExtensionMsg } from "memviz-ui";
 import type {
   ExtensionToMemvizResponse,
   GetPlacesReq,
-  GetStackTraceReq,
   ProcessStoppedEvent,
-  ReadMemoryReq,
   TakeAllocEventsReq,
 } from "memviz-ui/src/messages";
 import { SessionType } from "process-def";
 import type { GDBDebuggerSession } from "../../session/gdb";
-import { decodeBase64 } from "../../utils";
-import type { WebviewMessageHandler } from "./webviewMessageHandler";
+import { WebviewMessageHandler } from "./webviewMessageHandler";
 
-export class GDBWebviewMessageHandler
-  implements WebviewMessageHandler<GDBDebuggerSession>
-{
+export class GDBWebviewMessageHandler extends WebviewMessageHandler<GDBDebuggerSession> {
   public getHandleCallback(
     message: MemvizToExtensionMsg,
     session: GDBDebuggerSession,
   ) {
-    if (message.kind === "get-stack-trace") {
-      return this.performGetStackTraceRequest(message, session);
-    }
     if (message.kind === "get-places") {
       return this.performGetPlacesRequest(message, session);
-    }
-    if (message.kind === "read-memory") {
-      return this.performReadMemoryRequest(message, session);
     }
     if (message.kind === "take-alloc-events") {
       return this.performTakeAllocEventsRequest(message, session);
     }
-    return null;
+    return super.getHandleCallback(message, session);
   }
 
   public async getProcessStoppedMessage(
@@ -57,25 +46,6 @@ export class GDBWebviewMessageHandler
     } as const;
   }
 
-  private performGetStackTraceRequest(
-    message: GetStackTraceReq,
-    session: GDBDebuggerSession,
-  ): () => Promise<
-    Omit<ExtensionToMemvizResponse, "requestId" | "resolverId">
-  > {
-    return async () => {
-      const frames = await session.getStackTrace(message.threadId);
-      return {
-        kind: "get-stack-trace",
-        data: {
-          stackTrace: {
-            frames,
-          },
-        },
-      };
-    };
-  }
-
   private performGetPlacesRequest(
     message: GetPlacesReq,
     session: GDBDebuggerSession,
@@ -88,24 +58,6 @@ export class GDBWebviewMessageHandler
         kind: "get-places",
         data: {
           places,
-        },
-      };
-    };
-  }
-
-  private performReadMemoryRequest(
-    message: ReadMemoryReq,
-    session: GDBDebuggerSession,
-  ): () => Promise<
-    Omit<ExtensionToMemvizResponse, "requestId" | "resolverId">
-  > {
-    return async () => {
-      const result = await session.readMemory(message.address, message.size);
-      const data = await decodeBase64(result.data ?? "");
-      return {
-        kind: "read-memory",
-        data: {
-          data,
         },
       };
     };
