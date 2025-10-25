@@ -35,7 +35,10 @@ export class Reactor<
   // Breakpoint management
   private breakpointMap = new BreakpointMap();
 
-  private webviewMessageHandler: WebviewMessageHandler<TSession>;
+  private webviewMessageHandler: WebviewMessageHandler<
+    TSession,
+    ExtensionToMemvizResponse
+  >;
 
   constructor(
     private panel: vscode.WebviewPanel,

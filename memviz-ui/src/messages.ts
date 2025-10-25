@@ -1,14 +1,17 @@
 import type {
   AddressStr,
   FrameIndex,
-  KeyValuePair,
-  ObjectVal,
   ProcessState,
   SessionType,
   StackTrace,
   ThreadId,
 } from "process-def";
-import type { PythonVal, PythonVariables } from "process-def";
+import type {
+  KeyValuePair,
+  ObjectVal,
+  Val as PythonVal,
+  Variables as PythonVariables,
+} from "process-def/debugpy";
 import type { InternedPlaceList } from "./type";
 
 export type ProcessStoppedEvent = {
@@ -107,17 +110,24 @@ export interface ErrorRes extends Response {
   error: string;
 }
 
-export type ExtensionToMemvizResponse =
+export type ExtensionToMemvizCommonResponse =
   | GetStackTraceRes
-  | GetPlacesRes
+  | ReadMemoryRes
+  | ErrorRes;
+
+export type ExtensionToMemvizGDBResponse = GetPlacesRes | TakeAllocEventsRes;
+
+export type ExtensionToMemvizDebugpyResponse =
   | GetPythonVariablesRepresentationRes
   | GetSequenceTypeElementsRes
   | GetDictPairsRes
   | GetStringContentsRes
-  | GetObjectRes
-  | ReadMemoryRes
-  | TakeAllocEventsRes
-  | ErrorRes;
+  | GetObjectRes;
+
+export type ExtensionToMemvizResponse =
+  | ExtensionToMemvizCommonResponse
+  | ExtensionToMemvizGDBResponse
+  | ExtensionToMemvizDebugpyResponse;
 
 // Any message from the extension
 export type ExtensionToMemvizMsg = ExtensionEvent | ExtensionToMemvizResponse;

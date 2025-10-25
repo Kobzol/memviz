@@ -3,23 +3,30 @@ import type {
   MemvizToExtensionMsg,
 } from "memviz-ui";
 import type {
+  ExtensionToMemvizCommonResponse,
   GetStackTraceReq,
+  GetStackTraceRes,
   ProcessStoppedEvent,
   ReadMemoryReq,
+  ReadMemoryRes,
 } from "memviz-ui/src/messages";
 import type { Evaluator } from "../../session/evaluator/evaluator";
 import type { DebuggerSession } from "../../session/session";
 import { decodeBase64 } from "../../utils";
 
 export abstract class WebviewMessageHandler<
-  T extends DebuggerSession<Evaluator>,
+  TSession extends DebuggerSession<Evaluator>,
+  TResponse extends ExtensionToMemvizResponse = ExtensionToMemvizCommonResponse,
 > {
-  getHandleCallback(
+  public getHandleCallback(
     message: MemvizToExtensionMsg,
-    session: T,
+    session: TSession,
   ):
     | (() => Promise<
-        Omit<ExtensionToMemvizResponse, "requestId" | "resolverId">
+        Omit<
+          ExtensionToMemvizCommonResponse | TResponse,
+          "requestId" | "resolverId"
+        >
       >)
     | null {
     if (message.kind === "get-stack-trace") {
@@ -34,9 +41,7 @@ export abstract class WebviewMessageHandler<
   private performGetStackTraceRequest(
     message: GetStackTraceReq,
     session: DebuggerSession<Evaluator>,
-  ): () => Promise<
-    Omit<ExtensionToMemvizResponse, "requestId" | "resolverId">
-  > {
+  ): () => Promise<Omit<GetStackTraceRes, "requestId" | "resolverId">> {
     return async () => {
       const frames = await session.getStackTrace(message.threadId);
       return {
@@ -53,9 +58,7 @@ export abstract class WebviewMessageHandler<
   private performReadMemoryRequest(
     message: ReadMemoryReq,
     session: DebuggerSession<Evaluator>,
-  ): () => Promise<
-    Omit<ExtensionToMemvizResponse, "requestId" | "resolverId">
-  > {
+  ): () => Promise<Omit<ReadMemoryRes, "requestId" | "resolverId">> {
     return async () => {
       const result = await session.readMemory(message.address, message.size);
       const data = await decodeBase64(result.data ?? "");
@@ -68,5 +71,7 @@ export abstract class WebviewMessageHandler<
     };
   }
 
-  abstract getProcessStoppedMessage(session: T): Promise<ProcessStoppedEvent>;
+  abstract getProcessStoppedMessage(
+    session: TSession,
+  ): Promise<ProcessStoppedEvent>;
 }

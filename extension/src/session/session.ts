@@ -1,4 +1,5 @@
 import type { DebugProtocol } from "@vscode/debugprotocol";
+import type { ExtensionToMemvizResponse } from "memviz-ui";
 import {
   type FrameId,
   SessionType,
@@ -15,7 +16,10 @@ export abstract class DebuggerSession<TEvaluator extends Evaluator> {
 
   constructor(protected session: DebugSession) {}
 
-  public abstract createWebviewMessageHandler(): WebviewMessageHandler<this>;
+  public abstract createWebviewMessageHandler(): WebviewMessageHandler<
+    this,
+    ExtensionToMemvizResponse
+  >;
 
   public getSessionType(): SessionType {
     switch (this.session.configuration.type) {

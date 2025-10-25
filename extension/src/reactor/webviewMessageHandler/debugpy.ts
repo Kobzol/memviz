@@ -1,18 +1,26 @@
 import type { MemvizToExtensionMsg } from "memviz-ui";
 import type {
-  ExtensionToMemvizResponse,
+  ExtensionToMemvizDebugpyResponse,
   GetDictPairsReq,
+  GetDictPairsRes,
   GetObjectReq,
+  GetObjectRes,
   GetPythonVariablesRepresentationReq,
+  GetPythonVariablesRepresentationRes,
   GetSequenceTypeElementsReq,
+  GetSequenceTypeElementsRes,
   GetStringContentsReq,
+  GetStringContentsRes,
   ProcessStoppedEvent,
 } from "memviz-ui/src/messages";
 import { SessionType } from "process-def";
 import type { DebugpyDebuggerSession } from "../../session/debugpy";
 import { WebviewMessageHandler } from "./webviewMessageHandler";
 
-export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<DebugpyDebuggerSession> {
+export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
+  DebugpyDebuggerSession,
+  ExtensionToMemvizDebugpyResponse
+> {
   public getHandleCallback(
     message: MemvizToExtensionMsg,
     session: DebugpyDebuggerSession,
@@ -60,7 +68,7 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<DebugpyD
     message: GetPythonVariablesRepresentationReq,
     session: DebugpyDebuggerSession,
   ): () => Promise<
-    Omit<ExtensionToMemvizResponse, "requestId" | "resolverId">
+    Omit<GetPythonVariablesRepresentationRes, "requestId" | "resolverId">
   > {
     return async () => {
       const variables = await session.createVariablesRepresentation(
@@ -79,7 +87,7 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<DebugpyD
     message: GetSequenceTypeElementsReq,
     session: DebugpyDebuggerSession,
   ): () => Promise<
-    Omit<ExtensionToMemvizResponse, "requestId" | "resolverId">
+    Omit<GetSequenceTypeElementsRes, "requestId" | "resolverId">
   > {
     return async () => {
       const elements = await session.getSequenceTypeElements(
@@ -100,9 +108,7 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<DebugpyD
   private performGetDictPairsRequest(
     message: GetDictPairsReq,
     session: DebugpyDebuggerSession,
-  ): () => Promise<
-    Omit<ExtensionToMemvizResponse, "requestId" | "resolverId">
-  > {
+  ): () => Promise<Omit<GetDictPairsRes, "requestId" | "resolverId">> {
     return async () => {
       const pairs = await session.getDictPairs(
         message.reference,
@@ -122,9 +128,7 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<DebugpyD
   private performGetStringContentsRequest(
     message: GetStringContentsReq,
     session: DebugpyDebuggerSession,
-  ): () => Promise<
-    Omit<ExtensionToMemvizResponse, "requestId" | "resolverId">
-  > {
+  ): () => Promise<Omit<GetStringContentsRes, "requestId" | "resolverId">> {
     return async () => {
       const contents = await session.getStringContents(
         message.reference,
@@ -144,9 +148,7 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<DebugpyD
   private performGetObjectRequest(
     message: GetObjectReq,
     session: DebugpyDebuggerSession,
-  ): () => Promise<
-    Omit<ExtensionToMemvizResponse, "requestId" | "resolverId">
-  > {
+  ): () => Promise<Omit<GetObjectRes, "requestId" | "resolverId">> {
     return async () => {
       const objectVal = await session.getObject(
         message.reference,
@@ -155,7 +157,7 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<DebugpyD
       return {
         kind: "get-object",
         data: {
-          objectVal,
+          object: objectVal,
         },
       };
     };
