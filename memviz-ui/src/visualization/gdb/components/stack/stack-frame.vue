@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PlaceKind, type Place, type StackFrame } from "process-def";
+import type { StackFrame } from "process-def";
 import { computed, ref, watch } from "vue";
 import type { Ref } from "vue";
 import { addressToStr, strToAddress } from "../../../../utils";
@@ -10,6 +10,7 @@ import TooltipContributor from "../../../components/tooltip/tooltip-contributor.
 import PtrTarget from "../ptr-target.vue";
 import { AddressRegion, EMPTY_REGION } from "../../pointers/region";
 import { Path } from "../../pointers/path";
+import { Place, PlaceKind } from "process-def/gdb";
 
 const props = defineProps<{
   frame: StackFrame;

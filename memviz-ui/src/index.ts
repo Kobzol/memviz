@@ -17,8 +17,9 @@ export type {
   ReadMemoryReq,
   TakeAllocEventsReq,
 } from "./messages";
+
 export type { InternedPlaceList } from "./type";
-export { PlaceKind } from "process-def";
+export { PlaceKind } from "process-def/gdb";
 
 function runMemvizInVsCode(vscode: WebviewApi<unknown>) {
   let resolverId = 0;

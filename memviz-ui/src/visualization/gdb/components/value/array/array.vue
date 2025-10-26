@@ -3,7 +3,7 @@ import { type Ref, computed, ref, watch } from "vue";
 import { addressToStr, assert } from "../../../../../utils";
 import { appState } from "../../../../store";
 import { pluralize } from "../../../utils/formatting";
-import { TyArray, Type } from "process-def";
+import { TyArray, Type } from "process-def/gdb";
 import ValueComponent from "../value.vue";
 import { Path } from "../../../pointers/path";
 import TooltipContributor from "../../../../components/tooltip/tooltip-contributor.vue";
@@ -167,6 +167,7 @@ watch(
   display: flex;
   justify-content: center;
 }
+
 .offset {
   @extend .element;
 
@@ -181,6 +182,7 @@ watch(
     // TODO: make nicer
     border-radius: 50% 0 0 50%;
   }
+
   &:last-child {
     margin-left: 5px;
     border-radius: 0 50% 50% 0;

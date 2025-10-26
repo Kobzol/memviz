@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Type, TyArray, TyPtr, TyEnum, TyStruct } from "process-def";
+import { Type, TyArray, TyPtr, TyEnum, TyStruct } from "process-def/gdb";
 import { Path } from "../../pointers/path";
 import {
   isCharType,

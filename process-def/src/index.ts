@@ -1,26 +1,3 @@
-export type {
-  Type,
-  TyArray,
-  TyBool,
-  TyFloat,
-  TyInt,
-  TyPtr,
-  TyEnum,
-  TyStruct,
-} from "./gdb";
-
-export {
-  PlaceKind,
-  Place,
-} from "./gdb";
-
-export type {
-  PythonVariables,
-  PythonVal,
-  KeyValuePair,
-  ObjectVal,
-} from "./debugpy";
-
 export enum SessionType {
   GDB = "GDB",
   Debugpy = "Debugpy",

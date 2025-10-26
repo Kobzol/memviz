@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Type } from "process-def";
+import { Type } from "process-def/gdb";
 import { Path } from "../../pointers/path";
 import { Value } from "../../utils/value";
 import { ref } from "vue";

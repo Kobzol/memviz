@@ -1,4 +1,5 @@
-import type { Address, Type } from "process-def";
+import type { Address } from "process-def";
+import type { Type } from "process-def/gdb";
 import type { AddressRegion } from "../pointers/region";
 
 export interface Value<T extends Type> {

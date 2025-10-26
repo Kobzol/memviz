@@ -2,7 +2,7 @@
 import { computed, watch } from "vue";
 import { addressToStr } from "../../../../../utils";
 import { appState } from "../../../../store";
-import { Type, TyStruct } from "process-def";
+import { Type, TyStruct } from "process-def/gdb";
 import { Path } from "../../../pointers/path";
 import { Value } from "../../../utils/value";
 import { pluralize } from "../../../utils/formatting";

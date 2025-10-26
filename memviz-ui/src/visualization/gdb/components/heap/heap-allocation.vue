@@ -5,11 +5,10 @@ import { AddressRegion } from "../../pointers/region";
 import { Path } from "../../pointers/path";
 import { formatAddress, formatSize } from "../../utils/formatting";
 import { pointerMap } from "../../../store";
-import { TyArray, Type } from "process-def";
+import { TyArray, Type } from "process-def/gdb";
 import { Value } from "../../utils/value";
 import PtrTarget from "../ptr-target.vue";
 import ValueComponent from "../value/value.vue";
-import tooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 
 const props = defineProps<{
   allocation: HeapAllocation;

@@ -1,4 +1,5 @@
-import type { AddressStr, FrameIndex, Place } from "process-def";
+import type { AddressStr } from "process-def";
+import type { Place } from "process-def/gdb";
 import { MemoryMap } from "../memory-map";
 import type { MemoryAllocEvent } from "../messages";
 import { strToAddress } from "../utils";
@@ -7,12 +8,12 @@ import type { ProcessResolver } from "./resolver";
 export class CachingResolver<T extends ProcessResolver>
   implements ProcessResolver
 {
-  private placeMap: Map<FrameIndex, Place[]> = new Map();
+  private placeMap: Map<number, Place[]> = new Map();
   private map = new MemoryMap();
 
   constructor(public inner: T) {}
 
-  async getPlaces(frameIndex: FrameIndex): Promise<Place[]> {
+  async getPlaces(frameIndex: number): Promise<Place[]> {
     let cached = this.placeMap.get(frameIndex);
 
     if (cached === undefined) {

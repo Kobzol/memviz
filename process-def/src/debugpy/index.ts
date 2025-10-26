@@ -1,15 +1,15 @@
-import type { PythonVal } from "./value";
+import type { Val } from "./value";
 
-export type { PythonVal, KeyValuePair, ObjectVal } from "./value";
+export type { Val, KeyValuePair, ObjectVal } from "./value";
 
 export type PythonId = string;
 
-export interface PythonPlace {
+export interface Place {
   name: string;
   id: PythonId;
 }
 
-export interface PythonVariables {
-  places: PythonPlace[];
-  values: { [key: PythonId]: PythonVal };
+export interface Variables {
+  places: Place[];
+  values: { [key: PythonId]: Val };
 }

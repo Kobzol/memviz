@@ -1,10 +1,11 @@
-import type {
-  AddressStr,
-  FrameIndex,
-  Place,
-  StackTrace,
-  ThreadId,
+import {
+  type AddressStr,
+  type FrameIndex,
+  SessionType,
+  type StackTrace,
+  type ThreadId,
 } from "process-def";
+import type { Place as GDBPlace } from "process-def/gdb";
 import type { WebviewApi } from "vscode-webview";
 import type {
   ExtensionToMemvizResponse,
@@ -69,7 +70,7 @@ export class VsCodeResolver implements ProcessResolver {
     return res.stackTrace;
   }
 
-  async getPlaces(frameIndex: FrameIndex): Promise<Place[]> {
+  async getPlaces(frameIndex: FrameIndex): Promise<GDBPlace[]> {
     const res = await this.sendRequest<GetPlacesReq, GetPlacesRes>({
       kind: "get-places",
       frameIndex,

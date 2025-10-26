@@ -1,16 +1,19 @@
-import {
-  type Address,
-  type AddressStr,
-  PlaceKind,
-  type ProcessState,
-  type StackFrame,
-  type TyArray,
-  type TyFloat,
-  type TyInt,
-  type TyPtr,
-  type Type,
+import type {
+  Address,
+  AddressStr,
+  FrameIndex,
+  ProcessState,
+  StackFrame,
 } from "process-def";
-import type { FrameIndex, Place } from "process-def";
+import type {
+  Place,
+  TyArray,
+  TyFloat,
+  TyInt,
+  TyPtr,
+  Type,
+} from "process-def/gdb";
+import { PlaceKind } from "process-def/gdb";
 import { MemoryMap } from "../memory-map";
 import type { MemoryAllocEvent } from "../messages";
 import { assert, addressToStr, strToAddress } from "../utils";

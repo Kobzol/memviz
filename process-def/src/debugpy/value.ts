@@ -1,32 +1,32 @@
-export interface PythonVal {
+export interface Val {
   kind: string;
   size: number;
 }
 
-interface DeferredVal extends PythonVal {
+interface DeferredVal extends Val {
   reference: string;
 }
 
-export interface NoneVal extends PythonVal {
+export interface NoneVal extends Val {
   kind: "none";
 }
 
-export interface BoolVal extends PythonVal {
+export interface BoolVal extends Val {
   kind: "bool";
   value: boolean;
 }
 
-export interface IntVal extends PythonVal {
+export interface IntVal extends Val {
   kind: "int";
   value: number;
 }
 
-export interface FloatVal extends PythonVal {
+export interface FloatVal extends Val {
   kind: "float";
   value: number;
 }
 
-export interface ComplexVal extends PythonVal {
+export interface ComplexVal extends Val {
   kind: "complex";
   real_value: string;
   imaginary_value: string;
@@ -63,18 +63,18 @@ export interface DeferredDictVal extends DeferredVal {
 }
 
 export interface KeyValuePair {
-  key: PythonVal;
-  value: PythonVal;
+  key: Val;
+  value: Val;
 }
 
-export interface RangeVal extends PythonVal {
+export interface RangeVal extends Val {
   kind: "range";
   start: number | null;
   stop: number | null;
   step: number | null;
 }
 
-export interface FunctionVal extends PythonVal {
+export interface FunctionVal extends Val {
   kind: "function";
   name: string;
   qualified_name: string;
@@ -87,7 +87,7 @@ export interface DeferredObjectVal extends DeferredVal {
   type_name: string;
 }
 
-export interface ObjectVal extends PythonVal {
+export interface ObjectVal extends Val {
   kind: "obj";
   attributes: KeyValuePair[];
   methods: string[];

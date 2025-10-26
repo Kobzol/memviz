@@ -1,4 +1,4 @@
-import { type Place, PlaceKind, type Type } from "process-def";
+import { type Place, PlaceKind, type Type } from "process-def/gdb";
 
 export interface InternedPlaceList {
   places: PlaceWithInternedType[];

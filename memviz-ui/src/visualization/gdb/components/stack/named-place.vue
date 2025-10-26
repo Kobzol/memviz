@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PlaceKind, type Address, type Place, type Type } from "process-def";
+import type { Address } from "process-def";
 import { computed } from "vue";
 import { strToAddress } from "../../../../utils";
 import { formatTypeSize } from "../../utils/formatting";
@@ -7,6 +7,7 @@ import ValueComponent from "../value/value.vue";
 import { Path } from "../../pointers/path";
 import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 import { Value } from "../../utils/value";
+import { Place, PlaceKind, Type } from "process-def/gdb";
 
 const props = defineProps<{
   place: Place;

@@ -18,13 +18,14 @@ import {
 } from "../../../store";
 import { bufferAsBigUnsignedInt, formatAddress } from "../../utils/formatting";
 import { Path } from "../../pointers/path";
-import { Address, TyPtr } from "process-def";
+import { Address } from "process-def";
 import { LeaderLine } from "leader-line";
 import { withDisabledPanZoom } from "../../utils/panzoom";
 import { ComponentWithAddress } from "../../pointers/component-map";
 import { Value, valueToRegion } from "../../utils/value";
 import PtrTarget from "../ptr-target.vue";
 import { PointerUnsubscribeFn } from "../../pointers/pointer-map";
+import { TyPtr } from "process-def/gdb";
 
 const props = defineProps<{
   value: Value<TyPtr>;

@@ -1,4 +1,5 @@
-import type { Address, Type } from "process-def";
+import type { Address } from "process-def";
+import type { Type } from "process-def/gdb";
 import BTree from "sorted-btree";
 import { type ShallowRef, triggerRef } from "vue";
 import type { AddressRegion } from "./region";

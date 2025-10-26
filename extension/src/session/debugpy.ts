@@ -1,10 +1,10 @@
-import {
-  type FrameId,
-  type FrameIndex,
-  type PythonVariables,
-  SessionType,
-} from "process-def";
-import type { KeyValuePair, ObjectVal, PythonVal } from "process-def";
+import { type FrameId, type FrameIndex, SessionType } from "process-def";
+import type {
+  KeyValuePair,
+  ObjectVal,
+  Val,
+  Variables,
+} from "process-def/debugpy";
 import type { DebugSession } from "vscode";
 import type { Location } from "../reactor/locations";
 import { DebugpyWebviewMessageHandler } from "../reactor/webviewMessageHandler/debugpy";
@@ -39,10 +39,8 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
 
   async createVariablesRepresentation(
     frameIndex: FrameIndex,
-  ): Promise<PythonVariables> {
-    return await this.pythonEvaluate<PythonVariables>(
-      `get_variables(${frameIndex})`,
-    );
+  ): Promise<Variables> {
+    return await this.pythonEvaluate<Variables>(`get_variables(${frameIndex})`);
   }
 
   async getSequenceTypeElements(
@@ -50,8 +48,8 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
     frameIndex: number,
     startIndex: number,
     elementCount: number,
-  ): Promise<PythonVal[]> {
-    const result = await this.pythonEvaluate<PythonVal[]>(
+  ): Promise<Val[]> {
+    const result = await this.pythonEvaluate<Val[]>(
       `get_sequence_type_elements('${reference}', ${frameIndex}, ${startIndex}, ${elementCount})`,
     );
     return result;

@@ -1,4 +1,5 @@
-import type { Address, Type } from "process-def";
+import type { Address } from "process-def";
+import type { Type } from "process-def/gdb";
 import { type TyScalar, isCharType } from "./types";
 
 const FORMATTERS: { [key: string]: (view: DataView) => string } = {

@@ -1,4 +1,11 @@
-import type { TyArray, TyBool, TyFloat, TyInt, TyPtr, Type } from "process-def";
+import type {
+  TyArray,
+  TyBool,
+  TyFloat,
+  TyInt,
+  TyPtr,
+  Type,
+} from "process-def/gdb";
 
 export type TyScalar = TyBool | TyInt | TyFloat;
 

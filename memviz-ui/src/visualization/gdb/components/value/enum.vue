@@ -4,7 +4,7 @@ import { addressToStr } from "../../../../utils";
 import { appState } from "../../../store";
 import { Path } from "../../pointers/path";
 import { Value } from "../../utils/value";
-import { TyEnum } from "process-def";
+import { TyEnum } from "process-def/gdb";
 import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 import { bufferAsBigUnsignedInt } from "../../utils/formatting";
 
