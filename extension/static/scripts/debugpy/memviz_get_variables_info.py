@@ -253,12 +253,12 @@ def get_variables(frame_index: int) -> List[Variables]:
     return Variables(places=places, values=values)
 
 
-def get_sequence_type_elements(reference: str, frame_index: int,  element_count: int, start_index: int) -> List[BaseVal]:
+def get_collection_type_elements(reference: str, frame_index: int,  element_count: int, start_index: int) -> List[BaseVal]:
     length = evaluate_expression(f"len({reference})", frame_index)
     if start_index < 0 or start_index >= length:
-        raise Exception(f"start_index {start_index} out of range [0, {length}] for sequence {reference}.")
+        raise Exception(f"start_index {start_index} out of range [0, {length}] for collection {reference}.")
     if start_index + element_count > length:
-        raise Exception(f"element_count {element_count} out of range [0, {length - start_index}] for sequence {reference}.")
+        raise Exception(f"element_count {element_count} out of range [0, {length - start_index}] for collection {reference}.")
 
     value = evaluate_expression(f"{reference}[{start_index}:{start_index + element_count}]", frame_index)
     assert isinstance(value, (list, tuple, set, frozenset))

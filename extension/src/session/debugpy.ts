@@ -43,14 +43,14 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
     return await this.pythonEvaluate<Variables>(`get_variables(${frameIndex})`);
   }
 
-  async getSequenceTypeElements(
+  async getCollectionTypeElements(
     reference: string,
     frameIndex: number,
     startIndex: number,
     elementCount: number,
   ): Promise<Value[]> {
     const result = await this.pythonEvaluate<Value[]>(
-      `get_sequence_type_elements('${reference}', ${frameIndex}, ${startIndex}, ${elementCount})`,
+      `get_collection_type_elements('${reference}', ${frameIndex}, ${startIndex}, ${elementCount})`,
     );
     return result;
   }

@@ -50,8 +50,8 @@ export interface GetPythonVariablesRepresentationRes extends Response {
   };
 }
 
-export interface GetSequenceTypeElementsRes extends Response {
-  kind: "get-sequence-type-elements";
+export interface GetCollectionTypeElementsRes extends Response {
+  kind: "get-collection-type-elements";
   data: {
     elements: PythonValue[];
   };
@@ -119,7 +119,7 @@ export type ExtensionToMemvizGDBResponse = GetPlacesRes | TakeAllocEventsRes;
 
 export type ExtensionToMemvizDebugpyResponse =
   | GetPythonVariablesRepresentationRes
-  | GetSequenceTypeElementsRes
+  | GetCollectionTypeElementsRes
   | GetDictPairsRes
   | GetStringContentsRes
   | GetObjectRes;
@@ -156,8 +156,8 @@ export interface GetPythonVariablesRepresentationReq extends Request {
   frameIndex: FrameIndex;
 }
 
-export interface GetSequenceTypeElementsReq extends Request {
-  kind: "get-sequence-type-elements";
+export interface GetCollectionTypeElementsReq extends Request {
+  kind: "get-collection-type-elements";
   reference: string;
   frameIndex: FrameIndex;
   elementCount: number;
@@ -200,7 +200,7 @@ export type MemvizToExtensionMsg =
   | GetStackTraceReq
   | GetPlacesReq
   | GetPythonVariablesRepresentationReq
-  | GetSequenceTypeElementsReq
+  | GetCollectionTypeElementsReq
   | GetDictPairsReq
   | GetStringContentsReq
   | GetObjectReq

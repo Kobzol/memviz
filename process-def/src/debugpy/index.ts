@@ -1,7 +1,25 @@
 import type { AddressStr } from "..";
 import type { Value } from "./value";
 
-export type { Value, KeyValuePair, ObjectVal } from "./value";
+export type {
+  Value,
+  NoneVal,
+  BoolVal,
+  IntVal,
+  FloatVal,
+  ComplexVal,
+  DeferredStrVal,
+  DeferredListVal,
+  DeferredTupleVal,
+  DeferredSetVal,
+  DeferredFrozenSetVal,
+  DeferredDictVal,
+  DeferredObjectVal,
+  RangeVal,
+  FunctionVal,
+  KeyValuePair,
+  ObjectVal,
+} from "./value";
 
 export interface Place {
   name: string;

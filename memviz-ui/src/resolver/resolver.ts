@@ -1,5 +1,8 @@
 import type { AddressStr, FrameIndex } from "process-def";
-import type { Variables as DebugpyVariables } from "process-def/debugpy";
+import type {
+  Value as PythonValue,
+  Variables as PythonVariables,
+} from "process-def/debugpy";
 import type { Place as GDBPlace } from "process-def/gdb";
 import type { MemoryAllocEvent } from "../messages";
 
@@ -9,5 +12,11 @@ export interface ProcessResolver {
   takeAllocEvents(): Promise<MemoryAllocEvent[]>;
   createVariablesRepresentation(
     frameIndex: FrameIndex,
-  ): Promise<DebugpyVariables>;
+  ): Promise<PythonVariables>;
+  getCollectionTypeElements(
+    reference: string,
+    frameIndex: number,
+    elementCount: number,
+    startIndex: number,
+  ): Promise<PythonValue[]>;
 }

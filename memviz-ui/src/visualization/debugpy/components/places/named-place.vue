@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { Place, Value } from "process-def/debugpy";
 import { computed } from "vue";
-import { Path } from "../../../gdb/pointers/path";
 import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
+import ValueComponent from "../value/value.vue";
 
 const props = defineProps<{
   place: Place;
-  path: Path;
   value: Value | null;
 }>();
 
@@ -29,6 +28,7 @@ const tooltip = computed(() => {
         props.place.name
       }}</TooltipContributor></code
     >
+    <ValueComponent v-if="value" :value="value" />
   </div>
 </template>
 

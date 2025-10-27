@@ -1,5 +1,8 @@
 import type { AddressStr, FrameIndex } from "process-def";
-import type { Variables as DebugpyVariables } from "process-def/debugpy";
+import type {
+  Value as PythonValue,
+  Variables as PythonVariables,
+} from "process-def/debugpy";
 import type { Place } from "process-def/gdb";
 import { MemoryMap } from "../memory-map";
 import type { MemoryAllocEvent } from "../messages";
@@ -26,8 +29,22 @@ export class CachingResolver<T extends ProcessResolver>
 
   async createVariablesRepresentation(
     frameIndex: FrameIndex,
-  ): Promise<DebugpyVariables> {
+  ): Promise<PythonVariables> {
     return await this.inner.createVariablesRepresentation(frameIndex);
+  }
+
+  async getCollectionTypeElements(
+    reference: string,
+    frameIndex: number,
+    elementCount: number,
+    startIndex: number,
+  ): Promise<PythonValue[]> {
+    return await this.inner.getCollectionTypeElements(
+      reference,
+      frameIndex,
+      elementCount,
+      startIndex,
+    );
   }
 
   async readMemory(address: AddressStr, size: number): Promise<ArrayBuffer> {

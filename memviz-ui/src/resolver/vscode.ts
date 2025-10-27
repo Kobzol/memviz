@@ -5,11 +5,16 @@ import {
   type StackTrace,
   type ThreadId,
 } from "process-def";
-import type { Variables as DebugpyVariables } from "process-def/debugpy";
+import type {
+  Value as PythonValue,
+  Variables as PythonVariables,
+} from "process-def/debugpy";
 import type { Place as GDBPlace } from "process-def/gdb";
 import type { WebviewApi } from "vscode-webview";
 import type {
   ExtensionToMemvizResponse,
+  GetCollectionTypeElementsReq,
+  GetCollectionTypeElementsRes,
   GetPlacesReq,
   GetPlacesRes,
   GetPythonVariablesRepresentationReq,
@@ -84,10 +89,10 @@ export class VsCodeResolver implements ProcessResolver {
 
   async createVariablesRepresentation(
     frameIndex: FrameIndex,
-  ): Promise<DebugpyVariables> {
-    if (this.sessionType === SessionType.GDB) {
+  ): Promise<PythonVariables> {
+    if (this.sessionType !== SessionType.Debugpy) {
       throw new Error(
-        "createVariablesRepresentation not supported for GDB sessions",
+        "createVariablesRepresentation is only supported in debugpy sessions",
       );
     }
     const res = await this.sendRequest<
@@ -99,6 +104,30 @@ export class VsCodeResolver implements ProcessResolver {
     });
 
     return res.variables;
+  }
+
+  async getCollectionTypeElements(
+    reference: string,
+    frameIndex: number,
+    elementCount: number,
+    startIndex: number,
+  ): Promise<PythonValue[]> {
+    if (this.sessionType !== SessionType.Debugpy) {
+      throw new Error(
+        "getCollectionTypeElements is only supported in debugpy sessions",
+      );
+    }
+    const res = await this.sendRequest<
+      GetCollectionTypeElementsReq,
+      GetCollectionTypeElementsRes
+    >({
+      kind: "get-collection-type-elements",
+      reference,
+      frameIndex,
+      elementCount,
+      startIndex,
+    });
+    return res.elements;
   }
 
   async readMemory(address: AddressStr, size: number): Promise<ArrayBuffer> {
