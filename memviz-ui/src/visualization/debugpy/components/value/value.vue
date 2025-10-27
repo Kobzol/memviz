@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import None from "./none.vue";
 import Scalar from "./scalar.vue";
+import Complex from "./complex.vue";
 import Collection from "./collection.vue";
 import type {
   DeferredStrVal,
@@ -72,6 +73,7 @@ function isObjectVal(value: DeferredObjectVal): value is DeferredObjectVal {
   <div class="value" :style="{ marginLeft: `${level * 30}px` }">
     <None v-if="isNone(value)" :value="value as NoneVal" />
     <Scalar v-else-if="isScalar(value)" :value="value as ScalarVal" />
+    <Complex v-else-if="isComplex(value)" :value="value as ComplexVal" />
     <Collection
       v-else-if="isCollection(value)"
       :value="value as CollectionVal"
