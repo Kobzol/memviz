@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import None from "./none.vue";
 import Scalar from "./scalar.vue";
 import Collection from "./collection.vue";
 import type {
@@ -69,7 +70,8 @@ function isObjectVal(value: DeferredObjectVal): value is DeferredObjectVal {
 
 <template>
   <div class="value" :style="{ marginLeft: `${level * 30}px` }">
-    <Scalar v-if="isScalar(value)" :value="value as ScalarVal" />
+    <None v-if="isNone(value)" :value="value as NoneVal" />
+    <Scalar v-else-if="isScalar(value)" :value="value as ScalarVal" />
     <Collection
       v-else-if="isCollection(value)"
       :value="value as CollectionVal"
