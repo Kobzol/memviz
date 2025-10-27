@@ -5,6 +5,7 @@ import type {
   ProcessState,
   StackFrame,
 } from "process-def";
+import type { Variables as DebugpyVariables } from "process-def/debugpy";
 import type {
   Place,
   TyArray,
@@ -52,6 +53,18 @@ export class EagerResolver implements ProcessResolver {
 
   async getPlaces(frameIndex: FrameIndex): Promise<Place[]> {
     return this.state.stackTrace.frames[frameIndex].places;
+  }
+
+  async createVariablesRepresentation(
+    frameIndex: FrameIndex,
+  ): Promise<DebugpyVariables> {
+    console.error(
+      "EagerResolver.createVariablesRepresentation not implemented",
+    );
+    return {
+      places: [],
+      values: {},
+    };
   }
 
   async takeAllocEvents(): Promise<MemoryAllocEvent[]> {

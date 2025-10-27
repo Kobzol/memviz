@@ -24,7 +24,7 @@ export { PlaceKind } from "process-def/gdb";
 function runMemvizInVsCode(vscode: WebviewApi<unknown>) {
   let resolverId = 0;
   let resolver: CachingResolver<VsCodeResolver> = new CachingResolver(
-    new VsCodeResolver(vscode, resolverId),
+    new VsCodeResolver(vscode, resolverId, SessionType.GDB),
   );
   const memviz = new Memviz(document.getElementById("app")!);
 
@@ -35,7 +35,11 @@ function runMemvizInVsCode(vscode: WebviewApi<unknown>) {
       if (message.kind === "process-stopped") {
         // We need to reset the resolver to break caches
         resolverId++;
-        const innerResolver = new VsCodeResolver(vscode, resolverId);
+        const innerResolver = new VsCodeResolver(
+          vscode,
+          resolverId,
+          message.sessionType,
+        );
         resolver = new CachingResolver(innerResolver);
         memviz.showState(message.state, resolver, message.sessionType);
       } else {

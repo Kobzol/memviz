@@ -2,7 +2,7 @@ import { type FrameId, type FrameIndex, SessionType } from "process-def";
 import type {
   KeyValuePair,
   ObjectVal,
-  Val,
+  Value,
   Variables,
 } from "process-def/debugpy";
 import type { DebugSession } from "vscode";
@@ -48,8 +48,8 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
     frameIndex: number,
     startIndex: number,
     elementCount: number,
-  ): Promise<Val[]> {
-    const result = await this.pythonEvaluate<Val[]>(
+  ): Promise<Value[]> {
+    const result = await this.pythonEvaluate<Value[]>(
       `get_sequence_type_elements('${reference}', ${frameIndex}, ${startIndex}, ${elementCount})`,
     );
     return result;

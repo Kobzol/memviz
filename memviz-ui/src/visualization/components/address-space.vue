@@ -6,23 +6,11 @@ import AddressSpaceDebugpy from "../debugpy/components/address-space.vue";
 import { SessionType } from "process-def";
 
 const sessionType = computed(() => appState.value.sessionType);
-
 </script>
 
 <template>
-  <div class="address-space">
-    <AddressSpaceGDB v-if="sessionType === SessionType.GDB"></AddressSpaceGDB>
-    <AddressSpaceDebugpy v-if="sessionType === SessionType.Debugpy"></AddressSpaceDebugpy>
-  </div>
+  <AddressSpaceGDB v-if="sessionType === SessionType.GDB"></AddressSpaceGDB>
+  <AddressSpaceDebugpy
+    v-if="sessionType === SessionType.Debugpy"
+  ></AddressSpaceDebugpy>
 </template>
-
-<style lang="scss" scoped>
-.address-space {
-  display: flex;
-  flex-direction: row;
-  justify-content: start;
-}
-.stack {
-  margin-right: 100px;
-}
-</style>

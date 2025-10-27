@@ -5,12 +5,15 @@ import {
   type StackTrace,
   type ThreadId,
 } from "process-def";
+import type { Variables as DebugpyVariables } from "process-def/debugpy";
 import type { Place as GDBPlace } from "process-def/gdb";
 import type { WebviewApi } from "vscode-webview";
 import type {
   ExtensionToMemvizResponse,
   GetPlacesReq,
   GetPlacesRes,
+  GetPythonVariablesRepresentationReq,
+  GetPythonVariablesRepresentationRes,
   GetStackTraceReq,
   GetStackTraceRes,
   MemoryAllocEvent,
@@ -39,6 +42,7 @@ export class VsCodeResolver implements ProcessResolver {
   public constructor(
     private vscode: WebviewApi<unknown>,
     private resolverId: ResolverId,
+    private sessionType: SessionType,
   ) {}
 
   handleMessage(message: ExtensionToMemvizResponse) {
@@ -76,6 +80,25 @@ export class VsCodeResolver implements ProcessResolver {
       frameIndex,
     });
     return deserializePlaces(res.places);
+  }
+
+  async createVariablesRepresentation(
+    frameIndex: FrameIndex,
+  ): Promise<DebugpyVariables> {
+    if (this.sessionType === SessionType.GDB) {
+      throw new Error(
+        "createVariablesRepresentation not supported for GDB sessions",
+      );
+    }
+    const res = await this.sendRequest<
+      GetPythonVariablesRepresentationReq,
+      GetPythonVariablesRepresentationRes
+    >({
+      kind: "get-python-variables-representation",
+      frameIndex,
+    });
+
+    return res.variables;
   }
 
   async readMemory(address: AddressStr, size: number): Promise<ArrayBuffer> {

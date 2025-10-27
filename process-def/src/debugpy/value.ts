@@ -1,32 +1,32 @@
-export interface Val {
+export interface Value {
   kind: string;
   size: number;
 }
 
-interface DeferredVal extends Val {
+interface DeferredVal extends Value {
   reference: string;
 }
 
-export interface NoneVal extends Val {
+export interface NoneVal extends Value {
   kind: "none";
 }
 
-export interface BoolVal extends Val {
+export interface BoolVal extends Value {
   kind: "bool";
   value: boolean;
 }
 
-export interface IntVal extends Val {
+export interface IntVal extends Value {
   kind: "int";
   value: number;
 }
 
-export interface FloatVal extends Val {
+export interface FloatVal extends Value {
   kind: "float";
   value: number;
 }
 
-export interface ComplexVal extends Val {
+export interface ComplexVal extends Value {
   kind: "complex";
   real_value: string;
   imaginary_value: string;
@@ -63,18 +63,18 @@ export interface DeferredDictVal extends DeferredVal {
 }
 
 export interface KeyValuePair {
-  key: Val;
-  value: Val;
+  key: Value;
+  value: Value;
 }
 
-export interface RangeVal extends Val {
+export interface RangeVal extends Value {
   kind: "range";
   start: number | null;
   stop: number | null;
   step: number | null;
 }
 
-export interface FunctionVal extends Val {
+export interface FunctionVal extends Value {
   kind: "function";
   name: string;
   qualified_name: string;
@@ -87,7 +87,7 @@ export interface DeferredObjectVal extends DeferredVal {
   type_name: string;
 }
 
-export interface ObjectVal extends Val {
+export interface ObjectVal extends Value {
   kind: "obj";
   attributes: KeyValuePair[];
   methods: string[];

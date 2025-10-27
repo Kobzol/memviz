@@ -9,7 +9,7 @@ import type {
 import type {
   KeyValuePair,
   ObjectVal,
-  Val as PythonVal,
+  Value as PythonValue,
   Variables as PythonVariables,
 } from "process-def/debugpy";
 import type { InternedPlaceList } from "./type";
@@ -53,7 +53,7 @@ export interface GetPythonVariablesRepresentationRes extends Response {
 export interface GetSequenceTypeElementsRes extends Response {
   kind: "get-sequence-type-elements";
   data: {
-    elements: PythonVal[];
+    elements: PythonValue[];
   };
 }
 

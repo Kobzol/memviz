@@ -1,15 +1,14 @@
-import type { Val } from "./value";
+import type { AddressStr } from "..";
+import type { Value } from "./value";
 
-export type { Val, KeyValuePair, ObjectVal } from "./value";
-
-export type PythonId = string;
+export type { Value, KeyValuePair, ObjectVal } from "./value";
 
 export interface Place {
   name: string;
-  id: PythonId;
+  id: AddressStr;
 }
 
 export interface Variables {
   places: Place[];
-  values: { [key: PythonId]: Val };
+  values: { [key: AddressStr]: Value };
 }

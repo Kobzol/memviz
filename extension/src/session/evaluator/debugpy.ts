@@ -5,8 +5,10 @@ import { Evaluator } from "./evaluator";
 
 export class DebugpyEvaluator extends Evaluator {
   moduleName = "memviz_get_variables_info";
+  frameId: FrameId | undefined;
 
   async init(frameId: FrameId) {
+    this.frameId = frameId;
     return await this.evaluateInner(
       `exec(open("${this.scriptPath}").read(), {'__file__': '${this.scriptPath}'})`,
     );
@@ -16,6 +18,7 @@ export class DebugpyEvaluator extends Evaluator {
     expression: string,
     frameId?: FrameId,
   ): Promise<ExtractBody<DebugProtocol.EvaluateResponse>> {
+    frameId = frameId ?? this.frameId;
     const result = await this.evaluateInner(
       `__import__('${this.moduleName}').try_run(lambda: __import__('${this.moduleName}').${expression})`,
       frameId,
