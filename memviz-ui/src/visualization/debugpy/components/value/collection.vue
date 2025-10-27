@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { PropType, type Ref, computed, ref, shallowRef, watch } from "vue";
+import { type Ref, computed, ref, watch } from "vue";
 import ValueComponent from "./value.vue";
 import { appState } from "../../../store";
 import { CollectionVal } from "../../utils/types";
@@ -23,8 +23,8 @@ async function loadData() {
     .getCollectionTypeElements(
       props.value.reference,
       frameIndex,
-      props.value.element_count,
-      0
+      0,
+      props.value.element_count
     )
     .then((loadedElements) => {
       elements.value = loadedElements;

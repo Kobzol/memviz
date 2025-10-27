@@ -253,7 +253,7 @@ def get_variables(frame_index: int) -> List[Variables]:
     return Variables(places=places, values=values)
 
 
-def get_collection_type_elements(reference: str, frame_index: int,  element_count: int, start_index: int) -> List[BaseVal]:
+def get_collection_type_elements(reference: str, frame_index: int, start_index: int, element_count: int) -> List[BaseVal]:
     length = evaluate_expression(f"len({reference})", frame_index)
     if start_index < 0 or start_index >= length:
         raise Exception(f"start_index {start_index} out of range [0, {length}] for collection {reference}.")

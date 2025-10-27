@@ -21,6 +21,8 @@ import type {
   GetPythonVariablesRepresentationRes,
   GetStackTraceReq,
   GetStackTraceRes,
+  GetStringContentsReq,
+  GetStringContentsRes,
   MemoryAllocEvent,
   MemvizToExtensionMsg,
   ReadMemoryReq,
@@ -109,8 +111,8 @@ export class VsCodeResolver implements ProcessResolver {
   async getCollectionTypeElements(
     reference: string,
     frameIndex: number,
-    elementCount: number,
     startIndex: number,
+    elementCount: number,
   ): Promise<PythonValue[]> {
     if (this.sessionType !== SessionType.Debugpy) {
       throw new Error(
@@ -128,6 +130,30 @@ export class VsCodeResolver implements ProcessResolver {
       startIndex,
     });
     return res.elements;
+  }
+
+  async getStringContents(
+    reference: string,
+    frameIndex: number,
+    startIndex: number,
+    length: number,
+  ): Promise<string> {
+    if (this.sessionType !== SessionType.Debugpy) {
+      throw new Error(
+        "getStringContents is only supported in debugpy sessions",
+      );
+    }
+    const res = await this.sendRequest<
+      GetStringContentsReq,
+      GetStringContentsRes
+    >({
+      kind: "get-string-contents",
+      reference,
+      frameIndex,
+      startIndex,
+      length,
+    });
+    return res.contents;
   }
 
   async readMemory(address: AddressStr, size: number): Promise<ArrayBuffer> {

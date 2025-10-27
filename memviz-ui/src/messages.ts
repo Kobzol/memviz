@@ -160,8 +160,8 @@ export interface GetCollectionTypeElementsReq extends Request {
   kind: "get-collection-type-elements";
   reference: string;
   frameIndex: FrameIndex;
-  elementCount: number;
   startIndex: number;
+  elementCount: number;
 }
 
 export interface GetDictPairsReq extends Request {

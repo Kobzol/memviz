@@ -73,11 +73,21 @@ export class EagerResolver implements ProcessResolver {
   async getCollectionTypeElements(
     reference: string,
     frameIndex: number,
-    elementCount: number,
     startIndex: number,
+    elementCount: number,
   ): Promise<PythonValue[]> {
     console.error("EagerResolver.getCollectionTypeElements not implemented");
     return [];
+  }
+
+  async getStringContents(
+    reference: string,
+    frameIndex: number,
+    startIndex: number,
+    length: number,
+  ): Promise<string> {
+    console.error("EagerResolver.getStringContents not implemented");
+    return "";
   }
 
   async takeAllocEvents(): Promise<MemoryAllocEvent[]> {

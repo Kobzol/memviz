@@ -47,6 +47,20 @@ export class CachingResolver<T extends ProcessResolver>
     );
   }
 
+  async getStringContents(
+    reference: string,
+    frameIndex: number,
+    startIndex: number,
+    length: number,
+  ): Promise<string> {
+    return await this.inner.getStringContents(
+      reference,
+      frameIndex,
+      startIndex,
+      length,
+    );
+  }
+
   async readMemory(address: AddressStr, size: number): Promise<ArrayBuffer> {
     const memory = this.map.read(strToAddress(address), BigInt(size));
     if (memory !== null) {

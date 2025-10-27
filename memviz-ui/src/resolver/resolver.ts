@@ -16,7 +16,13 @@ export interface ProcessResolver {
   getCollectionTypeElements(
     reference: string,
     frameIndex: number,
-    elementCount: number,
     startIndex: number,
+    elementCount: number,
   ): Promise<PythonValue[]>;
+  getStringContents(
+    reference: string,
+    frameIndex: number,
+    startIndex: number,
+    length: number,
+  ): Promise<string>;
 }
