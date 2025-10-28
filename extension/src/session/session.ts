@@ -169,7 +169,7 @@ export abstract class DebuggerSession<TEvaluator extends Evaluator> {
     frameId?: FrameId,
   ): Promise<T> {
     const start = performance.now();
-    const gdbResult = await this.evaluator.evaluate(command, frameId);
+    const evaluatorResult = await this.evaluator.evaluate(command, frameId);
     const duration = performance.now() - start;
     // console.debug(
     // `Py command ${command} took ${duration.toFixed(2)}ms, response size: ${gdbResult.result.length}`,
@@ -177,10 +177,10 @@ export abstract class DebuggerSession<TEvaluator extends Evaluator> {
 
     let pyResult: PyResult<T>;
     try {
-      pyResult = JSON.parse(gdbResult.result);
+      pyResult = JSON.parse(evaluatorResult.result);
     } catch (err) {
       throw new Error(
-        `Python command ${command} returned non-JSON response:\n${gdbResult.result.trim()}`,
+        `Python command ${command} returned non-JSON response:\n${evaluatorResult.result.trim()}`,
       );
     }
     if (!pyResult.ok) {

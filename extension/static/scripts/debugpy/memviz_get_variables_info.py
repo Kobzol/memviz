@@ -3,6 +3,7 @@ import dataclasses
 import json
 import inspect
 from typing import Any, Callable, Dict, List, Optional
+import base64
 
 
 PythonId = str
@@ -347,10 +348,15 @@ class Result:
 def try_run(fn: Callable) -> str:
     try:
         result = fn()
-        return dataclass_to_json(Result.make_ok(result))
+        return encode_dataclass(Result.make_ok(result))
     except BaseException as e:
-        return dataclass_to_json(Result.make_error(str(e)))
+        return encode_dataclass(Result.make_error(str(e)))
 
 
 def dataclass_to_json(value) -> str:
     return json.dumps(dataclasses.asdict(value))
+
+
+def encode_dataclass(value) -> str:
+    json_str = dataclass_to_json(value)
+    return base64.b64encode(json_str.encode("utf-8")).decode("utf-8")

@@ -1,6 +1,6 @@
 import type { DebugProtocol } from "@vscode/debugprotocol";
 import type { FrameId } from "process-def";
-import { type ExtractBody, stripOuterSingleQuotes } from "../../utils";
+import type { ExtractBody } from "../../utils";
 import { Evaluator } from "./evaluator";
 
 export class DebugpyEvaluator extends Evaluator {
@@ -14,6 +14,12 @@ export class DebugpyEvaluator extends Evaluator {
     );
   }
 
+  private evaluateResultToJsonString(evaluateResult: string): string {
+    // repr() adds quotes around the string
+    evaluateResult = evaluateResult.slice(1, -1);
+    return atob(evaluateResult);
+  }
+
   async evaluate(
     expression: string,
     frameId?: FrameId,
@@ -23,7 +29,10 @@ export class DebugpyEvaluator extends Evaluator {
       `__import__('${this.moduleName}').try_run(lambda: __import__('${this.moduleName}').${expression})`,
       frameId,
     );
-    result.result = stripOuterSingleQuotes(result.result);
+    // Debugpy's evaluate returns Python repr() of the string result,
+    // which can break JSON parsing,
+    // so the script encodes the result JSON string in base64
+    result.result = this.evaluateResultToJsonString(result.result);
     return result;
   }
 }
