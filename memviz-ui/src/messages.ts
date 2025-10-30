@@ -57,10 +57,10 @@ export interface GetCollectionTypeElementsRes extends Response {
   };
 }
 
-export interface GetDictPairsRes extends Response {
-  kind: "get-dict-pairs";
+export interface GetDictEntriesRes extends Response {
+  kind: "get-dict-entries";
   data: {
-    pairs: KeyValuePair[];
+    entries: KeyValuePair[];
   };
 }
 
@@ -120,7 +120,7 @@ export type ExtensionToMemvizGDBResponse = GetPlacesRes | TakeAllocEventsRes;
 export type ExtensionToMemvizDebugpyResponse =
   | GetPythonVariablesRepresentationRes
   | GetCollectionTypeElementsRes
-  | GetDictPairsRes
+  | GetDictEntriesRes
   | GetStringContentsRes
   | GetObjectRes;
 
@@ -164,8 +164,8 @@ export interface GetCollectionTypeElementsReq extends Request {
   elementCount: number;
 }
 
-export interface GetDictPairsReq extends Request {
-  kind: "get-dict-pairs";
+export interface GetDictEntriesReq extends Request {
+  kind: "get-dict-entries";
   reference: string;
   frameIndex: FrameIndex;
   startIndex: number;
@@ -201,7 +201,7 @@ export type MemvizToExtensionMsg =
   | GetPlacesReq
   | GetPythonVariablesRepresentationReq
   | GetCollectionTypeElementsReq
-  | GetDictPairsReq
+  | GetDictEntriesReq
   | GetStringContentsReq
   | GetObjectReq
   | ReadMemoryReq

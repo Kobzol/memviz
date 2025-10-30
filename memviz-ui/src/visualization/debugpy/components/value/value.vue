@@ -4,6 +4,7 @@ import Scalar from "./scalar.vue";
 import Complex from "./complex.vue";
 import Str from "./str.vue";
 import Collection from "./collection.vue";
+import Dict from "./dict.vue";
 import type {
   DeferredStrVal,
   NoneVal,
@@ -79,6 +80,11 @@ function isObjectVal(value: DeferredObjectVal): value is DeferredObjectVal {
     <Collection
       v-else-if="isCollection(value)"
       :value="value as CollectionVal"
+      :level="level"
+    />
+    <Dict
+      v-else-if="isDictType(value)"
+      :value="value as DeferredDictVal"
       :level="level"
     />
     <div>&lt;value of type {{ value.kind }}&gt;</div>

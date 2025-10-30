@@ -55,14 +55,14 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
     return result;
   }
 
-  async getDictPairs(
+  async getDictEntries(
     reference: string,
     frameIndex: number,
     startIndex: number,
     pairCount: number,
   ): Promise<KeyValuePair[]> {
     const result = await this.pythonEvaluate<KeyValuePair[]>(
-      `get_dict_pairs("${reference}", ${frameIndex}, ${startIndex}, ${pairCount})`,
+      `get_dict_entries("${reference}", ${frameIndex}, ${startIndex}, ${pairCount})`,
     );
     return result;
   }

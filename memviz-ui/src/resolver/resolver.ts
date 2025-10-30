@@ -1,5 +1,6 @@
 import type { AddressStr, FrameIndex } from "process-def";
 import type {
+  KeyValuePair,
   Value as PythonValue,
   Variables as PythonVariables,
 } from "process-def/debugpy";
@@ -25,4 +26,10 @@ export interface ProcessResolver {
     startIndex: number,
     length: number,
   ): Promise<string>;
+  getDictEntries(
+    reference: string,
+    frameIndex: number,
+    startIndex: number,
+    pairCount: number,
+  ): Promise<KeyValuePair[]>;
 }

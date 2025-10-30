@@ -6,6 +6,7 @@ import {
   type ThreadId,
 } from "process-def";
 import type {
+  KeyValuePair,
   Value as PythonValue,
   Variables as PythonVariables,
 } from "process-def/debugpy";
@@ -15,6 +16,8 @@ import type {
   ExtensionToMemvizResponse,
   GetCollectionTypeElementsReq,
   GetCollectionTypeElementsRes,
+  GetDictEntriesReq,
+  GetDictEntriesRes,
   GetPlacesReq,
   GetPlacesRes,
   GetPythonVariablesRepresentationReq,
@@ -154,6 +157,25 @@ export class VsCodeResolver implements ProcessResolver {
       length,
     });
     return res.contents;
+  }
+
+  async getDictEntries(
+    reference: string,
+    frameIndex: number,
+    startIndex: number,
+    pairCount: number,
+  ): Promise<KeyValuePair[]> {
+    if (this.sessionType !== SessionType.Debugpy) {
+      throw new Error("getDictEntries is only supported in debugpy sessions");
+    }
+    const res = await this.sendRequest<GetDictEntriesReq, GetDictEntriesRes>({
+      kind: "get-dict-entries",
+      reference,
+      frameIndex,
+      startIndex,
+      pairCount,
+    });
+    return res.entries;
   }
 
   async readMemory(address: AddressStr, size: number): Promise<ArrayBuffer> {

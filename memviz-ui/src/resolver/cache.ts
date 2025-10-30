@@ -1,5 +1,6 @@
 import type { AddressStr, FrameIndex } from "process-def";
 import type {
+  KeyValuePair,
   Value as PythonValue,
   Variables as PythonVariables,
 } from "process-def/debugpy";
@@ -58,6 +59,20 @@ export class CachingResolver<T extends ProcessResolver>
       frameIndex,
       startIndex,
       length,
+    );
+  }
+
+  async getDictEntries(
+    reference: string,
+    frameIndex: number,
+    startIndex: number,
+    pairCount: number,
+  ): Promise<KeyValuePair[]> {
+    return await this.inner.getDictEntries(
+      reference,
+      frameIndex,
+      startIndex,
+      pairCount,
     );
   }
 

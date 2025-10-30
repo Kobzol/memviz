@@ -3,8 +3,8 @@ import type {
   ExtensionToMemvizDebugpyResponse,
   GetCollectionTypeElementsReq,
   GetCollectionTypeElementsRes,
-  GetDictPairsReq,
-  GetDictPairsRes,
+  GetDictEntriesReq,
+  GetDictEntriesRes,
   GetObjectReq,
   GetObjectRes,
   GetPythonVariablesRepresentationReq,
@@ -31,8 +31,8 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
     if (message.kind === "get-collection-type-elements") {
       return this.performGetCollectionTypeElementsRequest(message, session);
     }
-    if (message.kind === "get-dict-pairs") {
-      return this.performGetDictPairsRequest(message, session);
+    if (message.kind === "get-dict-entries") {
+      return this.performGetDictEntriesRequest(message, session);
     }
     if (message.kind === "get-string-contents") {
       return this.performGetStringContentsRequest(message, session);
@@ -105,21 +105,21 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
     };
   }
 
-  private performGetDictPairsRequest(
-    message: GetDictPairsReq,
+  private performGetDictEntriesRequest(
+    message: GetDictEntriesReq,
     session: DebugpyDebuggerSession,
-  ): () => Promise<Omit<GetDictPairsRes, "requestId" | "resolverId">> {
+  ): () => Promise<Omit<GetDictEntriesRes, "requestId" | "resolverId">> {
     return async () => {
-      const pairs = await session.getDictPairs(
+      const entries = await session.getDictEntries(
         message.reference,
         message.frameIndex,
         message.startIndex,
         message.pairCount,
       );
       return {
-        kind: "get-dict-pairs",
+        kind: "get-dict-entries",
         data: {
-          pairs,
+          entries,
         },
       };
     };

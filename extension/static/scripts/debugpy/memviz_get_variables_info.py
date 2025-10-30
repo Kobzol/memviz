@@ -285,7 +285,7 @@ def get_dict_entries(reference: str, frame_index: int, start_index: int, pair_co
     for i, (key, val) in enumerate(items):
         key_value_pairs.append(
             KeyValuePair(
-                key=make_value(key, reference=f"{reference}.keys()[{start_index + i}]"),
+                key=make_value(key, reference=f"list({reference}.keys())[{start_index + i}]"),
                 value=make_value(val, reference=f"{reference}[{repr(key)}]"),
             )
         )

@@ -6,6 +6,7 @@ import type {
   StackFrame,
 } from "process-def";
 import type {
+  KeyValuePair,
   Value as PythonValue,
   Variables as PythonVariables,
 } from "process-def/debugpy";
@@ -88,6 +89,16 @@ export class EagerResolver implements ProcessResolver {
   ): Promise<string> {
     console.error("EagerResolver.getStringContents not implemented");
     return "";
+  }
+
+  async getDictEntries(
+    reference: string,
+    frameIndex: number,
+    startIndex: number,
+    pairCount: number,
+  ): Promise<KeyValuePair[]> {
+    console.error("EagerResolver.getDictEntries not implemented");
+    return [];
   }
 
   async takeAllocEvents(): Promise<MemoryAllocEvent[]> {
