@@ -67,12 +67,12 @@ export class EagerResolver implements ProcessResolver {
     );
     return {
       places: [],
-      values: {},
+      values: [],
     };
   }
 
   async getCollectionTypeElements(
-    reference: string,
+    id: AddressStr,
     frameIndex: number,
     startIndex: number,
     elementCount: number,
@@ -82,7 +82,7 @@ export class EagerResolver implements ProcessResolver {
   }
 
   async getStringContents(
-    reference: string,
+    id: AddressStr,
     frameIndex: number,
     startIndex: number,
     length: number,
@@ -92,7 +92,7 @@ export class EagerResolver implements ProcessResolver {
   }
 
   async getDictEntries(
-    reference: string,
+    id: AddressStr,
     frameIndex: number,
     startIndex: number,
     pairCount: number,

@@ -21,7 +21,7 @@ async function loadData() {
   }
   resolver.value
     .getCollectionTypeElements(
-      props.value.reference,
+      props.value.id,
       frameIndex,
       0,
       props.value.element_count

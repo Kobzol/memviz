@@ -112,7 +112,7 @@ export class VsCodeResolver implements ProcessResolver {
   }
 
   async getCollectionTypeElements(
-    reference: string,
+    id: AddressStr,
     frameIndex: number,
     startIndex: number,
     elementCount: number,
@@ -127,7 +127,7 @@ export class VsCodeResolver implements ProcessResolver {
       GetCollectionTypeElementsRes
     >({
       kind: "get-collection-type-elements",
-      reference,
+      id,
       frameIndex,
       elementCount,
       startIndex,
@@ -136,7 +136,7 @@ export class VsCodeResolver implements ProcessResolver {
   }
 
   async getStringContents(
-    reference: string,
+    id: AddressStr,
     frameIndex: number,
     startIndex: number,
     length: number,
@@ -151,7 +151,7 @@ export class VsCodeResolver implements ProcessResolver {
       GetStringContentsRes
     >({
       kind: "get-string-contents",
-      reference,
+      id,
       frameIndex,
       startIndex,
       length,
@@ -160,7 +160,7 @@ export class VsCodeResolver implements ProcessResolver {
   }
 
   async getDictEntries(
-    reference: string,
+    id: AddressStr,
     frameIndex: number,
     startIndex: number,
     pairCount: number,
@@ -170,7 +170,7 @@ export class VsCodeResolver implements ProcessResolver {
     }
     const res = await this.sendRequest<GetDictEntriesReq, GetDictEntriesRes>({
       kind: "get-dict-entries",
-      reference,
+      id,
       frameIndex,
       startIndex,
       pairCount,

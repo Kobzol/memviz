@@ -18,11 +18,12 @@ class Place:
 @dataclasses.dataclass(frozen=True)
 class BaseVal(ABC):
     size: int
+    id: PythonId
 
-
-@dataclasses.dataclass(frozen=True)
-class DeferredVal(BaseVal, ABC):
-    reference: str
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, BaseVal):
+            return NotImplemented
+        return self.id == other.id
 
 
 @dataclasses.dataclass(frozen=True)
@@ -56,37 +57,37 @@ class ComplexVal(BaseVal):
 
 
 @dataclasses.dataclass(frozen=True)
-class DeferredStrVal(DeferredVal):
+class DeferredStrVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="defStr")
     length: int
 
 
 @dataclasses.dataclass(frozen=True)
-class DeferredListVal(DeferredVal):
+class DeferredListVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="defList")
     element_count: int
 
 
 @dataclasses.dataclass(frozen=True)
-class DeferredTupleVal(DeferredVal):
+class DeferredTupleVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="defTuple")
     element_count: int
 
 
 @dataclasses.dataclass(frozen=True)
-class DeferredSetVal(DeferredVal):
+class DeferredSetVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="defSet")
     element_count: int
 
 
 @dataclasses.dataclass(frozen=True)
-class DeferredFrozenSetVal(DeferredVal):
+class DeferredFrozenSetVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="defFrozenSet")
     element_count: int
 
 
 @dataclasses.dataclass(frozen=True)
-class DeferredDictVal(DeferredVal):
+class DeferredDictVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="defDict")
     key_value_pair_count: int
 
@@ -115,7 +116,7 @@ class FunctionVal(BaseVal):
 
 
 @dataclasses.dataclass(frozen=True)
-class DeferredObjectVal(DeferredVal):
+class DeferredObjectVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="defObject")
     type_name: str
 
@@ -123,18 +124,19 @@ class DeferredObjectVal(DeferredVal):
 @dataclasses.dataclass(frozen=True)
 class ObjectVal(DeferredObjectVal):
     kind: str = dataclasses.field(init=False, default="object")
-    attributes: List[KeyValuePair] = dataclasses.field(default_factory=list)
+    attributes: Dict[str, BaseVal] = dataclasses.field(default_factory=dict)
     methods: List[str] = dataclasses.field(default_factory=list)
 
 
 @dataclasses.dataclass
 class Variables:
     places: List[Place]
-    values: Dict[PythonId, BaseVal]
+    values: List[BaseVal]
 
 
 # TODO: find a better way to get the debugged frame
 debugged_frame_offset: Optional[int] = None
+id_to_reference: Dict[PythonId, str] = {}
 
 
 def configure(top_frame_file: str) -> None:
@@ -152,68 +154,64 @@ def get_size(val: Any) -> int:
     return getattr(val, "__sizeof__", lambda: 0)()
 
 
-def make_value(val: Any, reference: str = None) -> BaseVal:
+def make_value(val: Any) -> BaseVal:
     size = get_size(val)
+    val_id = str(id(val))
+    base_kwargs = {"size": size, "id": val_id}
     if val is None:
-        return NoneVal(size=size)
+        return NoneVal(**base_kwargs)
     elif isinstance(val, bool):
-        return BoolVal(size=size, value=val)
+        return BoolVal(**base_kwargs, value=val)
     elif isinstance(val, int):
-        return IntVal(size=size, value=str(val))
+        return IntVal(**base_kwargs, value=str(val))
     elif isinstance(val, float):
-        return FloatVal(size=size, value=str(val))
+        return FloatVal(**base_kwargs, value=str(val))
     elif isinstance(val, complex):
         return ComplexVal(
-            size=size,
+            **base_kwargs,
             real_value=str(val.real),
             imaginary_value=str(val.imag),
         )
     elif isinstance(val, str):
         return DeferredStrVal(
-            size=size,
-            reference=reference,
+            **base_kwargs,
             length=len(val)
         )
     elif isinstance(val, dict):
         return DeferredDictVal(
-            size=size,
-            reference=reference,
+            **base_kwargs,
             key_value_pair_count=len(val)
         )
     elif isinstance(val, list):
         return DeferredListVal(
-            size=size,
-            reference=reference,
+            **base_kwargs,
             element_count=len(val)
         )
     elif isinstance(val, tuple):
         return DeferredTupleVal(
-            size=size,
-            reference=reference,
+            **base_kwargs,
             element_count=len(val)
         )
     elif isinstance(val, set):
         return DeferredSetVal(
-            size=size,
-            reference=reference,
+            **base_kwargs,
             element_count=len(val)
         )
     elif isinstance(val, frozenset):
         return DeferredFrozenSetVal(
-            size=size,
-            reference=reference,
+            **base_kwargs,
             element_count=len(val),
         )
     elif isinstance(val, range):
         return RangeVal(
-            size=size,
+            **base_kwargs,
             start=str(val.start),
             stop=str(val.stop),
             step=str(val.step),
         )
     elif inspect.isfunction(val):
         return FunctionVal(
-            size=size,
+            **base_kwargs,
             name=val.__name__,
             qualified_name=val.__qualname__,
             module=val.__module__,
@@ -221,8 +219,7 @@ def make_value(val: Any, reference: str = None) -> BaseVal:
         )
     else:
         return DeferredObjectVal(
-            size=size,
-            reference=reference,
+            **base_kwargs,
             type_name=type(val).__name__,
         )
     
@@ -233,68 +230,103 @@ def evaluate_expression(expression: str, frame_index: int) -> Any:
     return eval(expression, frame_info.frame.f_globals, frame_info.frame.f_locals)
 
 
+def add_to_id_to_reference(python_id: PythonId, reference: str) -> None:
+    # only add if not already present to keep the first (likely shortest) reference
+    if python_id not in id_to_reference:
+        id_to_reference[python_id] = reference
+
+
 def get_variables(frame_index: int) -> List[Variables]:
     stack = inspect.stack()
     frame_info = stack[frame_index + debugged_frame_offset]
     frame = frame_info.frame
 
     places = []
-    values = {}
+    values = set()
 
     for name, value in frame.f_locals.items():
-        value_id = str(id(value))
+        value_repr = make_value(value)
         place = Place(
             name=name,
-            id=value_id,
+            id=value_repr.id,
         )
         places.append(place)
-        if value_id not in values:
-            values[value_id] = make_value(value, reference=name)
+        values.add(value_repr)
+        add_to_id_to_reference(value_repr.id, name)
 
-    return Variables(places=places, values=values)
+    return Variables(places=places, values=list(values))
+    
 
+def get_collection_type_elements(collection_id: PythonId, frame_index: int, start_index: int, element_count: int) -> List[BaseVal]:
+    if collection_id not in id_to_reference:
+        raise Exception(f"Collection with id {collection_id} not found.")
+    reference = id_to_reference[collection_id]
 
-def get_collection_type_elements(reference: str, frame_index: int, start_index: int, element_count: int) -> List[BaseVal]:
+    value_type = evaluate_expression(f"type({reference}).__name__", frame_index)
+    if value_type not in ("list", "tuple", "set", "frozenset"):
+        raise Exception(f"Value with id {collection_id} is of type {value_type}, not a collection type.")
     length = evaluate_expression(f"len({reference})", frame_index)
     if start_index < 0 or start_index >= length:
-        raise Exception(f"start_index {start_index} out of range [0, {length}] for collection {reference}.")
+        raise Exception(f"Start_index {start_index} out of range [0, {length}] for collection {reference}.")
     if start_index + element_count > length:
-        raise Exception(f"element_count {element_count} out of range [0, {length - start_index}] for collection {reference}.")
+        raise Exception(f"Element count {element_count} out of range [0, {length - start_index}] for collection {reference}.")
 
-    value = evaluate_expression(f"{reference}[{start_index}:{start_index + element_count}]", frame_index)
+    evaluation_reference = reference
+    collection_type = evaluate_expression(f"type({reference}).__name__", frame_index)
+    if collection_type in ("set", "frozenset"):
+        evaluation_reference = f'tuple({reference})'
+
+    value = evaluate_expression(f"{evaluation_reference}[{start_index}:{start_index + element_count}]", frame_index)
     assert isinstance(value, (list, tuple, set, frozenset))
     elements = []
     for i, element in enumerate(value):
-        elements.append(make_value(element, reference=f"{reference}[{start_index + i}]"))
+        reference = f"{evaluation_reference}[{start_index + i}]"
+        value_repr = make_value(element)
+        elements.append(value_repr)
+        add_to_id_to_reference(value_repr.id, reference)
     return elements
 
 
-def get_dict_entries(reference: str, frame_index: int, start_index: int, pair_count: int) -> List[KeyValuePair]:
-    length = evaluate_expression(f"len({reference})", frame_index)
+def get_dict_entries(dict_id: PythonId, frame_index: int, start_index: int, pair_count: int) -> List[KeyValuePair]:
+    if dict_id not in id_to_reference:
+        raise Exception(f"Dict with id {dict_id} not found.")
+    reference = id_to_reference[dict_id]
 
+    value_type = evaluate_expression(f"type({reference}).__name__", frame_index)
+    if value_type != "dict":
+        raise Exception(f"Value with id {dict_id} is of type {value_type}, not a dict.")
+    
+    length = evaluate_expression(f"len({reference})", frame_index)
     if start_index < 0 or start_index >= length:
-        raise Exception(f"start_index {start_index} out of range [0, {length}] for dict {reference}.")
+        raise Exception(f"Start_index {start_index} out of range [0, {length}] for dict {reference}.")
     if start_index + pair_count > length:
-        raise Exception(f"key_value_pair_count {pair_count} out of range [0, {length - start_index}] for dict {reference}.")
+        raise Exception(f"Key value pair count {pair_count} out of range [0, {length - start_index}] for dict {reference}.")
 
     value = evaluate_expression(reference, frame_index)
     assert isinstance(value, dict)
 
     items = list(value.items())[start_index:start_index + pair_count]
     key_value_pairs = []
-    for i, (key, val) in enumerate(items):
-        key_value_pairs.append(
-            KeyValuePair(
-                key=make_value(key, reference=f"list({reference}.keys())[{start_index + i}]"),
-                value=make_value(val, reference=f"{reference}[{repr(key)}]"),
-            )
-        )
+    for i, (key, value) in enumerate(items):
+        key_repr = make_value(key)
+        value_repr = make_value(value)
+        key_value_pairs.append(KeyValuePair(key_repr, value_repr))
+        add_to_id_to_reference(key_repr.id, f"list({reference}.keys())[{start_index + i}]")
+        add_to_id_to_reference(value_repr.id, f"{reference}[{repr(key)}]")
+    
     return key_value_pairs
 
 
-def get_string_contents(reference: str, frame_index: int, start_index: int, length: int) -> str:
-    str_length = evaluate_expression(f"len({reference})", frame_index)
+def get_string_contents(str_id: PythonId, frame_index: int, start_index: int, length: int) -> str:
+    if str_id not in id_to_reference:
+        raise Exception(f"string with id {str_id} not found.")
+    reference = id_to_reference[str_id]
 
+    value_type = evaluate_expression(f"type({reference}).__name__", frame_index)
+    if value_type != "str":
+        raise Exception(f"Value with id {str_id} is of type {value_type}, not a string.")
+
+    str_length = evaluate_expression(f"len({reference})", frame_index)
     if start_index < 0 or start_index >= str_length:
         raise Exception(f"start_index {start_index} out of range [0, {str_length}] for string {reference}.")
     if start_index + length > str_length:
@@ -305,9 +337,14 @@ def get_string_contents(reference: str, frame_index: int, start_index: int, leng
     return str_value
 
 
-def get_object(reference: str, frame_index: int) -> ObjectVal:
+def get_object(object_id: PythonId, frame_index: int) -> ObjectVal:
+    if object_id not in id_to_reference:
+        raise Exception(f"object with id {object_id} not found.")
+    reference = id_to_reference[object_id]
+
     obj = evaluate_expression(reference, frame_index)
     assert obj is not None
+
     attributes = []
     methods = []
     for attr_name in dir(obj):
@@ -315,14 +352,12 @@ def get_object(reference: str, frame_index: int) -> ObjectVal:
         if inspect.ismethod(attr_value) or inspect.isfunction(attr_value):
             methods.append(attr_name)
         else:
-            attributes.append(
-                KeyValuePair(
-                    key=make_value(attr_name, reference=f"{reference}.{attr_name}"),
-                    value=make_value(attr_value, reference=f"{reference}.{attr_name}"),
-                )
-            )
+            value_repr = make_value(attr_value, reference=f"{reference}.{attr_name}")
+            attributes[attr_name] = value_repr
+            add_to_id_to_reference(value_repr.id, f"{reference}.{attr_name}")
 
     return ObjectVal(
+        id=object_id,
         size=get_size(obj),
         type_name=type(obj).__name__,
         attributes=attributes,

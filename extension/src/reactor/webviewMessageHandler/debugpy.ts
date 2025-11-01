@@ -91,7 +91,7 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
   > {
     return async () => {
       const elements = await session.getCollectionTypeElements(
-        message.reference,
+        message.id,
         message.frameIndex,
         message.startIndex,
         message.elementCount,
@@ -111,7 +111,7 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
   ): () => Promise<Omit<GetDictEntriesRes, "requestId" | "resolverId">> {
     return async () => {
       const entries = await session.getDictEntries(
-        message.reference,
+        message.id,
         message.frameIndex,
         message.startIndex,
         message.pairCount,
@@ -131,7 +131,7 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
   ): () => Promise<Omit<GetStringContentsRes, "requestId" | "resolverId">> {
     return async () => {
       const contents = await session.getStringContents(
-        message.reference,
+        message.id,
         message.frameIndex,
         message.startIndex,
         message.length,
@@ -150,10 +150,7 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
     session: DebugpyDebuggerSession,
   ): () => Promise<Omit<GetObjectRes, "requestId" | "resolverId">> {
     return async () => {
-      const objectVal = await session.getObject(
-        message.reference,
-        message.frameIndex,
-      );
+      const objectVal = await session.getObject(message.id, message.frameIndex);
       return {
         kind: "get-object",
         data: {

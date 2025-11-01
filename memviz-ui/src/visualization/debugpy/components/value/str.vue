@@ -15,7 +15,7 @@ async function loadData() {
     return;
   }
   resolver.value
-    .getStringContents(props.value.reference, frameIndex, 0, props.value.length)
+    .getStringContents(props.value.id, frameIndex, 0, props.value.length)
     .then((loadedString) => {
       console.log("Loaded string:", loadedString);
       stringContents.value = loadedString;

@@ -15,19 +15,19 @@ export interface ProcessResolver {
     frameIndex: FrameIndex,
   ): Promise<PythonVariables>;
   getCollectionTypeElements(
-    reference: string,
+    id: AddressStr,
     frameIndex: number,
     startIndex: number,
     elementCount: number,
   ): Promise<PythonValue[]>;
   getStringContents(
-    reference: string,
+    id: AddressStr,
     frameIndex: number,
     startIndex: number,
     length: number,
   ): Promise<string>;
   getDictEntries(
-    reference: string,
+    id: AddressStr,
     frameIndex: number,
     startIndex: number,
     pairCount: number,

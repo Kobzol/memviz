@@ -35,13 +35,13 @@ export class CachingResolver<T extends ProcessResolver>
   }
 
   async getCollectionTypeElements(
-    reference: string,
+    id: AddressStr,
     frameIndex: number,
     elementCount: number,
     startIndex: number,
   ): Promise<PythonValue[]> {
     return await this.inner.getCollectionTypeElements(
-      reference,
+      id,
       frameIndex,
       elementCount,
       startIndex,
@@ -49,13 +49,13 @@ export class CachingResolver<T extends ProcessResolver>
   }
 
   async getStringContents(
-    reference: string,
+    id: AddressStr,
     frameIndex: number,
     startIndex: number,
     length: number,
   ): Promise<string> {
     return await this.inner.getStringContents(
-      reference,
+      id,
       frameIndex,
       startIndex,
       length,
@@ -63,13 +63,13 @@ export class CachingResolver<T extends ProcessResolver>
   }
 
   async getDictEntries(
-    reference: string,
+    id: AddressStr,
     frameIndex: number,
     startIndex: number,
     pairCount: number,
   ): Promise<KeyValuePair[]> {
     return await this.inner.getDictEntries(
-      reference,
+      id,
       frameIndex,
       startIndex,
       pairCount,

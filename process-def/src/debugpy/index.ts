@@ -28,5 +28,5 @@ export interface Place {
 
 export interface Variables {
   places: Place[];
-  values: { [key: AddressStr]: Value };
+  values: Value[];
 }

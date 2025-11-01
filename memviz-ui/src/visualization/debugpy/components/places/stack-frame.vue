@@ -28,10 +28,7 @@ async function maybeLoadPlaces() {
 
     places.value = variables.places;
     values.value = new Map<AddressStr, Value>(
-      Object.entries(variables.values).map(([id, val]) => [
-        id as AddressStr,
-        val,
-      ])
+      variables.values.map((val) => [val.id, val])
     );
   }
 }

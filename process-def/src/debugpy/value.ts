@@ -1,10 +1,7 @@
 export interface Value {
   kind: string;
   size: number;
-}
-
-interface DeferredVal extends Value {
-  reference: string;
+  id: string;
 }
 
 export interface NoneVal extends Value {
@@ -32,32 +29,32 @@ export interface ComplexVal extends Value {
   imaginary_value: string;
 }
 
-export interface DeferredStrVal extends DeferredVal {
+export interface DeferredStrVal extends Value {
   kind: "defStr";
   length: number;
 }
 
-export interface DeferredListVal extends DeferredVal {
+export interface DeferredListVal extends Value {
   kind: "defList";
   element_count: number;
 }
 
-export interface DeferredTupleVal extends DeferredVal {
+export interface DeferredTupleVal extends Value {
   kind: "defTuple";
   element_count: number;
 }
 
-export interface DeferredSetVal extends DeferredVal {
+export interface DeferredSetVal extends Value {
   kind: "defSet";
   element_count: number;
 }
 
-export interface DeferredFrozenSetVal extends DeferredVal {
+export interface DeferredFrozenSetVal extends Value {
   kind: "defFrozenset";
   element_count: number;
 }
 
-export interface DeferredDictVal extends DeferredVal {
+export interface DeferredDictVal extends Value {
   kind: "defDict";
   key_value_pair_count: number;
 }
@@ -82,7 +79,7 @@ export interface FunctionVal extends Value {
   signature: string | null;
 }
 
-export interface DeferredObjectVal extends DeferredVal {
+export interface DeferredObjectVal extends Value {
   kind: "defObj";
   type_name: string;
 }

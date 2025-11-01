@@ -1,4 +1,9 @@
-import { type FrameId, type FrameIndex, SessionType } from "process-def";
+import {
+  type AddressStr,
+  type FrameId,
+  type FrameIndex,
+  SessionType,
+} from "process-def";
 import type {
   KeyValuePair,
   ObjectVal,
@@ -44,44 +49,44 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
   }
 
   async getCollectionTypeElements(
-    reference: string,
+    id: AddressStr,
     frameIndex: number,
     startIndex: number,
     elementCount: number,
   ): Promise<Value[]> {
     const result = await this.pythonEvaluate<Value[]>(
-      `get_collection_type_elements("${reference}", ${frameIndex}, ${startIndex}, ${elementCount})`,
+      `get_collection_type_elements("${id}", ${frameIndex}, ${startIndex}, ${elementCount})`,
     );
     return result;
   }
 
   async getDictEntries(
-    reference: string,
+    id: AddressStr,
     frameIndex: number,
     startIndex: number,
     pairCount: number,
   ): Promise<KeyValuePair[]> {
     const result = await this.pythonEvaluate<KeyValuePair[]>(
-      `get_dict_entries("${reference}", ${frameIndex}, ${startIndex}, ${pairCount})`,
+      `get_dict_entries("${id}", ${frameIndex}, ${startIndex}, ${pairCount})`,
     );
     return result;
   }
 
   async getStringContents(
-    reference: string,
+    id: AddressStr,
     frameIndex: number,
     startIndex: number,
     length: number,
   ): Promise<string> {
     const result = await this.pythonEvaluate<string>(
-      `get_string_contents("${reference}", ${frameIndex}, ${startIndex}, ${length})`,
+      `get_string_contents("${id}", ${frameIndex}, ${startIndex}, ${length})`,
     );
     return result;
   }
 
-  async getObject(reference: string, frameIndex: number): Promise<ObjectVal> {
+  async getObject(id: AddressStr, frameIndex: number): Promise<ObjectVal> {
     const result = await this.pythonEvaluate<ObjectVal>(
-      `get_object("${reference}", ${frameIndex})`,
+      `get_object("${id}", ${frameIndex})`,
     );
     return result;
   }

@@ -18,7 +18,7 @@ async function loadData() {
   }
   resolver.value
     .getDictEntries(
-      props.value.reference,
+      props.value.id,
       frameIndex,
       0,
       props.value.key_value_pair_count
