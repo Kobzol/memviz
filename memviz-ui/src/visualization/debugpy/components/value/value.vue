@@ -6,6 +6,7 @@ import Str from "./str.vue";
 import Collection from "./collection.vue";
 import Dict from "./dict.vue";
 import Range from "./range.vue";
+import FunctionComponent from "./function.vue";
 import ObjectComponent from "./object.vue";
 import type {
   DeferredStrVal,
@@ -92,6 +93,11 @@ function isObjectVal(value: Value): value is DeferredObjectVal {
     <Range 
       v-else-if="isRangeVal(value)"
       :value="value as RangeVal"
+      :level="level"
+    />
+    <FunctionComponent
+      v-else-if="isFunctionVal(value)"
+      :value="value as FunctionVal"
       :level="level"
     />
     <ObjectComponent
