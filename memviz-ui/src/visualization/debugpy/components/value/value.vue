@@ -5,6 +5,7 @@ import Complex from "./complex.vue";
 import Str from "./str.vue";
 import Collection from "./collection.vue";
 import Dict from "./dict.vue";
+import Range from "./range.vue";
 import ObjectComponent from "./object.vue";
 import type {
   DeferredStrVal,
@@ -60,7 +61,7 @@ function isDictType(value: Value): value is DeferredDictVal {
 }
 
 function isRangeVal(value: Value): value is RangeVal {
-  return value.kind === "rangeVal";
+  return value.kind === "range";
 }
 
 function isFunctionVal(value: Value): value is FunctionVal {
@@ -86,6 +87,11 @@ function isObjectVal(value: Value): value is DeferredObjectVal {
     <Dict
       v-else-if="isDictType(value)"
       :value="value as DeferredDictVal"
+      :level="level"
+    />
+    <Range 
+      v-else-if="isRangeVal(value)"
+      :value="value as RangeVal"
       :level="level"
     />
     <ObjectComponent
