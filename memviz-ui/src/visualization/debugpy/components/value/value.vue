@@ -5,6 +5,7 @@ import Complex from "./complex.vue";
 import Str from "./str.vue";
 import Collection from "./collection.vue";
 import Dict from "./dict.vue";
+import ObjectComponent from "./object.vue";
 import type {
   DeferredStrVal,
   NoneVal,
@@ -66,8 +67,8 @@ function isFunctionVal(value: Value): value is FunctionVal {
   return value.kind === "function";
 }
 
-function isObjectVal(value: DeferredObjectVal): value is DeferredObjectVal {
-  return value.kind === "defObj";
+function isObjectVal(value: Value): value is DeferredObjectVal {
+  return value.kind === "defObject";
 }
 </script>
 
@@ -85,6 +86,11 @@ function isObjectVal(value: DeferredObjectVal): value is DeferredObjectVal {
     <Dict
       v-else-if="isDictType(value)"
       :value="value as DeferredDictVal"
+      :level="level"
+    />
+    <ObjectComponent
+      v-else-if="isObjectVal(value)"
+      :value="value as DeferredObjectVal"
       :level="level"
     />
     <div>&lt;value of type {{ value.kind }}&gt;</div>

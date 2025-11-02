@@ -2,8 +2,11 @@ from abc import ABC
 import dataclasses
 import json
 import inspect
+from types import FunctionType, ModuleType
 from typing import Any, Callable, Dict, List, Optional
 import base64
+from sys import getsizeof
+from gc import get_referents
 
 
 PythonId = str
@@ -17,7 +20,6 @@ class Place:
 
 @dataclasses.dataclass(frozen=True)
 class BaseVal(ABC):
-    size: int
     id: PythonId
 
     def __eq__(self, other: object) -> bool:
@@ -29,29 +31,34 @@ class BaseVal(ABC):
 @dataclasses.dataclass(frozen=True)
 class NoneVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="none")
+    size: int
 
 
 @dataclasses.dataclass(frozen=True)
 class BoolVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="bool")
+    size: int
     value: bool
 
 
 @dataclasses.dataclass(frozen=True)
 class IntVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="int")
+    size: int
     value: str
 
 
 @dataclasses.dataclass(frozen=True)
 class FloatVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="float")
+    size: int
     value: str
 
 
 @dataclasses.dataclass(frozen=True)
 class ComplexVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="complex")
+    size: int
     real_value: str
     imaginary_value: str
 
@@ -59,36 +66,42 @@ class ComplexVal(BaseVal):
 @dataclasses.dataclass(frozen=True)
 class DeferredStrVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="defStr")
+    size: int
     length: int
 
 
 @dataclasses.dataclass(frozen=True)
 class DeferredListVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="defList")
+    size: int
     element_count: int
 
 
 @dataclasses.dataclass(frozen=True)
 class DeferredTupleVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="defTuple")
+    size: int
     element_count: int
 
 
 @dataclasses.dataclass(frozen=True)
 class DeferredSetVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="defSet")
+    size: int
     element_count: int
 
 
 @dataclasses.dataclass(frozen=True)
 class DeferredFrozenSetVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="defFrozenSet")
+    size: int
     element_count: int
 
 
 @dataclasses.dataclass(frozen=True)
 class DeferredDictVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="defDict")
+    size: int
     key_value_pair_count: int
 
 
@@ -101,6 +114,7 @@ class KeyValuePair:
 @dataclasses.dataclass(frozen=True)
 class RangeVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="range")
+    size: int
     start: str
     stop: str
     step: str
@@ -118,14 +132,16 @@ class FunctionVal(BaseVal):
 @dataclasses.dataclass(frozen=True)
 class DeferredObjectVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="defObject")
+    size: int
     type_name: str
 
 
 @dataclasses.dataclass(frozen=True)
 class ObjectVal(DeferredObjectVal):
     kind: str = dataclasses.field(init=False, default="object")
+    size: int
     attributes: Dict[str, BaseVal] = dataclasses.field(default_factory=dict)
-    methods: List[str] = dataclasses.field(default_factory=list)
+    methods: Dict[str, FunctionVal] = dataclasses.field(default_factory=dict)
 
 
 @dataclasses.dataclass
@@ -151,67 +167,84 @@ def configure(top_frame_file: str) -> None:
 
 
 def get_size(val: Any) -> int:
-    return getattr(val, "__sizeof__", lambda: 0)()
+    ids_seen = set()
+
+    def sizeof_inner(v: Any) -> int:
+        if id(v) in ids_seen or isinstance(v, (type, ModuleType, FunctionType)):
+            return 0
+        ids_seen.add(id(v))
+        size = getsizeof(v)
+        for ref in get_referents(v):
+            size += sizeof_inner(ref)
+        return size
+
+    return sizeof_inner(val)
 
 
 def make_value(val: Any) -> BaseVal:
-    size = get_size(val)
     val_id = str(id(val))
-    base_kwargs = {"size": size, "id": val_id}
     if val is None:
-        return NoneVal(**base_kwargs)
+        return NoneVal(id=val_id, size=get_size(val))
     elif isinstance(val, bool):
-        return BoolVal(**base_kwargs, value=val)
+        return BoolVal(id=val_id, size=get_size(val), value=val)
     elif isinstance(val, int):
-        return IntVal(**base_kwargs, value=str(val))
+        return IntVal(id=val_id, size=get_size(val), value=str(val))
     elif isinstance(val, float):
-        return FloatVal(**base_kwargs, value=str(val))
+        return FloatVal(id=val_id, size=get_size(val), value=str(val))
     elif isinstance(val, complex):
         return ComplexVal(
-            **base_kwargs,
+            id=val_id,
+            size=get_size(val),
             real_value=str(val.real),
             imaginary_value=str(val.imag),
         )
     elif isinstance(val, str):
         return DeferredStrVal(
-            **base_kwargs,
+            id=val_id,
+            size=get_size(val),
             length=len(val)
         )
     elif isinstance(val, dict):
         return DeferredDictVal(
-            **base_kwargs,
+            id=val_id,
+            size=get_size(val),
             key_value_pair_count=len(val)
         )
     elif isinstance(val, list):
         return DeferredListVal(
-            **base_kwargs,
+            id=val_id,
+            size=get_size(val),
             element_count=len(val)
         )
     elif isinstance(val, tuple):
         return DeferredTupleVal(
-            **base_kwargs,
+            id=val_id,
+            size=get_size(val),
             element_count=len(val)
         )
     elif isinstance(val, set):
         return DeferredSetVal(
-            **base_kwargs,
+            id=val_id,
+            size=get_size(val),
             element_count=len(val)
         )
     elif isinstance(val, frozenset):
         return DeferredFrozenSetVal(
-            **base_kwargs,
+            id=val_id,
+            size=get_size(val),
             element_count=len(val),
         )
     elif isinstance(val, range):
         return RangeVal(
-            **base_kwargs,
+            id=val_id,
+            size=get_size(val),
             start=str(val.start),
             stop=str(val.stop),
             step=str(val.step),
         )
-    elif inspect.isfunction(val):
+    elif inspect.isfunction(val) or inspect.ismethod(val):
         return FunctionVal(
-            **base_kwargs,
+            id=val_id,
             name=val.__name__,
             qualified_name=val.__qualname__,
             module=val.__module__,
@@ -219,7 +252,8 @@ def make_value(val: Any) -> BaseVal:
         )
     else:
         return DeferredObjectVal(
-            **base_kwargs,
+            id=val_id,
+            size=get_size(val),
             type_name=type(val).__name__,
         )
     
@@ -344,18 +378,17 @@ def get_object(object_id: PythonId, frame_index: int) -> ObjectVal:
 
     obj = evaluate_expression(reference, frame_index)
     assert obj is not None
-
-    attributes = []
-    methods = []
+    attributes = {}
+    methods = {}
     for attr_name in dir(obj):
         attr_value = getattr(obj, attr_name)
-        if inspect.ismethod(attr_value) or inspect.isfunction(attr_value):
-            methods.append(attr_name)
+        value_repr = make_value(attr_value)
+        if inspect.ismethod(attr_value):
+            methods[attr_name] = value_repr
         else:
-            value_repr = make_value(attr_value, reference=f"{reference}.{attr_name}")
             attributes[attr_name] = value_repr
-            add_to_id_to_reference(value_repr.id, f"{reference}.{attr_name}")
-
+        add_to_id_to_reference(value_repr.id, f"{reference}.{attr_name}")
+        
     return ObjectVal(
         id=object_id,
         size=get_size(obj),

@@ -1,6 +1,7 @@
 import type { AddressStr, FrameIndex } from "process-def";
 import type {
   KeyValuePair,
+  ObjectVal,
   Value as PythonValue,
   Variables as PythonVariables,
 } from "process-def/debugpy";
@@ -32,4 +33,5 @@ export interface ProcessResolver {
     startIndex: number,
     pairCount: number,
   ): Promise<KeyValuePair[]>;
+  getObject(id: AddressStr, frameIndex: number): Promise<ObjectVal>;
 }

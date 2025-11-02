@@ -101,6 +101,11 @@ export class EagerResolver implements ProcessResolver {
     return [];
   }
 
+  async getObject(id: AddressStr, frameIndex: number): Promise<any> {
+    console.error("EagerResolver.getObject not implemented");
+    return {};
+  }
+
   async takeAllocEvents(): Promise<MemoryAllocEvent[]> {
     return this.state.heapAllocations.flatMap(({ address, size, active }) => {
       const events: MemoryAllocEvent[] = [

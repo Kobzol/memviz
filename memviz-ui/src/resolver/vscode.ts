@@ -7,6 +7,7 @@ import {
 } from "process-def";
 import type {
   KeyValuePair,
+  ObjectVal,
   Value as PythonValue,
   Variables as PythonVariables,
 } from "process-def/debugpy";
@@ -18,6 +19,8 @@ import type {
   GetCollectionTypeElementsRes,
   GetDictEntriesReq,
   GetDictEntriesRes,
+  GetObjectReq,
+  GetObjectRes,
   GetPlacesReq,
   GetPlacesRes,
   GetPythonVariablesRepresentationReq,
@@ -176,6 +179,18 @@ export class VsCodeResolver implements ProcessResolver {
       pairCount,
     });
     return res.entries;
+  }
+
+  async getObject(id: AddressStr, frameIndex: number): Promise<ObjectVal> {
+    if (this.sessionType !== SessionType.Debugpy) {
+      throw new Error("getObject is only supported in debugpy sessions");
+    }
+    const res = await this.sendRequest<GetObjectReq, GetObjectRes>({
+      kind: "get-object",
+      id,
+      frameIndex,
+    });
+    return res.object;
   }
 
   async readMemory(address: AddressStr, size: number): Promise<ArrayBuffer> {
