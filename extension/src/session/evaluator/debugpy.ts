@@ -14,12 +14,6 @@ export class DebugpyEvaluator extends Evaluator {
     );
   }
 
-  private evaluateResultToJsonString(evaluateResult: string): string {
-    // repr() adds quotes around the string
-    evaluateResult = evaluateResult.slice(1, -1);
-    return atob(evaluateResult);
-  }
-
   async evaluate(
     expression: string,
     frameId?: FrameId,
@@ -29,10 +23,6 @@ export class DebugpyEvaluator extends Evaluator {
       `__import__('${this.moduleName}').try_run(lambda: __import__('${this.moduleName}').${expression})`,
       frameId,
     );
-    // Debugpy's evaluate returns Python repr() of the string result,
-    // which can break JSON parsing,
-    // so the script encodes the result JSON string in base64
-    result.result = this.evaluateResultToJsonString(result.result);
     return result;
   }
 }

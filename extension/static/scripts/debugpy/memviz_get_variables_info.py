@@ -413,18 +413,22 @@ class Result:
         return Result(ok=False, error=error)
 
 
+@dataclasses.dataclass
+class Response:
+    message: str
+    def __init__(self, content: dataclasses.dataclass) -> None:
+        self.message = json.dumps(dataclasses.asdict(content))
+
+    def __repr__(self) -> str:
+        # Debugpy's evaluate returns Python repr() of the string result,
+        # which by default could escape characters and break JSON parsing,
+        # so the message is returned as is.
+        return self.message
+
+
 def try_run(fn: Callable) -> str:
     try:
         result = fn()
-        return encode_dataclass(Result.make_ok(result))
+        return Response(Result.make_ok(result))
     except BaseException as e:
-        return encode_dataclass(Result.make_error(str(e)))
-
-
-def dataclass_to_json(value) -> str:
-    return json.dumps(dataclasses.asdict(value))
-
-
-def encode_dataclass(value) -> str:
-    json_str = dataclass_to_json(value)
-    return base64.b64encode(json_str.encode("utf-8")).decode("utf-8")
+        return Response(Result.make_error(str(e)))
