@@ -9,7 +9,6 @@ import type {
 } from "memviz-ui";
 import { type FrameId, SessionType } from "process-def";
 import type { Settings } from "../menu/settings";
-import { DebugpyDebuggerSession } from "../session/debugpy";
 import type { Evaluator } from "../session/evaluator/evaluator";
 import { GDBDebuggerSession } from "../session/gdb";
 import type { DebuggerSession } from "../session/session";
@@ -156,15 +155,12 @@ export class Reactor<
     stopLocation: Location,
   ) {
     // GDB: The program has stopped at main
-    // Debugpy: The program has stopped at the first breakpoint
     // Perform all initialization actions
     if (
       this.session instanceof GDBDebuggerSession &&
       this.trackDynamicAllocations
     ) {
       await this.session.initDynAllocTracking(frameId);
-    } else if (this.session instanceof DebugpyDebuggerSession) {
-      await this.session.configureEvaluator(frameId, stopLocation);
     }
 
     // We need to change the status BEFORE starting the asynchronous continue

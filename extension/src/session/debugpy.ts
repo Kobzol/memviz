@@ -1,9 +1,4 @@
-import {
-  type AddressStr,
-  type FrameId,
-  type FrameIndex,
-  SessionType,
-} from "process-def";
+import { type AddressStr, type FrameIndex, SessionType } from "process-def";
 import type {
   KeyValuePair,
   ObjectVal,
@@ -11,7 +6,6 @@ import type {
   Variables,
 } from "process-def/debugpy";
 import type { DebugSession } from "vscode";
-import type { Location } from "../reactor/locations";
 import { DebugpyWebviewMessageHandler } from "../reactor/webviewMessageHandler/debugpy";
 import { DebugpyEvaluator } from "./evaluator/debugpy";
 import type { ScriptPathProvider } from "./scriptPathProvider";
@@ -32,20 +26,12 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
     return new DebugpyWebviewMessageHandler();
   }
 
-  async configureEvaluator(
-    frameId: FrameId,
-    stopLocation: Location,
-  ): Promise<void> {
-    await this.pythonEvaluate(
-      `configure(r'${stopLocation.source?.path}')`,
-      frameId,
-    );
-  }
-
   async createVariablesRepresentation(
     frameIndex: FrameIndex,
   ): Promise<Variables> {
-    return await this.pythonEvaluate<Variables>(`get_variables(${frameIndex})`);
+    return await this.pythonEvaluate<Variables>(
+      `get_variables(${frameIndex}, __file__)`,
+    );
   }
 
   async getCollectionTypeElements(
@@ -55,7 +41,7 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
     elementCount: number,
   ): Promise<Value[]> {
     const result = await this.pythonEvaluate<Value[]>(
-      `get_collection_type_elements("${id}", ${frameIndex}, ${startIndex}, ${elementCount})`,
+      `get_collection_type_elements("${id}", ${frameIndex}, __file__, ${startIndex}, ${elementCount})`,
     );
     return result;
   }
@@ -67,7 +53,7 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
     pairCount: number,
   ): Promise<KeyValuePair[]> {
     const result = await this.pythonEvaluate<KeyValuePair[]>(
-      `get_dict_entries("${id}", ${frameIndex}, ${startIndex}, ${pairCount})`,
+      `get_dict_entries("${id}", ${frameIndex}, __file__, ${startIndex}, ${pairCount})`,
     );
     return result;
   }
@@ -79,14 +65,14 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
     length: number,
   ): Promise<string> {
     const result = await this.pythonEvaluate<string>(
-      `get_string_contents("${id}", ${frameIndex}, ${startIndex}, ${length})`,
+      `get_string_contents("${id}", ${frameIndex}, __file__, ${startIndex}, ${length})`,
     );
     return result;
   }
 
   async getObject(id: AddressStr, frameIndex: number): Promise<ObjectVal> {
     const result = await this.pythonEvaluate<ObjectVal>(
-      `get_object("${id}", ${frameIndex})`,
+      `get_object("${id}", ${frameIndex}, __file__)`,
     );
     return result;
   }

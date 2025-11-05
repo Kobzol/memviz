@@ -150,20 +150,7 @@ class Variables:
     values: List[BaseVal]
 
 
-# TODO: find a better way to get the debugged frame
-debugged_frame_offset: Optional[int] = None
 id_to_reference: Dict[PythonId, str] = {}
-
-
-def configure(top_frame_file: str) -> None:
-    global debugged_frame_offset
-    stack = inspect.stack()
-    for i, frame in enumerate(stack):
-        if frame.filename == top_frame_file:
-            debugged_frame_offset = i
-            break
-    if debugged_frame_offset is None:
-        raise Exception(f"Frame file '{top_frame_file}' not found.")
 
 
 def get_size(val: Any) -> int:
@@ -256,11 +243,27 @@ def make_value(val: Any) -> BaseVal:
             size=get_size(val),
             type_name=type(val).__name__,
         )
-    
 
-def evaluate_expression(expression: str, frame_index: int) -> Any:
+
+def get_frame_by_index(frame_index: int, debugged_file: str) -> inspect.FrameInfo:
+    # get topmost debugged frame info
     stack = inspect.stack()
-    frame_info = stack[frame_index + debugged_frame_offset + 1]
+    topmost_debugged_frame = None
+    for i, frame in enumerate(stack):
+        if frame.filename == debugged_file:
+            topmost_debugged_frame = frame
+            break
+    if topmost_debugged_frame is None:
+        raise Exception(f"Could not find frame for file {debugged_file}")
+
+    # get the frame at frame_index relative to topmost_debugged_frame
+    target_index = stack.index(topmost_debugged_frame) + frame_index
+    if target_index < 0 or target_index >= len(stack):
+        raise Exception(f"Frame index {frame_index} out of range.")
+    return stack[target_index]
+
+
+def evaluate_expression(expression: str, frame_info: inspect.FrameInfo) -> Any:
     return eval(expression, frame_info.frame.f_globals, frame_info.frame.f_locals)
 
 
@@ -270,9 +273,11 @@ def add_to_id_to_reference(python_id: PythonId, reference: str) -> None:
         id_to_reference[python_id] = reference
 
 
-def get_variables(frame_index: int) -> List[Variables]:
-    stack = inspect.stack()
-    frame_info = stack[frame_index + debugged_frame_offset]
+def get_variables(frame_index: int, debugged_file: str) -> List[Variables]:
+    frame_info = get_frame_by_index(frame_index, debugged_file)
+    if frame_info is None:
+        raise Exception(f"Could not find frame for file {debugged_file}")
+
     frame = frame_info.frame
 
     places = []
@@ -291,26 +296,30 @@ def get_variables(frame_index: int) -> List[Variables]:
     return Variables(places=places, values=list(values))
     
 
-def get_collection_type_elements(collection_id: PythonId, frame_index: int, start_index: int, element_count: int) -> List[BaseVal]:
+def get_collection_type_elements(collection_id: PythonId, frame_index: int, debugged_file: str, start_index: int, element_count: int) -> List[BaseVal]:
     if collection_id not in id_to_reference:
         raise Exception(f"Collection with id {collection_id} not found.")
     reference = id_to_reference[collection_id]
 
-    value_type = evaluate_expression(f"type({reference}).__name__", frame_index)
+    frame_info = get_frame_by_index(frame_index, debugged_file)
+    if frame_info is None:
+        raise Exception(f"Could not find frame for file {debugged_file}")
+
+    value_type = evaluate_expression(f"type({reference}).__name__", frame_info)
     if value_type not in ("list", "tuple", "set", "frozenset"):
         raise Exception(f"Value with id {collection_id} is of type {value_type}, not a collection type.")
-    length = evaluate_expression(f"len({reference})", frame_index)
+    length = evaluate_expression(f"len({reference})", frame_info)
     if start_index < 0 or start_index >= length:
         raise Exception(f"Start_index {start_index} out of range [0, {length}] for collection {reference}.")
     if start_index + element_count > length:
         raise Exception(f"Element count {element_count} out of range [0, {length - start_index}] for collection {reference}.")
 
     evaluation_reference = reference
-    collection_type = evaluate_expression(f"type({reference}).__name__", frame_index)
+    collection_type = evaluate_expression(f"type({reference}).__name__", frame_info)
     if collection_type in ("set", "frozenset"):
         evaluation_reference = f'tuple({reference})'
 
-    value = evaluate_expression(f"{evaluation_reference}[{start_index}:{start_index + element_count}]", frame_index)
+    value = evaluate_expression(f"{evaluation_reference}[{start_index}:{start_index + element_count}]", frame_info)
     assert isinstance(value, (list, tuple, set, frozenset))
     elements = []
     for i, element in enumerate(value):
@@ -321,22 +330,26 @@ def get_collection_type_elements(collection_id: PythonId, frame_index: int, star
     return elements
 
 
-def get_dict_entries(dict_id: PythonId, frame_index: int, start_index: int, pair_count: int) -> List[KeyValuePair]:
+def get_dict_entries(dict_id: PythonId, frame_index: int, debugged_file: str, start_index: int, pair_count: int) -> List[KeyValuePair]:
     if dict_id not in id_to_reference:
         raise Exception(f"Dict with id {dict_id} not found.")
     reference = id_to_reference[dict_id]
 
-    value_type = evaluate_expression(f"type({reference}).__name__", frame_index)
+    frame_info = get_frame_by_index(frame_index, debugged_file)
+    if frame_info is None:
+        raise Exception(f"Could not find frame for file {debugged_file}")
+
+    value_type = evaluate_expression(f"type({reference}).__name__", frame_info)
     if value_type != "dict":
         raise Exception(f"Value with id {dict_id} is of type {value_type}, not a dict.")
-    
-    length = evaluate_expression(f"len({reference})", frame_index)
+
+    length = evaluate_expression(f"len({reference})", frame_info)
     if start_index < 0 or start_index >= length:
         raise Exception(f"Start_index {start_index} out of range [0, {length}] for dict {reference}.")
     if start_index + pair_count > length:
         raise Exception(f"Key value pair count {pair_count} out of range [0, {length - start_index}] for dict {reference}.")
 
-    value = evaluate_expression(reference, frame_index)
+    value = evaluate_expression(reference, frame_info)
     assert isinstance(value, dict)
 
     items = list(value.items())[start_index:start_index + pair_count]
@@ -351,32 +364,40 @@ def get_dict_entries(dict_id: PythonId, frame_index: int, start_index: int, pair
     return key_value_pairs
 
 
-def get_string_contents(str_id: PythonId, frame_index: int, start_index: int, length: int) -> str:
+def get_string_contents(str_id: PythonId, frame_index: int, debugged_file: str, start_index: int, length: int) -> str:
     if str_id not in id_to_reference:
         raise Exception(f"string with id {str_id} not found.")
     reference = id_to_reference[str_id]
 
-    value_type = evaluate_expression(f"type({reference}).__name__", frame_index)
+    frame_info = get_frame_by_index(frame_index, debugged_file)
+    if frame_info is None:
+        raise Exception(f"Could not find frame for file {debugged_file}")
+
+    value_type = evaluate_expression(f"type({reference}).__name__", frame_info)
     if value_type != "str":
         raise Exception(f"Value with id {str_id} is of type {value_type}, not a string.")
 
-    str_length = evaluate_expression(f"len({reference})", frame_index)
+    str_length = evaluate_expression(f"len({reference})", frame_info)
     if start_index < 0 or start_index >= str_length:
         raise Exception(f"start_index {start_index} out of range [0, {str_length}] for string {reference}.")
     if start_index + length > str_length:
         raise Exception(f"length {length} out of range [0, {str_length - start_index}] for string {reference}.")
 
-    str_value = evaluate_expression(f"{reference}[{start_index}:{start_index + length}]", frame_index)
+    str_value = evaluate_expression(f"{reference}[{start_index}:{start_index + length}]", frame_info)
     assert isinstance(str_value, str)
     return str_value
 
 
-def get_object(object_id: PythonId, frame_index: int) -> ObjectVal:
+def get_object(object_id: PythonId, frame_index: int, debugged_file: str) -> ObjectVal:
     if object_id not in id_to_reference:
         raise Exception(f"object with id {object_id} not found.")
     reference = id_to_reference[object_id]
 
-    obj = evaluate_expression(reference, frame_index)
+    frame_info = get_frame_by_index(frame_index, debugged_file)
+    if frame_info is None:
+        raise Exception(f"Could not find frame for file {debugged_file}")
+
+    obj = evaluate_expression(reference, frame_info)
     assert obj is not None
     attributes = {}
     methods = {}
