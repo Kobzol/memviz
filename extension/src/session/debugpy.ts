@@ -34,14 +34,14 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
     );
   }
 
-  async getCollectionTypeElements(
+  async getCollectionElements(
     id: AddressStr,
     frameIndex: number,
     startIndex: number,
     elementCount: number,
   ): Promise<Value[]> {
     const result = await this.pythonEvaluate<Value[]>(
-      `get_collection_type_elements("${id}", ${frameIndex}, __file__, ${startIndex}, ${elementCount})`,
+      `get_collection_elements("${id}", ${frameIndex}, __file__, ${startIndex}, ${elementCount})`,
     );
     return result;
   }

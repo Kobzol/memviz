@@ -3,13 +3,13 @@ import dataclasses
 import json
 import inspect
 from types import FunctionType, ModuleType
-from typing import Any, Callable, Dict, List, Optional
-import base64
+from typing import Any, Callable, Dict, List, Optional, Tuple
 from sys import getsizeof
 from gc import get_referents
 
 
 PythonId = str
+ValueAccessExpr = str
 
 
 @dataclasses.dataclass(frozen=True)
@@ -102,7 +102,7 @@ class DeferredFrozenSetVal(BaseVal):
 class DeferredDictVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="defDict")
     size: int
-    key_value_pair_count: int
+    pair_count: int
 
 
 @dataclasses.dataclass(frozen=True)
@@ -144,13 +144,19 @@ class ObjectVal(DeferredObjectVal):
     methods: Dict[str, FunctionVal] = dataclasses.field(default_factory=dict)
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class Variables:
     places: List[Place]
     values: List[BaseVal]
 
 
-id_to_reference: Dict[PythonId, str] = {}
+@dataclasses.dataclass(frozen=True)
+class EvaluationContext:
+    value_access_expr: ValueAccessExpr
+    frame_info: inspect.FrameInfo
+
+
+id_to_access_expr: Dict[PythonId, ValueAccessExpr] = {}
 
 
 def get_size(val: Any) -> int:
@@ -186,35 +192,15 @@ def make_value(val: Any) -> BaseVal:
             imaginary_value=str(val.imag),
         )
     elif isinstance(val, str):
-        return DeferredStrVal(
-            id=val_id,
-            size=get_size(val),
-            length=len(val)
-        )
+        return DeferredStrVal(id=val_id, size=get_size(val), length=len(val))
     elif isinstance(val, dict):
-        return DeferredDictVal(
-            id=val_id,
-            size=get_size(val),
-            key_value_pair_count=len(val)
-        )
+        return DeferredDictVal(id=val_id, size=get_size(val), pair_count=len(val))
     elif isinstance(val, list):
-        return DeferredListVal(
-            id=val_id,
-            size=get_size(val),
-            element_count=len(val)
-        )
+        return DeferredListVal(id=val_id, size=get_size(val), element_count=len(val))
     elif isinstance(val, tuple):
-        return DeferredTupleVal(
-            id=val_id,
-            size=get_size(val),
-            element_count=len(val)
-        )
+        return DeferredTupleVal(id=val_id, size=get_size(val), element_count=len(val))
     elif isinstance(val, set):
-        return DeferredSetVal(
-            id=val_id,
-            size=get_size(val),
-            element_count=len(val)
-        )
+        return DeferredSetVal(id=val_id, size=get_size(val), element_count=len(val))
     elif isinstance(val, frozenset):
         return DeferredFrozenSetVal(
             id=val_id,
@@ -235,7 +221,9 @@ def make_value(val: Any) -> BaseVal:
             name=val.__name__,
             qualified_name=val.__qualname__,
             module=val.__module__,
-            signature=str(inspect.signature(val)) if hasattr(inspect, "signature") else None,
+            signature=(
+                str(inspect.signature(val)) if hasattr(inspect, "signature") else None
+            ),
         )
     else:
         return DeferredObjectVal(
@@ -245,16 +233,16 @@ def make_value(val: Any) -> BaseVal:
         )
 
 
-def get_frame_by_index(frame_index: int, debugged_file: str) -> inspect.FrameInfo:
+def get_frame_by_index(frame_index: int, debugged_file_path: str) -> inspect.FrameInfo:
     # get topmost debugged frame info
     stack = inspect.stack()
     topmost_debugged_frame = None
     for i, frame in enumerate(stack):
-        if frame.filename == debugged_file:
+        if frame.filename == debugged_file_path:
             topmost_debugged_frame = frame
             break
     if topmost_debugged_frame is None:
-        raise Exception(f"Could not find frame for file {debugged_file}")
+        raise Exception(f"Could not find frame for file {debugged_file_path}")
 
     # get the frame at frame_index relative to topmost_debugged_frame
     target_index = stack.index(topmost_debugged_frame) + frame_index
@@ -267,149 +255,190 @@ def evaluate_expression(expression: str, frame_info: inspect.FrameInfo) -> Any:
     return eval(expression, frame_info.frame.f_globals, frame_info.frame.f_locals)
 
 
-def add_to_id_to_reference(python_id: PythonId, reference: str) -> None:
-    # only add if not already present to keep the first (likely shortest) reference
-    if python_id not in id_to_reference:
-        id_to_reference[python_id] = reference
+def register_value_access_expr(python_id: PythonId, access_expr: str) -> None:
+    # only add if not already present to keep the first (likely shortest) expression
+    if python_id not in id_to_access_expr:
+        id_to_access_expr[python_id] = access_expr
 
 
-def get_variables(frame_index: int, debugged_file: str) -> List[Variables]:
-    frame_info = get_frame_by_index(frame_index, debugged_file)
+def get_context(
+    value_id: PythonId, frame_index: int, debugged_file_path: str
+) -> EvaluationContext:
+    if value_id not in id_to_access_expr:
+        raise ValueError(f"Value with id {value_id} not found in saved values.")
+    access_expr = id_to_access_expr[value_id]
+
+    frame_info = get_frame_by_index(frame_index, debugged_file_path)
     if frame_info is None:
-        raise Exception(f"Could not find frame for file {debugged_file}")
+        raise ValueError(f"Could not find frame for file {debugged_file_path}")
+
+    return EvaluationContext(access_expr, frame_info)
+
+
+def check_type(context: EvaluationContext, expected_types: Tuple[str, ...]) -> str:
+    value_type = evaluate_expression(
+        f"type({context.value_access_expr}).__name__", context.frame_info
+    )
+    if value_type not in expected_types:
+        raise ValueError(
+            f"Value {context.value_access_expr} is of type {value_type}, expected one of {expected_types}."
+        )
+    return value_type
+
+
+def validate_slicing_params(
+    context: EvaluationContext,
+    start_index: int,
+    count: int,
+) -> int:
+    collection_length = evaluate_expression(
+        f"len({context.value_access_expr})", context.frame_info
+    )
+    if not (0 <= start_index < collection_length):
+        raise ValueError(
+            f"Start_index {start_index} out of range [0, {collection_length}] for {context.value_access_expr}."
+        )
+    if start_index + count > collection_length:
+        raise ValueError(
+            f"Count {count} out of range. Collection {context.value_access_expr} has length {collection_length}, "
+            f"so maximum allowed count is {collection_length - start_index} for start_index {start_index}."
+        )
+    return collection_length
+
+
+def get_variables(frame_index: int, debugged_file_path: str) -> Variables:
+    frame_info = get_frame_by_index(frame_index, debugged_file_path)
+    if frame_info is None:
+        raise ValueError(f"Could not find frame for file {debugged_file_path}")
 
     frame = frame_info.frame
 
     places = []
-    values = set()
+    values: Dict[PythonId, BaseVal] = {}
 
     for name, value in frame.f_locals.items():
-        value_repr = make_value(value)
+        value_id = str(id(value))
+
+        if value_id in values:
+            value_repr = values[value_id]
+        else:
+            value_repr = make_value(value)
+            values[value_id] = value_repr
+            register_value_access_expr(value_repr.id, name)
+
         place = Place(
             name=name,
             id=value_repr.id,
         )
         places.append(place)
-        values.add(value_repr)
-        add_to_id_to_reference(value_repr.id, name)
 
-    return Variables(places=places, values=list(values))
-    
+    return Variables(places=places, values=list(values.values()))
 
-def get_collection_type_elements(collection_id: PythonId, frame_index: int, debugged_file: str, start_index: int, element_count: int) -> List[BaseVal]:
-    if collection_id not in id_to_reference:
-        raise Exception(f"Collection with id {collection_id} not found.")
-    reference = id_to_reference[collection_id]
 
-    frame_info = get_frame_by_index(frame_index, debugged_file)
-    if frame_info is None:
-        raise Exception(f"Could not find frame for file {debugged_file}")
+def get_collection_elements(
+    collection_id: PythonId,
+    frame_index: int,
+    debugged_file_path: str,
+    start_index: int,
+    element_count: int,
+) -> List[BaseVal]:
+    context = get_context(collection_id, frame_index, debugged_file_path)
 
-    value_type = evaluate_expression(f"type({reference}).__name__", frame_info)
-    if value_type not in ("list", "tuple", "set", "frozenset"):
-        raise Exception(f"Value with id {collection_id} is of type {value_type}, not a collection type.")
-    length = evaluate_expression(f"len({reference})", frame_info)
-    if start_index < 0 or start_index >= length:
-        raise Exception(f"Start_index {start_index} out of range [0, {length}] for collection {reference}.")
-    if start_index + element_count > length:
-        raise Exception(f"Element count {element_count} out of range [0, {length - start_index}] for collection {reference}.")
+    allowed_types = ("list", "tuple", "set", "frozenset")
+    value_type = check_type(context, allowed_types)
+    validate_slicing_params(context, start_index, element_count)
 
-    evaluation_reference = reference
-    collection_type = evaluate_expression(f"type({reference}).__name__", frame_info)
-    if collection_type in ("set", "frozenset"):
-        evaluation_reference = f'tuple({reference})'
+    value_access_expr = context.value_access_expr
+    if value_type in ("set", "frozenset"):
+        value_access_expr = f"tuple({context.value_access_expr})"
 
-    value = evaluate_expression(f"{evaluation_reference}[{start_index}:{start_index + element_count}]", frame_info)
-    assert isinstance(value, (list, tuple, set, frozenset))
+    value = evaluate_expression(
+        f"{value_access_expr}[{start_index}:{start_index + element_count}]",
+        context.frame_info,
+    )
+
     elements = []
     for i, element in enumerate(value):
-        reference = f"{evaluation_reference}[{start_index + i}]"
+        element_access_expr = f"{value_access_expr}[{start_index + i}]"
         value_repr = make_value(element)
         elements.append(value_repr)
-        add_to_id_to_reference(value_repr.id, reference)
+        register_value_access_expr(value_repr.id, element_access_expr)
     return elements
 
 
-def get_dict_entries(dict_id: PythonId, frame_index: int, debugged_file: str, start_index: int, pair_count: int) -> List[KeyValuePair]:
-    if dict_id not in id_to_reference:
-        raise Exception(f"Dict with id {dict_id} not found.")
-    reference = id_to_reference[dict_id]
+def get_dict_entries(
+    dict_id: PythonId,
+    frame_index: int,
+    debugged_file_path: str,
+    start_index: int,
+    pair_count: int,
+) -> List[KeyValuePair]:
+    context = get_context(dict_id, frame_index, debugged_file_path)
 
-    frame_info = get_frame_by_index(frame_index, debugged_file)
-    if frame_info is None:
-        raise Exception(f"Could not find frame for file {debugged_file}")
+    check_type(context, ("dict",))
+    validate_slicing_params(context, start_index, pair_count)
 
-    value_type = evaluate_expression(f"type({reference}).__name__", frame_info)
-    if value_type != "dict":
-        raise Exception(f"Value with id {dict_id} is of type {value_type}, not a dict.")
+    items = evaluate_expression(
+        f"list({context.value_access_expr}.items())[{start_index}:{start_index + pair_count}]",
+        context.frame_info,
+    )
 
-    length = evaluate_expression(f"len({reference})", frame_info)
-    if start_index < 0 or start_index >= length:
-        raise Exception(f"Start_index {start_index} out of range [0, {length}] for dict {reference}.")
-    if start_index + pair_count > length:
-        raise Exception(f"Key value pair count {pair_count} out of range [0, {length - start_index}] for dict {reference}.")
-
-    value = evaluate_expression(reference, frame_info)
-    assert isinstance(value, dict)
-
-    items = list(value.items())[start_index:start_index + pair_count]
-    key_value_pairs = []
-    for i, (key, value) in enumerate(items):
+    entries = []
+    for i, (key, val) in enumerate(items):
         key_repr = make_value(key)
-        value_repr = make_value(value)
-        key_value_pairs.append(KeyValuePair(key_repr, value_repr))
-        add_to_id_to_reference(key_repr.id, f"list({reference}.keys())[{start_index + i}]")
-        add_to_id_to_reference(value_repr.id, f"{reference}[{repr(key)}]")
-    
-    return key_value_pairs
+        value_repr = make_value(val)
+        entries.append(KeyValuePair(key_repr, value_repr))
+        register_value_access_expr(
+            key_repr.id, f"list({context.value_access_expr}.keys())[{start_index + i}]"
+        )
+        register_value_access_expr(
+            value_repr.id, f"{context.value_access_expr}[{repr(key)}]"
+        )
+    return entries
 
 
-def get_string_contents(str_id: PythonId, frame_index: int, debugged_file: str, start_index: int, length: int) -> str:
-    if str_id not in id_to_reference:
-        raise Exception(f"string with id {str_id} not found.")
-    reference = id_to_reference[str_id]
+def get_string_contents(
+    str_id: PythonId,
+    frame_index: int,
+    debugged_file: str,
+    start_index: int,
+    length: int,
+) -> str:
+    context = get_context(str_id, frame_index, debugged_file)
 
-    frame_info = get_frame_by_index(frame_index, debugged_file)
-    if frame_info is None:
-        raise Exception(f"Could not find frame for file {debugged_file}")
+    check_type(context, ("str",))
+    validate_slicing_params(context, start_index, length)
 
-    value_type = evaluate_expression(f"type({reference}).__name__", frame_info)
-    if value_type != "str":
-        raise Exception(f"Value with id {str_id} is of type {value_type}, not a string.")
-
-    str_length = evaluate_expression(f"len({reference})", frame_info)
-    if start_index < 0 or start_index >= str_length:
-        raise Exception(f"start_index {start_index} out of range [0, {str_length}] for string {reference}.")
-    if start_index + length > str_length:
-        raise Exception(f"length {length} out of range [0, {str_length - start_index}] for string {reference}.")
-
-    str_value = evaluate_expression(f"{reference}[{start_index}:{start_index + length}]", frame_info)
-    assert isinstance(str_value, str)
-    return str_value
+    return evaluate_expression(
+        f"{context.value_access_expr}[{start_index}:{start_index + length}]",
+        context.frame_info,
+    )
 
 
 def get_object(object_id: PythonId, frame_index: int, debugged_file: str) -> ObjectVal:
-    if object_id not in id_to_reference:
-        raise Exception(f"object with id {object_id} not found.")
-    reference = id_to_reference[object_id]
+    context = get_context(object_id, frame_index, debugged_file)
 
-    frame_info = get_frame_by_index(frame_index, debugged_file)
-    if frame_info is None:
-        raise Exception(f"Could not find frame for file {debugged_file}")
-
-    obj = evaluate_expression(reference, frame_info)
+    obj = evaluate_expression(context.value_access_expr, context.frame_info)
     assert obj is not None
+
     attributes = {}
     methods = {}
     for attr_name in dir(obj):
-        attr_value = getattr(obj, attr_name)
+        try:
+            attr_value = getattr(obj, attr_name)
+        except Exception:
+            continue
+
         value_repr = make_value(attr_value)
         if inspect.ismethod(attr_value):
+            assert isinstance(value_repr, FunctionVal)
             methods[attr_name] = value_repr
         else:
             attributes[attr_name] = value_repr
-        add_to_id_to_reference(value_repr.id, f"{reference}.{attr_name}")
-        
+        register_value_access_expr(
+            value_repr.id, f"{context.value_access_expr}.{attr_name}"
+        )
+
     return ObjectVal(
         id=object_id,
         size=get_size(obj),
@@ -419,7 +448,7 @@ def get_object(object_id: PythonId, frame_index: int, debugged_file: str) -> Obj
     )
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class Result:
     ok: bool
     value: Optional[Any] = None
@@ -434,11 +463,12 @@ class Result:
         return Result(ok=False, error=error)
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class Response:
     message: str
+
     def __init__(self, content: dataclasses.dataclass) -> None:
-        self.message = json.dumps(dataclasses.asdict(content))
+        object.__setattr__(self, "message", json.dumps(dataclasses.asdict(content)))
 
     def __repr__(self) -> str:
         # Debugpy's evaluate returns Python repr() of the string result,
@@ -447,7 +477,7 @@ class Response:
         return self.message
 
 
-def try_run(fn: Callable) -> str:
+def try_run(fn: Callable) -> Response:
     try:
         result = fn()
         return Response(Result.make_ok(result))

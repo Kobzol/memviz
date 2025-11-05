@@ -21,7 +21,7 @@ async function loadData() {
       props.value.id,
       frameIndex,
       0,
-      props.value.key_value_pair_count
+      props.value.pair_count
     )
     .then((pairs) => {
       keyValuePairs.value = pairs;

@@ -66,7 +66,7 @@ export interface DeferredFrozenSetVal extends Value {
 export interface DeferredDictVal extends Value {
   kind: "defDict";
   size: number;
-  key_value_pair_count: number;
+  pair_count: number;
 }
 
 export interface KeyValuePair {
@@ -91,7 +91,7 @@ export interface FunctionVal extends Value {
 }
 
 export interface DeferredObjectVal extends Value {
-  kind: "defObj";
+  kind: "defObject";
   size: number;
   type_name: string;
 }

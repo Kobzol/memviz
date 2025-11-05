@@ -20,7 +20,7 @@ async function loadData() {
     return;
   }
   resolver.value
-    .getCollectionTypeElements(
+    .getCollectionElements(
       props.value.id,
       frameIndex,
       0,

@@ -1,8 +1,8 @@
 import type { MemvizToExtensionMsg } from "memviz-ui";
 import type {
   ExtensionToMemvizDebugpyResponse,
-  GetCollectionTypeElementsReq,
-  GetCollectionTypeElementsRes,
+  GetCollectionElementsReq,
+  GetCollectionElementsRes,
   GetDictEntriesReq,
   GetDictEntriesRes,
   GetObjectReq,
@@ -28,8 +28,8 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
     if (message.kind === "get-python-variables-representation") {
       return this.performGetVariablesRequest(message, session);
     }
-    if (message.kind === "get-collection-type-elements") {
-      return this.performGetCollectionTypeElementsRequest(message, session);
+    if (message.kind === "get-collection-elements") {
+      return this.performGetCollectionElementsRequest(message, session);
     }
     if (message.kind === "get-dict-entries") {
       return this.performGetDictEntriesRequest(message, session);
@@ -83,21 +83,19 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
     };
   }
 
-  private performGetCollectionTypeElementsRequest(
-    message: GetCollectionTypeElementsReq,
+  private performGetCollectionElementsRequest(
+    message: GetCollectionElementsReq,
     session: DebugpyDebuggerSession,
-  ): () => Promise<
-    Omit<GetCollectionTypeElementsRes, "requestId" | "resolverId">
-  > {
+  ): () => Promise<Omit<GetCollectionElementsRes, "requestId" | "resolverId">> {
     return async () => {
-      const elements = await session.getCollectionTypeElements(
+      const elements = await session.getCollectionElements(
         message.id,
         message.frameIndex,
         message.startIndex,
         message.elementCount,
       );
       return {
-        kind: "get-collection-type-elements",
+        kind: "get-collection-elements",
         data: {
           elements,
         },

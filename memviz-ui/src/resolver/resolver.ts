@@ -15,7 +15,7 @@ export interface ProcessResolver {
   createVariablesRepresentation(
     frameIndex: FrameIndex,
   ): Promise<PythonVariables>;
-  getCollectionTypeElements(
+  getCollectionElements(
     id: AddressStr,
     frameIndex: number,
     startIndex: number,

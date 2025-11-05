@@ -15,8 +15,8 @@ import type { Place as GDBPlace } from "process-def/gdb";
 import type { WebviewApi } from "vscode-webview";
 import type {
   ExtensionToMemvizResponse,
-  GetCollectionTypeElementsReq,
-  GetCollectionTypeElementsRes,
+  GetCollectionElementsReq,
+  GetCollectionElementsRes,
   GetDictEntriesReq,
   GetDictEntriesRes,
   GetObjectReq,
@@ -114,7 +114,7 @@ export class VsCodeResolver implements ProcessResolver {
     return res.variables;
   }
 
-  async getCollectionTypeElements(
+  async getCollectionElements(
     id: AddressStr,
     frameIndex: number,
     startIndex: number,
@@ -122,14 +122,14 @@ export class VsCodeResolver implements ProcessResolver {
   ): Promise<PythonValue[]> {
     if (this.sessionType !== SessionType.Debugpy) {
       throw new Error(
-        "getCollectionTypeElements is only supported in debugpy sessions",
+        "getCollectionElements is only supported in debugpy sessions",
       );
     }
     const res = await this.sendRequest<
-      GetCollectionTypeElementsReq,
-      GetCollectionTypeElementsRes
+      GetCollectionElementsReq,
+      GetCollectionElementsRes
     >({
-      kind: "get-collection-type-elements",
+      kind: "get-collection-elements",
       id,
       frameIndex,
       elementCount,

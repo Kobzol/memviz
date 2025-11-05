@@ -35,13 +35,13 @@ export class CachingResolver<T extends ProcessResolver>
     return await this.inner.createVariablesRepresentation(frameIndex);
   }
 
-  async getCollectionTypeElements(
+  async getCollectionElements(
     id: AddressStr,
     frameIndex: number,
     elementCount: number,
     startIndex: number,
   ): Promise<PythonValue[]> {
-    return await this.inner.getCollectionTypeElements(
+    return await this.inner.getCollectionElements(
       id,
       frameIndex,
       elementCount,
