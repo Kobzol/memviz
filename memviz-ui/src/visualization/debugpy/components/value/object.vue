@@ -53,6 +53,21 @@ watch(
         <ValueComponent :value="value" :level="props.level + 1" />
       </div>
     </div>
+    <div class="data-descriptors" v-if="object">
+      <div v-for="key in object.data_descriptors" :key="key">
+        <span class="string">{{ key }} </span>
+      </div>
+    </div>
+    <div class="getset-descriptors" v-if="object">
+      <div v-for="key in object.getset_descriptors" :key="key">
+        <span class="string">{{ key }}</span>
+      </div>
+    </div>
+    <div class="member-descriptors" v-if="object">
+      <div v-for="key in object.member_descriptors" :key="key">
+        <span class="string">{{ key }}</span>
+      </div>
+    </div>
   </div>
 </template>
 

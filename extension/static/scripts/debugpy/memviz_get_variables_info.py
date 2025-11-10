@@ -142,6 +142,9 @@ class ObjectVal(DeferredObjectVal):
     size: int
     attributes: Dict[str, BaseVal] = dataclasses.field(default_factory=dict)
     methods: Dict[str, FunctionVal] = dataclasses.field(default_factory=dict)
+    data_descriptors: List[str] = dataclasses.field(default_factory=list)
+    getset_descriptors: List[str] = dataclasses.field(default_factory=list)
+    member_descriptors: List[str] = dataclasses.field(default_factory=list)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -423,21 +426,34 @@ def get_object(object_id: PythonId, frame_index: int, debugged_file: str) -> Obj
 
     attributes = {}
     methods = {}
+    data_descriptors = []
+    getset_descriptors = []
+    member_descriptors = []
     for attr_name in dir(obj):
         try:
-            attr_value = getattr(obj, attr_name)
+            # passive inspection to avoid resolving descriptors
+            attr_value = inspect.getattr_static(obj, attr_name)
         except Exception:
             continue
 
-        value_repr = make_value(attr_value)
-        if inspect.ismethod(attr_value):
-            assert isinstance(value_repr, FunctionVal)
-            methods[attr_name] = value_repr
+        if inspect.isdatadescriptor(attr_value):
+            data_descriptors.append(attr_name)
+        elif inspect.isgetsetdescriptor(attr_value):
+            getset_descriptors.append(attr_name)
+        elif inspect.ismemberdescriptor(attr_value):
+            member_descriptors.append(attr_name)
         else:
-            attributes[attr_name] = value_repr
-        register_value_access_expr(
-            value_repr.id, f"{context.value_access_expr}.{attr_name}"
-        )
+            value_repr = make_value(attr_value)
+
+            if inspect.ismethod(attr_value):
+                assert isinstance(value_repr, FunctionVal)
+                methods[attr_name] = value_repr
+            else:
+                attributes[attr_name] = value_repr
+
+            register_value_access_expr(
+                value_repr.id, f"{context.value_access_expr}.{attr_name}"
+            )
 
     return ObjectVal(
         id=object_id,
@@ -445,6 +461,9 @@ def get_object(object_id: PythonId, frame_index: int, debugged_file: str) -> Obj
         type_name=type(obj).__name__,
         attributes=attributes,
         methods=methods,
+        data_descriptors=data_descriptors,
+        getset_descriptors=getset_descriptors,
+        member_descriptors=member_descriptors,
     )
 
 

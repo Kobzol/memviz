@@ -102,4 +102,7 @@ export interface ObjectVal extends Value {
   type_name: string;
   attributes: { [key: string]: Value };
   methods: { [key: string]: FunctionVal };
+  data_descriptors: string[];
+  getset_descriptors: string[];
+  member_descriptors: string[];
 }
