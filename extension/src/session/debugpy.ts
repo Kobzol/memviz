@@ -1,4 +1,9 @@
-import { type AddressStr, type FrameIndex, SessionType } from "process-def";
+import {
+  type AddressStr,
+  type FrameId,
+  type FrameIndex,
+  SessionType,
+} from "process-def";
 import type {
   KeyValuePair,
   ObjectVal,
@@ -27,14 +32,17 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
   }
 
   async createVariablesRepresentation(
+    frameId: FrameId,
     frameIndex: FrameIndex,
   ): Promise<Variables> {
     return await this.pythonEvaluate<Variables>(
       `get_variables(${frameIndex}, __file__)`,
+      frameId,
     );
   }
 
   async getCollectionElements(
+    frameId: FrameId,
     id: AddressStr,
     frameIndex: number,
     startIndex: number,
@@ -42,11 +50,13 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
   ): Promise<Value[]> {
     const result = await this.pythonEvaluate<Value[]>(
       `get_collection_elements("${id}", ${frameIndex}, __file__, ${startIndex}, ${elementCount})`,
+      frameId,
     );
     return result;
   }
 
   async getDictEntries(
+    frameId: FrameId,
     id: AddressStr,
     frameIndex: number,
     startIndex: number,
@@ -54,11 +64,13 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
   ): Promise<KeyValuePair[]> {
     const result = await this.pythonEvaluate<KeyValuePair[]>(
       `get_dict_entries("${id}", ${frameIndex}, __file__, ${startIndex}, ${pairCount})`,
+      frameId,
     );
     return result;
   }
 
   async getStringContents(
+    frameId: FrameId,
     id: AddressStr,
     frameIndex: number,
     startIndex: number,
@@ -66,13 +78,19 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
   ): Promise<string> {
     const result = await this.pythonEvaluate<string>(
       `get_string_contents("${id}", ${frameIndex}, __file__, ${startIndex}, ${length})`,
+      frameId,
     );
     return result;
   }
 
-  async getObject(id: AddressStr, frameIndex: number): Promise<ObjectVal> {
+  async getObject(
+    frameId: FrameId,
+    id: AddressStr,
+    frameIndex: number,
+  ): Promise<ObjectVal> {
     const result = await this.pythonEvaluate<ObjectVal>(
       `get_object("${id}", ${frameIndex}, __file__)`,
+      frameId,
     );
     return result;
   }

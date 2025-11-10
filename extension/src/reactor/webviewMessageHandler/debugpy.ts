@@ -13,7 +13,7 @@ import type {
   GetStringContentsRes,
   ProcessStoppedEvent,
 } from "memviz-ui/src/messages";
-import { SessionType } from "process-def";
+import { type FrameId, SessionType } from "process-def";
 import type { DebugpyDebuggerSession } from "../../session/debugpy";
 import { WebviewMessageHandler } from "./webviewMessageHandler";
 
@@ -64,6 +64,18 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
     } as const;
   }
 
+  private async getCurrentFrameId(
+    session: DebugpyDebuggerSession,
+  ): Promise<FrameId> {
+    const response = await session.getThreads();
+    const stackTrace = await session.getStackTrace(
+      response.threads[0].id,
+      true,
+    );
+    const frameId: FrameId = stackTrace[0].id;
+    return frameId;
+  }
+
   private performGetVariablesRequest(
     message: GetPythonVariablesRepresentationReq,
     session: DebugpyDebuggerSession,
@@ -71,7 +83,9 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
     Omit<GetPythonVariablesRepresentationRes, "requestId" | "resolverId">
   > {
     return async () => {
+      const frameId = await this.getCurrentFrameId(session);
       const variables = await session.createVariablesRepresentation(
+        frameId,
         message.frameIndex,
       );
       return {
@@ -88,7 +102,9 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
     session: DebugpyDebuggerSession,
   ): () => Promise<Omit<GetCollectionElementsRes, "requestId" | "resolverId">> {
     return async () => {
+      const frameId = await this.getCurrentFrameId(session);
       const elements = await session.getCollectionElements(
+        frameId,
         message.id,
         message.frameIndex,
         message.startIndex,
@@ -108,7 +124,9 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
     session: DebugpyDebuggerSession,
   ): () => Promise<Omit<GetDictEntriesRes, "requestId" | "resolverId">> {
     return async () => {
+      const frameId = await this.getCurrentFrameId(session);
       const entries = await session.getDictEntries(
+        frameId,
         message.id,
         message.frameIndex,
         message.startIndex,
@@ -128,7 +146,9 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
     session: DebugpyDebuggerSession,
   ): () => Promise<Omit<GetStringContentsRes, "requestId" | "resolverId">> {
     return async () => {
+      const frameId = await this.getCurrentFrameId(session);
       const contents = await session.getStringContents(
+        frameId,
         message.id,
         message.frameIndex,
         message.startIndex,
@@ -148,7 +168,12 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
     session: DebugpyDebuggerSession,
   ): () => Promise<Omit<GetObjectRes, "requestId" | "resolverId">> {
     return async () => {
-      const objectVal = await session.getObject(message.id, message.frameIndex);
+      const frameId = await this.getCurrentFrameId(session);
+      const objectVal = await session.getObject(
+        frameId,
+        message.id,
+        message.frameIndex,
+      );
       return {
         kind: "get-object",
         data: {
