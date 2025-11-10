@@ -10,12 +10,12 @@ const props = defineProps<{
   level: number;
 }>();
 
+const frameIndex = inject<null | number>("frameIndex", null);
+
 async function loadData() {
   if (props.level > 1) {
-    console.warn("Max level reached, not loading object data");
     return;
   }
-  const frameIndex = inject<null | number>("frameIndex", null);
   if (frameIndex === null) {
     console.warn(
       "No frame index provided for collection, cannot load elements"

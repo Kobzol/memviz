@@ -10,19 +10,22 @@ const props = defineProps<{
   level: number;
 }>();
 
+const frameIndex = inject<null | number>("frameIndex", null);
+
 async function loadData() {
-  const frameIndex = inject<null | number>("frameIndex", null);
+  if (props.level > 1) {
+    return;
+  }
   if (frameIndex === null) {
     console.warn("No frame index provided for dict, cannot load elements");
     return;
   }
+  if (props.value.pair_count === 0) {
+    keyValuePairs.value = [];
+    return;
+  }
   resolver.value
-    .getDictEntries(
-      props.value.id,
-      frameIndex,
-      0,
-      props.value.pair_count
-    )
+    .getDictEntries(props.value.id, frameIndex, 0, props.value.pair_count)
     .then((pairs) => {
       keyValuePairs.value = pairs;
     });

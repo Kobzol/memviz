@@ -11,12 +11,20 @@ const props = defineProps<{
   level: number;
 }>();
 
+const frameIndex = inject<null | number>("frameIndex", null);
+
 async function loadData() {
-  const frameIndex = inject<null | number>("frameIndex", null);
+  if (props.level > 1) {
+    return;
+  }
   if (frameIndex === null) {
     console.warn(
       "No frame index provided for collection, cannot load elements"
     );
+    return;
+  }
+  if (props.value.element_count === 0) {
+    elements.value = [];
     return;
   }
   resolver.value

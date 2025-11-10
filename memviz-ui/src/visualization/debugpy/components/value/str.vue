@@ -8,10 +8,15 @@ const props = defineProps<{
   value: DeferredStrVal;
 }>();
 
+const frameIndex = inject<null | number>("frameIndex", null);
+
 async function loadData() {
-  const frameIndex = inject<null | number>("frameIndex", null);
   if (frameIndex === null) {
     console.warn("No frame index provided for str, cannot load elements");
+    return;
+  }
+  if (!props.value.length) {
+    stringContents.value = "";
     return;
   }
   resolver.value
