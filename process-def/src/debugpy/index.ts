@@ -19,6 +19,8 @@ export type {
   FunctionVal,
   KeyValuePair,
   ObjectVal,
+  ModuleVal,
+  TypeVal,
 } from "./value";
 
 export interface Place {

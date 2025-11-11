@@ -8,6 +8,8 @@ import Dict from "./dict.vue";
 import Range from "./range.vue";
 import FunctionComponent from "./function.vue";
 import ObjectComponent from "./object.vue";
+import ModuleComponent from "./module.vue";
+import TypeComponent from "./type.vue";
 import type {
   DeferredStrVal,
   NoneVal,
@@ -17,6 +19,8 @@ import type {
   RangeVal,
   DeferredObjectVal,
   FunctionVal,
+  ModuleVal,
+  TypeVal,
 } from "process-def/debugpy";
 import {
   type ScalarVal,
@@ -72,6 +76,14 @@ function isFunctionVal(value: Value): value is FunctionVal {
 function isObjectVal(value: Value): value is DeferredObjectVal {
   return value.kind === "defObject";
 }
+
+function isModuleVal(value: Value): value is ModuleVal {
+  return value.kind === "module";
+}
+
+function isTypeVal(value: Value): value is TypeVal {
+  return value.kind === "type";
+}
 </script>
 
 <template>
@@ -90,7 +102,7 @@ function isObjectVal(value: Value): value is DeferredObjectVal {
       :value="value as DeferredDictVal"
       :level="level"
     />
-    <Range 
+    <Range
       v-else-if="isRangeVal(value)"
       :value="value as RangeVal"
       :level="level"
@@ -105,6 +117,11 @@ function isObjectVal(value: Value): value is DeferredObjectVal {
       :value="value as DeferredObjectVal"
       :level="level"
     />
+    <ModuleComponent
+      v-else-if="isModuleVal(value)"
+      :value="value as ModuleVal"
+    />
+    <TypeComponent v-else-if="isTypeVal(value)" :value="value as TypeVal" />
     <div>&lt;value of type {{ value.kind }}&gt;</div>
   </div>
 </template>

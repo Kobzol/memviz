@@ -148,6 +148,19 @@ class ObjectVal(DeferredObjectVal):
 
 
 @dataclasses.dataclass(frozen=True)
+class ModuleVal(BaseVal):
+    kind: str = dataclasses.field(init=False, default="module")
+    name: str
+
+
+@dataclasses.dataclass(frozen=True)
+class TypeVal(BaseVal):
+    kind: str = dataclasses.field(init=False, default="type")
+    name: str
+    module: str | None
+
+
+@dataclasses.dataclass(frozen=True)
 class Variables:
     places: List[Place]
     values: List[BaseVal]
@@ -181,6 +194,14 @@ def make_value(val: Any) -> BaseVal:
     val_id = str(id(val))
     if val is None:
         return NoneVal(id=val_id, size=get_size(val))
+    elif inspect.ismodule(val):
+        return ModuleVal(id=val_id, name=val.__name__)
+    elif inspect.isclass(val):
+        return TypeVal(
+            id=val_id,
+            name=val.__name__,
+            module=val.__module__,
+        )
     elif isinstance(val, bool):
         return BoolVal(id=val_id, size=get_size(val), value=val)
     elif isinstance(val, int):

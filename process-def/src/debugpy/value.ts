@@ -106,3 +106,14 @@ export interface ObjectVal extends Value {
   getset_descriptors: string[];
   member_descriptors: string[];
 }
+
+export interface ModuleVal extends Value {
+  kind: "module";
+  name: string;
+}
+
+export interface TypeVal extends Value {
+  kind: "type";
+  name: string;
+  module: string;
+}
