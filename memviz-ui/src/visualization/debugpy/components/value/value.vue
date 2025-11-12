@@ -21,12 +21,12 @@ import type {
   FunctionVal,
   ModuleVal,
   TypeVal,
+  CollectionVal,
 } from "process-def/debugpy";
 import {
   type ScalarVal,
   isScalarType,
   isCollectionType,
-  CollectionVal,
 } from "../../utils/types";
 import { PropType } from "vue";
 
@@ -54,7 +54,7 @@ function isComplex(value: Value): value is ComplexVal {
 }
 
 function isStr(value: Value): value is DeferredStrVal {
-  return value.kind === "defStr";
+  return value.kind === "str";
 }
 
 function isCollection(value: Value): value is CollectionVal {
@@ -62,7 +62,7 @@ function isCollection(value: Value): value is CollectionVal {
 }
 
 function isDictType(value: Value): value is DeferredDictVal {
-  return value.kind === "defDict";
+  return value.kind === "dict";
 }
 
 function isRangeVal(value: Value): value is RangeVal {
@@ -74,7 +74,7 @@ function isFunctionVal(value: Value): value is FunctionVal {
 }
 
 function isObjectVal(value: Value): value is DeferredObjectVal {
-  return value.kind === "defObject";
+  return value.kind === "object" || value.kind === "deferred_object";
 }
 
 function isModuleVal(value: Value): value is ModuleVal {

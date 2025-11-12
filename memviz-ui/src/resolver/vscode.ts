@@ -7,9 +7,9 @@ import {
 } from "process-def";
 import type {
   KeyValuePair,
-  ObjectVal,
   Value as PythonValue,
   Variables as PythonVariables,
+  ResolvedObjectVal,
 } from "process-def/debugpy";
 import type { Place as GDBPlace } from "process-def/gdb";
 import type { WebviewApi } from "vscode-webview";
@@ -38,7 +38,7 @@ import type {
   TakeAllocEventsReq,
   TakeAllocEventsRes,
 } from "../messages";
-import { deserializePlaces } from "../type";
+import { deserializePlaces } from "../visualization/gdb/type";
 import type { ProcessResolver } from "./resolver";
 
 type ExtractData<T extends { data: unknown }> = T["data"];
@@ -181,7 +181,10 @@ export class VsCodeResolver implements ProcessResolver {
     return res.entries;
   }
 
-  async getObject(id: AddressStr, frameIndex: number): Promise<ObjectVal> {
+  async getObject(
+    id: AddressStr,
+    frameIndex: number,
+  ): Promise<ResolvedObjectVal> {
     if (this.sessionType !== SessionType.Debugpy) {
       throw new Error("getObject is only supported in debugpy sessions");
     }

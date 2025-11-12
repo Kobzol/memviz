@@ -8,11 +8,11 @@ import type {
 } from "process-def";
 import type {
   KeyValuePair,
-  ObjectVal,
   Value as PythonValue,
   Variables as PythonVariables,
+  ResolvedObjectVal,
 } from "process-def/debugpy";
-import type { InternedPlaceList } from "./type";
+import type { InternedPlaceList } from "./visualization/gdb/type";
 
 export type ProcessStoppedEvent = {
   kind: "process-stopped";
@@ -74,7 +74,7 @@ export interface GetStringContentsRes extends Response {
 export interface GetObjectRes extends Response {
   kind: "get-object";
   data: {
-    object: ObjectVal;
+    object: ResolvedObjectVal;
   };
 }
 

@@ -1,9 +1,9 @@
 import type { AddressStr, FrameIndex } from "process-def";
 import type {
   KeyValuePair,
-  ObjectVal,
   Value as PythonValue,
   Variables as PythonVariables,
+  ResolvedObjectVal,
 } from "process-def/debugpy";
 import type { Place } from "process-def/gdb";
 import { MemoryMap } from "../memory-map";
@@ -77,7 +77,10 @@ export class CachingResolver<T extends ProcessResolver>
     );
   }
 
-  async getObject(id: AddressStr, frameIndex: number): Promise<ObjectVal> {
+  async getObject(
+    id: AddressStr,
+    frameIndex: number,
+  ): Promise<ResolvedObjectVal> {
     return await this.inner.getObject(id, frameIndex);
   }
 

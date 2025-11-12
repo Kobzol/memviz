@@ -18,7 +18,7 @@ class Place:
     id: PythonId
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass()
 class BaseVal(ABC):
     id: PythonId
 
@@ -28,34 +28,34 @@ class BaseVal(ABC):
         return self.id == other.id
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass()
 class NoneVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="none")
     size: int
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass()
 class BoolVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="bool")
     size: int
     value: bool
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass()
 class IntVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="int")
     size: int
     value: str
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass()
 class FloatVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="float")
     size: int
     value: str
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass()
 class ComplexVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="complex")
     size: int
@@ -63,55 +63,59 @@ class ComplexVal(BaseVal):
     imaginary_value: str
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass()
 class DeferredStrVal(BaseVal):
-    kind: str = dataclasses.field(init=False, default="defStr")
+    kind: str = dataclasses.field(init=False, default="str")
     size: int
     length: int
+    content: Dict[int, str] = dataclasses.field(default_factory=dict)
 
 
-@dataclasses.dataclass(frozen=True)
-class DeferredListVal(BaseVal):
-    kind: str = dataclasses.field(init=False, default="defList")
-    size: int
+@dataclasses.dataclass()
+class CollectionVal(BaseVal, ABC):
     element_count: int
+    elements: Dict[int, BaseVal] = dataclasses.field(default_factory=dict, kw_only=True)
 
 
-@dataclasses.dataclass(frozen=True)
-class DeferredTupleVal(BaseVal):
-    kind: str = dataclasses.field(init=False, default="defTuple")
+@dataclasses.dataclass()
+class DeferredListVal(CollectionVal):
     size: int
-    element_count: int
+    kind: str = dataclasses.field(init=False, default="list")
 
 
-@dataclasses.dataclass(frozen=True)
-class DeferredSetVal(BaseVal):
-    kind: str = dataclasses.field(init=False, default="defSet")
+@dataclasses.dataclass()
+class DeferredTupleVal(CollectionVal):
     size: int
-    element_count: int
+    kind: str = dataclasses.field(init=False, default="tuple")
 
 
-@dataclasses.dataclass(frozen=True)
-class DeferredFrozenSetVal(BaseVal):
-    kind: str = dataclasses.field(init=False, default="defFrozenSet")
+@dataclasses.dataclass()
+class DeferredSetVal(CollectionVal):
     size: int
-    element_count: int
+    kind: str = dataclasses.field(init=False, default="set")
 
 
-@dataclasses.dataclass(frozen=True)
-class DeferredDictVal(BaseVal):
-    kind: str = dataclasses.field(init=False, default="defDict")
+@dataclasses.dataclass()
+class DeferredFrozenSetVal(CollectionVal):
     size: int
-    pair_count: int
+    kind: str = dataclasses.field(init=False, default="frozenset")
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass()
 class KeyValuePair:
     key: BaseVal
     value: BaseVal
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass()
+class DeferredDictVal(BaseVal):
+    kind: str = dataclasses.field(init=False, default="dict")
+    size: int
+    pair_count: int
+    pairs: Dict[int, KeyValuePair] = dataclasses.field(default_factory=dict)
+
+
+@dataclasses.dataclass()
 class RangeVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="range")
     size: int
@@ -120,7 +124,7 @@ class RangeVal(BaseVal):
     step: str
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass()
 class FunctionVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="function")
     name: str
@@ -129,17 +133,21 @@ class FunctionVal(BaseVal):
     signature: str | None
 
 
-@dataclasses.dataclass(frozen=True)
-class DeferredObjectVal(BaseVal):
-    kind: str = dataclasses.field(init=False, default="defObject")
+@dataclasses.dataclass()
+class ObjectVal(BaseVal, ABC):
+    kind: str
     size: int
     type_name: str
 
 
-@dataclasses.dataclass(frozen=True)
-class ObjectVal(DeferredObjectVal):
+@dataclasses.dataclass()
+class DeferredObjectVal(ObjectVal):
+    kind: str = dataclasses.field(init=False, default="deferred_object")
+
+
+@dataclasses.dataclass()
+class ResolvedObjectVal(ObjectVal):
     kind: str = dataclasses.field(init=False, default="object")
-    size: int
     attributes: Dict[str, BaseVal] = dataclasses.field(default_factory=dict)
     methods: Dict[str, FunctionVal] = dataclasses.field(default_factory=dict)
     data_descriptors: List[str] = dataclasses.field(default_factory=list)
@@ -147,20 +155,20 @@ class ObjectVal(DeferredObjectVal):
     member_descriptors: List[str] = dataclasses.field(default_factory=list)
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass()
 class ModuleVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="module")
     name: str
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass()
 class TypeVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="type")
     name: str
     module: str | None
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass()
 class Variables:
     places: List[Place]
     values: List[BaseVal]
@@ -347,9 +355,43 @@ def get_variables(frame_index: int, debugged_file_path: str) -> Variables:
             value_repr = values[value_id]
         else:
             value_repr = make_value(value)
-            values[value_id] = value_repr
             register_value_access_expr(value_repr.id, name)
 
+        # load one level of nested values
+        if isinstance(value_repr, CollectionVal):
+            value_repr.elements = get_collection_elements(
+                collection_id=value_repr.id,
+                frame_index=frame_index,
+                debugged_file_path=debugged_file_path,
+                start_index=0,
+                element_count=value_repr.element_count,
+            )
+        elif isinstance(value_repr, DeferredDictVal):
+            value_repr.pairs = get_dict_entries(
+                dict_id=value_repr.id,
+                frame_index=frame_index,
+                debugged_file_path=debugged_file_path,
+                start_index=0,
+                pair_count=value_repr.pair_count,
+            )
+        elif isinstance(value_repr, DeferredStrVal):
+            content = get_string_contents(
+                str_id=value_repr.id,
+                frame_index=frame_index,
+                debugged_file_path=debugged_file_path,
+                start_index=0,
+                length=value_repr.length,
+            )
+            value_repr.content = {i: ch for i, ch in enumerate(content)}
+
+        elif isinstance(value_repr, DeferredObjectVal):
+            value_repr = get_object(
+                object_id=value_repr.id,
+                frame_index=frame_index,
+                debugged_file_path=debugged_file_path,
+            )
+
+        values[value_repr.id] = value_repr
         place = Place(
             name=name,
             id=value_repr.id,
@@ -424,11 +466,11 @@ def get_dict_entries(
 def get_string_contents(
     str_id: PythonId,
     frame_index: int,
-    debugged_file: str,
+    debugged_file_path: str,
     start_index: int,
     length: int,
 ) -> str:
-    context = get_context(str_id, frame_index, debugged_file)
+    context = get_context(str_id, frame_index, debugged_file_path)
 
     check_type(context, ("str",))
     validate_slicing_params(context, start_index, length)
@@ -439,8 +481,10 @@ def get_string_contents(
     )
 
 
-def get_object(object_id: PythonId, frame_index: int, debugged_file: str) -> ObjectVal:
-    context = get_context(object_id, frame_index, debugged_file)
+def get_object(
+    object_id: PythonId, frame_index: int, debugged_file_path: str
+) -> ResolvedObjectVal:
+    context = get_context(object_id, frame_index, debugged_file_path)
 
     obj = evaluate_expression(context.value_access_expr, context.frame_info)
     assert obj is not None
@@ -476,7 +520,7 @@ def get_object(object_id: PythonId, frame_index: int, debugged_file: str) -> Obj
                 value_repr.id, f"{context.value_access_expr}.{attr_name}"
             )
 
-    return ObjectVal(
+    return ResolvedObjectVal(
         id=object_id,
         size=get_size(obj),
         type_name=type(obj).__name__,

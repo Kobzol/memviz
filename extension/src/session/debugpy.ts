@@ -6,7 +6,7 @@ import {
 } from "process-def";
 import type {
   KeyValuePair,
-  ObjectVal,
+  ResolvedObjectVal,
   Value,
   Variables,
 } from "process-def/debugpy";
@@ -87,8 +87,8 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
     frameId: FrameId,
     id: AddressStr,
     frameIndex: number,
-  ): Promise<ObjectVal> {
-    const result = await this.pythonEvaluate<ObjectVal>(
+  ): Promise<ResolvedObjectVal> {
+    const result = await this.pythonEvaluate<ResolvedObjectVal>(
       `get_object("${id}", ${frameIndex}, __file__)`,
       frameId,
     );

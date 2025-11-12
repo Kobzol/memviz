@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { type Ref, computed, ref, watch } from "vue";
+import { type Ref, computed, ref } from "vue";
 import ValueComponent from "./value.vue";
 import { appState } from "../../../store";
-import { CollectionVal } from "../../utils/types";
-import { Value } from "process-def/debugpy";
+import { CollectionVal, Value } from "process-def/debugpy";
 import { inject } from "vue";
 
 const props = defineProps<{
@@ -13,46 +12,36 @@ const props = defineProps<{
 
 const frameIndex = inject<null | number>("frameIndex", null);
 
-async function loadData() {
-  if (props.level > 1) {
-    return;
-  }
-  if (frameIndex === null) {
-    console.warn(
-      "No frame index provided for collection, cannot load elements"
-    );
-    return;
-  }
-  if (props.value.element_count === 0) {
-    elements.value = [];
-    return;
-  }
-  resolver.value
-    .getCollectionElements(
-      props.value.id,
-      frameIndex,
-      0,
-      props.value.element_count
-    )
-    .then((loadedElements) => {
-      elements.value = loadedElements;
-    });
-}
+// async function loadData() {
+//   if (frameIndex === null) {
+//     console.warn(
+//       "No frame index provided for collection, cannot load elements"
+//     );
+//     return;
+//   }
+//   if (props.value.element_count === 0) {
+//     elements.value = [];
+//     return;
+//   }
+//   resolver.value
+//     .getCollectionElements(
+//       props.value.id,
+//       frameIndex,
+//       0,
+//       props.value.element_count
+//     )
+//     .then((loadedElements) => {
+//       elements.value = loadedElements;
+//     });
+// }
 
-const resolver = computed(() => appState.value.resolver);
-const elements: Ref<Value[] | null> = ref(null);
-
-watch(
-  () => [props.value, resolver.value],
-  () => loadData(),
-  { immediate: true }
-);
+// const resolver = computed(() => appState.value.resolver);
 </script>
 
 <template>
   <div class="sequence">
     <ValueComponent
-      v-for="(el, index) in elements"
+      v-for="(el, index) in props.value.elements"
       class="value"
       :key="index"
       :value="el"

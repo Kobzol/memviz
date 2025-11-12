@@ -1,9 +1,6 @@
 import type {
   BoolVal,
-  DeferredFrozenSetVal,
-  DeferredListVal,
-  DeferredSetVal,
-  DeferredTupleVal,
+  CollectionVal,
   FloatVal,
   IntVal,
   Value,
@@ -11,21 +8,15 @@ import type {
 
 export type ScalarVal = BoolVal | IntVal | FloatVal;
 
-export type CollectionVal =
-  | DeferredListVal
-  | DeferredTupleVal
-  | DeferredSetVal
-  | DeferredFrozenSetVal;
-
 export function isScalarType(type: Value): type is ScalarVal {
   return type.kind === "bool" || type.kind === "int" || type.kind === "float";
 }
 
 export function isCollectionType(type: Value): type is CollectionVal {
   return (
-    type.kind === "defList" ||
-    type.kind === "defTuple" ||
-    type.kind === "defSet" ||
-    type.kind === "defFrozenSet"
+    type.kind === "list" ||
+    type.kind === "tuple" ||
+    type.kind === "set" ||
+    type.kind === "frozenset"
   );
 }

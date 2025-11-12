@@ -18,7 +18,7 @@ export type {
   TakeAllocEventsReq,
 } from "./messages";
 
-export type { InternedPlaceList } from "./type";
+export type { InternedPlaceList } from "./visualization/gdb/type";
 export { PlaceKind } from "process-def/gdb";
 
 function runMemvizInVsCode(vscode: WebviewApi<unknown>) {

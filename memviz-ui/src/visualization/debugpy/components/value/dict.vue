@@ -12,38 +12,32 @@ const props = defineProps<{
 
 const frameIndex = inject<null | number>("frameIndex", null);
 
-async function loadData() {
-  if (props.level > 1) {
-    return;
-  }
-  if (frameIndex === null) {
-    console.warn("No frame index provided for dict, cannot load elements");
-    return;
-  }
-  if (props.value.pair_count === 0) {
-    keyValuePairs.value = [];
-    return;
-  }
-  resolver.value
-    .getDictEntries(props.value.id, frameIndex, 0, props.value.pair_count)
-    .then((pairs) => {
-      keyValuePairs.value = pairs;
-    });
-}
+// async function loadData() {
+//   if (frameIndex === null) {
+//     console.warn("No frame index provided for dict, cannot load elements");
+//     return;
+//   }
+//   if (props.value.pair_count === 0) {
+//     keyValuePairs.value = [];
+//     return;
+//   }
+//   resolver.value
+//     .getDictEntries(props.value.id, frameIndex, 0, props.value.pair_count)
+//     .then((pairs) => {
+//       keyValuePairs.value = pairs;
+//     });
+// }
 
-const resolver = computed(() => appState.value.resolver);
-const keyValuePairs: Ref<KeyValuePair[] | null> = ref(null);
-
-watch(
-  () => [props.value, resolver.value],
-  () => loadData(),
-  { immediate: true }
-);
+// const resolver = computed(() => appState.value.resolver);
 </script>
 
 <template>
   <div class="dict">
-    <div v-for="(pair, index) in keyValuePairs" :key="index" class="kv-pair">
+    <div
+      v-for="(pair, index) in props.value.pairs"
+      :key="index"
+      class="kv-pair"
+    >
       <ValueComponent class="key" :value="pair.key" :level="props.level + 1" />
       :
       <ValueComponent

@@ -37,41 +37,44 @@ export interface DeferredStrVal extends Value {
   kind: "defStr";
   size: number;
   length: number;
+  content: { [key: number]: string };
 }
 
-export interface DeferredListVal extends Value {
+export interface CollectionVal extends Value {
+  element_count: number;
+  elements: { [key: number]: Value };
+}
+
+export interface DeferredListVal extends CollectionVal {
   kind: "defList";
   size: number;
-  element_count: number;
 }
 
-export interface DeferredTupleVal extends Value {
+export interface DeferredTupleVal extends CollectionVal {
   kind: "defTuple";
   size: number;
-  element_count: number;
 }
 
-export interface DeferredSetVal extends Value {
+export interface DeferredSetVal extends CollectionVal {
   kind: "defSet";
   size: number;
-  element_count: number;
 }
 
-export interface DeferredFrozenSetVal extends Value {
+export interface DeferredFrozenSetVal extends CollectionVal {
   kind: "defFrozenset";
   size: number;
-  element_count: number;
+}
+
+export interface KeyValuePair {
+  key: Value;
+  value: Value;
 }
 
 export interface DeferredDictVal extends Value {
   kind: "defDict";
   size: number;
   pair_count: number;
-}
-
-export interface KeyValuePair {
-  key: Value;
-  value: Value;
+  pairs: { [key: number]: KeyValuePair };
 }
 
 export interface RangeVal extends Value {
@@ -90,16 +93,18 @@ export interface FunctionVal extends Value {
   signature: string | null;
 }
 
-export interface DeferredObjectVal extends Value {
-  kind: "defObject";
+export interface ObjectVal extends Value {
+  kind: string;
   size: number;
   type_name: string;
 }
 
-export interface ObjectVal extends Value {
-  kind: "obj";
-  size: number;
-  type_name: string;
+export interface DeferredObjectVal extends ObjectVal {
+  kind: "deferred_object";
+}
+
+export interface ResolvedObjectVal extends ObjectVal {
+  kind: "object";
   attributes: { [key: string]: Value };
   methods: { [key: string]: FunctionVal };
   data_descriptors: string[];

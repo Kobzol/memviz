@@ -2,7 +2,12 @@
 import { type Ref, computed, ref, watch } from "vue";
 import ValueComponent from "./value.vue";
 import { appState } from "../../../store";
-import { DeferredObjectVal, ObjectVal, Value } from "process-def/debugpy";
+import {
+  DeferredObjectVal,
+  ResolvedObjectVal,
+  ObjectVal,
+  Value,
+} from "process-def/debugpy";
 import { inject } from "vue";
 
 const props = defineProps<{
@@ -12,28 +17,37 @@ const props = defineProps<{
 
 const frameIndex = inject<null | number>("frameIndex", null);
 
-async function loadData() {
-  if (props.level > 1) {
-    return;
-  }
-  if (frameIndex === null) {
-    console.warn(
-      "No frame index provided for collection, cannot load elements"
-    );
-    return;
-  }
-  resolver.value.getObject(props.value.id, frameIndex).then((loadedObject) => {
-    console.log("Loaded object:", loadedObject);
-    object.value = loadedObject;
-  });
+// async function loadData() {
+//   if (frameIndex === null) {
+//     console.warn(
+//       "No frame index provided for collection, cannot load elements"
+//     );
+//     return;
+//   }
+//   resolver.value.getObject(props.value.id, frameIndex).then((loadedObject) => {
+//     console.log("Loaded object:", loadedObject);
+//     object.value = loadedObject;
+//   });
+// }
+
+function isResolvedObject(value: ObjectVal): value is ResolvedObjectVal {
+  return value.kind === "object";
 }
 
-const resolver = computed(() => appState.value.resolver);
-const object: Ref<ObjectVal | null> = ref(null);
+function loadData() {
+  if (isResolvedObject(props.value)) {
+    object.value = props.value;
+  }
+}
+
+// const resolver = computed(() => appState.value.resolver);
+const object: Ref<ResolvedObjectVal | null> = ref(null);
 
 watch(
-  () => [props.value, resolver.value],
-  () => loadData(),
+  () => props.value,
+  () => {
+    loadData();
+  },
   { immediate: true }
 );
 </script>

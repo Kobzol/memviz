@@ -1,9 +1,9 @@
 import type { AddressStr, FrameIndex } from "process-def";
 import type {
   KeyValuePair,
-  ObjectVal,
   Value as PythonValue,
   Variables as PythonVariables,
+  ResolvedObjectVal,
 } from "process-def/debugpy";
 import type { Place as GDBPlace } from "process-def/gdb";
 import type { MemoryAllocEvent } from "../messages";
@@ -33,5 +33,5 @@ export interface ProcessResolver {
     startIndex: number,
     pairCount: number,
   ): Promise<KeyValuePair[]>;
-  getObject(id: AddressStr, frameIndex: number): Promise<ObjectVal>;
+  getObject(id: AddressStr, frameIndex: number): Promise<ResolvedObjectVal>;
 }

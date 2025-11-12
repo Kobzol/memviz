@@ -8,6 +8,7 @@ export type {
   IntVal,
   FloatVal,
   ComplexVal,
+  CollectionVal,
   DeferredStrVal,
   DeferredListVal,
   DeferredTupleVal,
@@ -19,6 +20,7 @@ export type {
   FunctionVal,
   KeyValuePair,
   ObjectVal,
+  ResolvedObjectVal,
   ModuleVal,
   TypeVal,
 } from "./value";

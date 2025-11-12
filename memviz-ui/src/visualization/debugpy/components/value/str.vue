@@ -10,31 +10,33 @@ const props = defineProps<{
 
 const frameIndex = inject<null | number>("frameIndex", null);
 
-async function loadData() {
-  if (frameIndex === null) {
-    console.warn("No frame index provided for str, cannot load elements");
-    return;
-  }
-  if (!props.value.length) {
-    stringContents.value = "";
-    return;
-  }
-  resolver.value
-    .getStringContents(props.value.id, frameIndex, 0, props.value.length)
-    .then((loadedString) => {
-      console.log("Loaded string:", loadedString);
-      stringContents.value = loadedString;
-    });
-}
+// async function loadData() {
+//   if (frameIndex === null) {
+//     console.warn("No frame index provided for str, cannot load elements");
+//     return;
+//   }
+//   if (!props.value.length) {
+//     stringContents.value = "";
+//     return;
+//   }
+//   resolver.value
+//     .getStringContents(props.value.id, frameIndex, 0, props.value.length)
+//     .then((loadedString) => {
+//       console.log("Loaded string:", loadedString);
+//       stringContents.value = loadedString;
+//     });
+// }
 
-const resolver = computed(() => appState.value.resolver);
-const stringContents: Ref<string | null> = ref(null);
-
-watch(
-  () => [props.value, resolver.value],
-  () => loadData(),
-  { immediate: true }
-);
+// const resolver = computed(() => appState.value.resolver);
+const stringContents = computed(() => {
+  if (!props.value.content) {
+    return "";
+  }
+  const keys = Object.keys(props.value.content)
+    .map((k) => parseInt(k))
+    .sort((a, b) => a - b);
+  return keys.map((k) => props.value.content[k]).join("");
+});
 </script>
 
 <template>
