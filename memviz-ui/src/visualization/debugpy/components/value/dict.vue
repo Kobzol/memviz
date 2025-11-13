@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Ref, computed, ref, watch } from "vue";
+import { computed } from "vue";
 import ValueComponent from "./value.vue";
 import { appState } from "../../../store";
 import { DeferredDictVal, KeyValuePair, Value } from "process-def/debugpy";
@@ -12,27 +12,31 @@ const props = defineProps<{
 
 const frameIndex = inject<null | number>("frameIndex", null);
 
-// async function loadData() {
-//   if (frameIndex === null) {
-//     console.warn("No frame index provided for dict, cannot load elements");
-//     return;
-//   }
-//   if (props.value.pair_count === 0) {
-//     keyValuePairs.value = [];
-//     return;
-//   }
-//   resolver.value
-//     .getDictEntries(props.value.id, frameIndex, 0, props.value.pair_count)
-//     .then((pairs) => {
-//       keyValuePairs.value = pairs;
-//     });
-// }
+async function loadData() {
+  if (Object.keys(props.value.pairs).length >= props.value.pair_count) {
+    // empty or already loaded
+    return;
+  }
+  if (frameIndex === null) {
+    console.warn("No frame index provided for dict, cannot load elements");
+    return;
+  }
+  resolver.value
+    .getDictEntries(props.value.id, frameIndex, 0, props.value.pair_count)
+    .then((pairs) => {
+      props.value.pairs = pairs;
+    });
+}
 
-// const resolver = computed(() => appState.value.resolver);
+const resolver = computed(() => appState.value.resolver);
+
+async function onClick() {
+  await loadData();
+}
 </script>
 
 <template>
-  <div class="dict">
+  <div class="dict" @click="onClick">
     <div
       v-for="(pair, index) in props.value.pairs"
       :key="index"

@@ -2,51 +2,49 @@
 import { type Ref, computed, ref, watch } from "vue";
 import ValueComponent from "./value.vue";
 import { appState } from "../../../store";
-import {
-  DeferredObjectVal,
-  ResolvedObjectVal,
-  ObjectVal,
-  Value,
-} from "process-def/debugpy";
+import { ResolvedObjectVal, ObjectVal } from "process-def/debugpy";
 import { inject } from "vue";
 
 const props = defineProps<{
-  value: DeferredObjectVal;
+  value: ObjectVal;
   level: number;
 }>();
 
 const frameIndex = inject<null | number>("frameIndex", null);
 
-// async function loadData() {
-//   if (frameIndex === null) {
-//     console.warn(
-//       "No frame index provided for collection, cannot load elements"
-//     );
-//     return;
-//   }
-//   resolver.value.getObject(props.value.id, frameIndex).then((loadedObject) => {
-//     console.log("Loaded object:", loadedObject);
-//     object.value = loadedObject;
-//   });
-// }
+async function loadData() {
+  if (isResolvedObject(props.value)) {
+    // already loaded
+    return;
+  }
+  if (frameIndex === null) {
+    console.warn(
+      "No frame index provided for collection, cannot load elements"
+    );
+    return;
+  }
+  resolver.value.getObject(props.value.id, frameIndex).then((loadedObject) => {
+    object.value = loadedObject;
+  });
+}
 
 function isResolvedObject(value: ObjectVal): value is ResolvedObjectVal {
   return value.kind === "object";
 }
 
-function loadData() {
+function checkIfAlreadyResolved() {
   if (isResolvedObject(props.value)) {
     object.value = props.value;
   }
 }
 
-// const resolver = computed(() => appState.value.resolver);
+const resolver = computed(() => appState.value.resolver);
 const object: Ref<ResolvedObjectVal | null> = ref(null);
 
 watch(
   () => props.value,
   () => {
-    loadData();
+    checkIfAlreadyResolved();
   },
   { immediate: true }
 );
@@ -54,7 +52,6 @@ watch(
 
 <template>
   <div class="object">
-    obj test
     <div class="methods" v-if="object">
       <div v-for="(value, key) in object.methods" :key="key">
         <span class="string">{{ object.type_name }}."{{ key }}": </span>

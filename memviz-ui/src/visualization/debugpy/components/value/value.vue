@@ -122,7 +122,6 @@ function isTypeVal(value: Value): value is TypeVal {
       :value="value as ModuleVal"
     />
     <TypeComponent v-else-if="isTypeVal(value)" :value="value as TypeVal" />
-    <div>&lt;value of type {{ value.kind }}&gt;</div>
   </div>
 </template>
 
