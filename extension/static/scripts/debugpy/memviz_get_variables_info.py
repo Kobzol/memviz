@@ -9,6 +9,7 @@ from gc import get_referents
 
 
 PythonId = str
+FrameIndex = int
 ValueAccessExpr = str
 
 
@@ -180,7 +181,7 @@ class EvaluationContext:
     frame_info: inspect.FrameInfo
 
 
-id_to_access_expr: Dict[PythonId, ValueAccessExpr] = {}
+id_to_access_expr: Dict[Tuple[FrameIndex, PythonId], ValueAccessExpr] = {}
 
 
 def get_size(val: Any) -> int:
@@ -265,7 +266,9 @@ def make_value(val: Any) -> BaseVal:
         )
 
 
-def get_frame_by_index(frame_index: int, debugged_file_path: str) -> inspect.FrameInfo:
+def get_frame_by_index(
+    frame_index: FrameIndex, debugged_file_path: str
+) -> inspect.FrameInfo:
     # get topmost debugged frame info
     stack = inspect.stack()
     topmost_debugged_frame = None
@@ -287,22 +290,24 @@ def evaluate_expression(expression: str, frame_info: inspect.FrameInfo) -> Any:
     return eval(expression, frame_info.frame.f_globals, frame_info.frame.f_locals)
 
 
-def register_value_access_expr(python_id: PythonId, access_expr: str) -> None:
+def register_value_access_expr(
+    frame_index: FrameIndex, python_id: PythonId, access_expr: str
+) -> None:
     # only add if not already present to keep the first (likely shortest) expression
-    if python_id not in id_to_access_expr:
-        id_to_access_expr[python_id] = access_expr
+    if (frame_index, python_id) not in id_to_access_expr:
+        id_to_access_expr[(frame_index, python_id)] = access_expr
 
 
 def get_context(
-    value_id: PythonId, frame_index: int, debugged_file_path: str
+    value_id: PythonId, frame_index: FrameIndex, debugged_file_path: str
 ) -> EvaluationContext:
-    if value_id not in id_to_access_expr:
-        raise ValueError(f"Value with id {value_id} not found in saved values.")
-    access_expr = id_to_access_expr[value_id]
+    if (frame_index, value_id) not in id_to_access_expr:
+        raise ValueError(
+            f"Value with id {value_id} not found in saved values for frame {frame_index}."
+        )
+    access_expr = id_to_access_expr[(frame_index, value_id)]
 
     frame_info = get_frame_by_index(frame_index, debugged_file_path)
-    if frame_info is None:
-        raise ValueError(f"Could not find frame for file {debugged_file_path}")
 
     return EvaluationContext(access_expr, frame_info)
 
@@ -338,7 +343,7 @@ def validate_slicing_params(
     return collection_length
 
 
-def get_variables(frame_index: int, debugged_file_path: str) -> Variables:
+def get_variables(frame_index: FrameIndex, debugged_file_path: str) -> Variables:
     frame_info = get_frame_by_index(frame_index, debugged_file_path)
     if frame_info is None:
         raise ValueError(f"Could not find frame for file {debugged_file_path}")
@@ -355,26 +360,28 @@ def get_variables(frame_index: int, debugged_file_path: str) -> Variables:
             value_repr = values[value_id]
         else:
             value_repr = make_value(value)
-            register_value_access_expr(value_repr.id, name)
+            register_value_access_expr(frame_index, value_repr.id, name)
 
         # load one level of nested values
-        if isinstance(value_repr, CollectionVal):
-            value_repr.elements = get_collection_elements(
+        if isinstance(value_repr, CollectionVal) and value_repr.element_count > 0:
+            elements = get_collection_elements(
                 collection_id=value_repr.id,
                 frame_index=frame_index,
                 debugged_file_path=debugged_file_path,
                 start_index=0,
                 element_count=value_repr.element_count,
             )
-        elif isinstance(value_repr, DeferredDictVal):
-            value_repr.pairs = get_dict_entries(
+            value_repr.elements = {i: elem for i, elem in enumerate(elements)}
+        elif isinstance(value_repr, DeferredDictVal) and value_repr.pair_count > 0:
+            pairs = get_dict_entries(
                 dict_id=value_repr.id,
                 frame_index=frame_index,
                 debugged_file_path=debugged_file_path,
                 start_index=0,
                 pair_count=value_repr.pair_count,
             )
-        elif isinstance(value_repr, DeferredStrVal):
+            value_repr.pairs = {i: pair for i, pair in enumerate(pairs)}
+        elif isinstance(value_repr, DeferredStrVal) and value_repr.length > 0:
             content = get_string_contents(
                 str_id=value_repr.id,
                 frame_index=frame_index,
@@ -403,7 +410,7 @@ def get_variables(frame_index: int, debugged_file_path: str) -> Variables:
 
 def get_collection_elements(
     collection_id: PythonId,
-    frame_index: int,
+    frame_index: FrameIndex,
     debugged_file_path: str,
     start_index: int,
     element_count: int,
@@ -428,13 +435,13 @@ def get_collection_elements(
         element_access_expr = f"{value_access_expr}[{start_index + i}]"
         value_repr = make_value(element)
         elements.append(value_repr)
-        register_value_access_expr(value_repr.id, element_access_expr)
+        register_value_access_expr(frame_index, value_repr.id, element_access_expr)
     return elements
 
 
 def get_dict_entries(
     dict_id: PythonId,
-    frame_index: int,
+    frame_index: FrameIndex,
     debugged_file_path: str,
     start_index: int,
     pair_count: int,
@@ -455,17 +462,19 @@ def get_dict_entries(
         value_repr = make_value(val)
         entries.append(KeyValuePair(key_repr, value_repr))
         register_value_access_expr(
-            key_repr.id, f"list({context.value_access_expr}.keys())[{start_index + i}]"
+            frame_index,
+            key_repr.id,
+            f"list({context.value_access_expr}.keys())[{start_index + i}]",
         )
         register_value_access_expr(
-            value_repr.id, f"{context.value_access_expr}[{repr(key)}]"
+            frame_index, value_repr.id, f"{context.value_access_expr}[{repr(key)}]"
         )
     return entries
 
 
 def get_string_contents(
     str_id: PythonId,
-    frame_index: int,
+    frame_index: FrameIndex,
     debugged_file_path: str,
     start_index: int,
     length: int,
@@ -482,18 +491,22 @@ def get_string_contents(
 
 
 def get_object(
-    object_id: PythonId, frame_index: int, debugged_file_path: str
+    object_id: PythonId, frame_index: FrameIndex, debugged_file_path: str
 ) -> ResolvedObjectVal:
     context = get_context(object_id, frame_index, debugged_file_path)
-
     obj = evaluate_expression(context.value_access_expr, context.frame_info)
-    assert obj is not None
+
+    if obj is None:
+        raise ValueError(
+            f"Object {context.value_access_expr} could not be resolved: got None"
+        )
 
     attributes = {}
     methods = {}
-    data_descriptors = []
     getset_descriptors = []
     member_descriptors = []
+    data_descriptors = []
+
     for attr_name in dir(obj):
         try:
             # passive inspection to avoid resolving descriptors
@@ -517,7 +530,7 @@ def get_object(
                 attributes[attr_name] = value_repr
 
             register_value_access_expr(
-                value_repr.id, f"{context.value_access_expr}.{attr_name}"
+                frame_index, value_repr.id, f"{context.value_access_expr}.{attr_name}"
             )
 
     return ResolvedObjectVal(
