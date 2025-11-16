@@ -7,7 +7,6 @@ import { inject } from "vue";
 
 const props = defineProps<{
   value: ObjectVal;
-  level: number;
 }>();
 
 const frameIndex = inject<null | number>("frameIndex", null);
@@ -48,61 +47,104 @@ watch(
   },
   { immediate: true }
 );
+
+function onClick() {
+  loadData();
+}
 </script>
 
 <template>
   <div class="object">
-    <div class="methods" v-if="object">
-      <div v-for="(value, key) in object.methods" :key="key">
-        <span class="string">{{ object.type_name }}."{{ key }}": </span>
-        <ValueComponent :value="value" :level="props.level + 1" />
-      </div>
+    <div v-if="isResolvedObject(value)" class="resolved-object">
+      <table>
+        <!-- Methods -->
+        <tbody v-if="Object.keys(value.methods).length > 0">
+          <tr>
+            <th colspan="2">Methods</th>
+          </tr>
+          <tr v-for="(val, key) in value.methods" :key="key">
+            <td class="string">{{ value.type_name }}."{{ key }}":</td>
+            <td>
+              <ValueComponent :value="val" />
+            </td>
+          </tr>
+        </tbody>
+
+        <!-- Attributes -->
+        <tbody v-if="Object.keys(value.attributes).length > 0">
+          <tr>
+            <th colspan="2">Attributes</th>
+          </tr>
+          <tr v-for="(val, key) in value.attributes" :key="key">
+            <td class="string">{{ key }}:</td>
+            <td>
+              <ValueComponent :value="val" />
+            </td>
+          </tr>
+        </tbody>
+
+        <!-- Descriptors -->
+        <tbody v-if="value.data_descriptors.length > 0">
+          <tr>
+            <th colspan="2">Data Descriptors</th>
+          </tr>
+          <tr v-for="key in value.data_descriptors" :key="key">
+            <td class="string" colspan="2">{{ key }}</td>
+          </tr>
+        </tbody>
+        <tbody v-if="value.getset_descriptors.length > 0">
+          <tr>
+            <th colspan="2">Getset Descriptors</th>
+          </tr>
+          <tr v-for="key in value.getset_descriptors" :key="key">
+            <td class="string" colspan="2">{{ key }}</td>
+          </tr>
+        </tbody>
+        <tbody v-if="value.member_descriptors.length > 0">
+          <tr colspan="2">
+            <th colspan="2">Member Descriptors</th>
+          </tr>
+          <tr v-for="key in value.member_descriptors" :key="key">
+            <td class="string" colspan="2">{{ key }}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-    <div class="attributes" v-if="object">
-      <div v-for="(value, key) in object.attributes" :key="key">
-        <span class="string">{{ key }}: </span>
-        <ValueComponent :value="value" :level="props.level + 1" />
-      </div>
-    </div>
-    <div class="data-descriptors" v-if="object">
-      <div v-for="key in object.data_descriptors" :key="key">
-        <span class="string">{{ key }} </span>
-      </div>
-    </div>
-    <div class="getset-descriptors" v-if="object">
-      <div v-for="key in object.getset_descriptors" :key="key">
-        <span class="string">{{ key }}</span>
-      </div>
-    </div>
-    <div class="member-descriptors" v-if="object">
-      <div v-for="key in object.member_descriptors" :key="key">
-        <span class="string">{{ key }}</span>
-      </div>
-    </div>
+    <div v-else @click="onClick" class="not-resolved">...</div>
   </div>
 </template>
 
 <style scoped lang="scss">
 .object {
-  display: flex;
-  justify-content: end;
-  padding: 0px 5px;
-  flex-direction: column;
-
-  &:hover {
-    cursor: pointer;
+  .not-resolved {
+    &:hover {
+      cursor: pointer;
+    }
   }
 }
 
-.value {
-  margin-left: 5px;
+.resolved-object {
+  display: flex;
+  justify-content: start;
+  flex-direction: column;
 }
 
-.string {
-  padding: 1px 0;
-}
+table {
+  border-collapse: collapse;
+  border: 3px solid black;
 
-.methods {
-  background-color: bisque;
+  margin: 5px 5px 0 0;
+
+  th {
+    background-color: #bca9e1;
+    text-align: left;
+    font-weight: normal;
+    padding-left: 5px;
+  }
+
+  td {
+    border-bottom: 1px solid #3f3f3f;
+    padding: 2px 5px;
+  }
 }
 </style>

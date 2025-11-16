@@ -3,7 +3,7 @@ import None from "./none.vue";
 import Scalar from "./scalar.vue";
 import Complex from "./complex.vue";
 import Str from "./str.vue";
-import Collection from "./collection.vue";
+import Collection from "./collection/collection.vue";
 import Dict from "./dict.vue";
 import Range from "./range.vue";
 import FunctionComponent from "./function.vue";
@@ -34,10 +34,6 @@ const props = defineProps({
   value: {
     type: Object as PropType<Value>,
     required: true,
-  },
-  level: {
-    type: Number,
-    default: 0,
   },
 });
 
@@ -84,10 +80,23 @@ function isModuleVal(value: Value): value is ModuleVal {
 function isTypeVal(value: Value): value is TypeVal {
   return value.kind === "type";
 }
+function getValueTypeTitle(value: Value): string {
+  if (isObjectVal(value)) {
+    return value.type_name;
+  }
+  if (isCollection(value)) {
+    return `${value.kind}[${value.element_count}]`;
+  }
+  if (isDictType(value)) {
+    return `${value.kind}[${value.pair_count}]`;
+  }
+  return value.kind;
+}
 </script>
 
 <template>
-  <div class="value" :style="{ marginLeft: `${level * 30}px` }">
+  <div class="value">
+    <div class="type-name">{{ getValueTypeTitle(value) }}</div>
     <None v-if="isNone(value)" :value="value as NoneVal" />
     <Scalar v-else-if="isScalar(value)" :value="value as ScalarVal" />
     <Complex v-else-if="isComplex(value)" :value="value as ComplexVal" />
@@ -95,27 +104,16 @@ function isTypeVal(value: Value): value is TypeVal {
     <Collection
       v-else-if="isCollection(value)"
       :value="value as CollectionVal"
-      :level="level"
     />
-    <Dict
-      v-else-if="isDictType(value)"
-      :value="value as DeferredDictVal"
-      :level="level"
-    />
-    <Range
-      v-else-if="isRangeVal(value)"
-      :value="value as RangeVal"
-      :level="level"
-    />
+    <Dict v-else-if="isDictType(value)" :value="value as DeferredDictVal" />
+    <Range v-else-if="isRangeVal(value)" :value="value as RangeVal" />
     <FunctionComponent
       v-else-if="isFunctionVal(value)"
       :value="value as FunctionVal"
-      :level="level"
     />
     <ObjectComponent
       v-else-if="isObjectVal(value)"
       :value="value as DeferredObjectVal"
-      :level="level"
     />
     <ModuleComponent
       v-else-if="isModuleVal(value)"
@@ -127,6 +125,12 @@ function isTypeVal(value: Value): value is TypeVal {
 
 <style scoped lang="scss">
 .value {
-  border: 1px solid #a4c5ea;
+  display: flex;
+  flex-direction: column;
+}
+
+.type-name {
+  font-size: 0.9em;
+  color: #3f3f3f;
 }
 </style>

@@ -2,12 +2,11 @@
 import { computed } from "vue";
 import ValueComponent from "./value.vue";
 import { appState } from "../../../store";
-import { DeferredDictVal, KeyValuePair, Value } from "process-def/debugpy";
+import { DeferredDictVal } from "process-def/debugpy";
 import { inject } from "vue";
 
 const props = defineProps<{
   value: DeferredDictVal;
-  level: number;
 }>();
 
 const frameIndex = inject<null | number>("frameIndex", null);
@@ -33,45 +32,83 @@ const resolver = computed(() => appState.value.resolver);
 async function onClick() {
   await loadData();
 }
+
+function hasResolvedPairs() {
+  return Object.keys(props.value.pairs).length > 0;
+}
 </script>
 
 <template>
-  <div class="dict" @click="onClick">
-    <div
-      v-for="(pair, index) in props.value.pairs"
-      :key="index"
-      class="kv-pair"
-    >
-      <ValueComponent class="key" :value="pair.key" :level="props.level + 1" />
-      :
-      <ValueComponent
-        class="value"
-        :value="pair.value"
-        :level="props.level + 1"
-      />
+  <div v-if="value.pair_count > 0" class="dict">
+    <div v-if="hasResolvedPairs()">
+      <div class="pairs">
+        <table>
+          <tr v-for="(pair, index) in value.pairs" :key="index">
+            <td class="key">
+              <ValueComponent :value="pair.key" />
+            </td>
+            <td>
+              <div class="value-container">
+                <div class="value">
+                  <ValueComponent :value="pair.value" />
+                </div>
+                <div class="index">{{ index }}</div>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
     </div>
+    <div v-else @click="onClick" class="not-resolved">...</div>
   </div>
 </template>
 
 <style scoped lang="scss">
-.dict {
-  display: flex;
-  justify-content: end;
-  padding: 0px 5px;
-  flex-direction: column;
+table {
+  border-collapse: collapse;
+  border: 3px solid black;
 
-  &:hover {
-    cursor: pointer;
+  margin: 5px 5px 0 0;
+
+  td {
+    border: 1px solid #858585;
   }
 }
 
-.kv-pair {
-  margin: 2px 0 5px;
-  display: flex;
-  flex-direction: row;
+.dict {
+  .not-resolved {
+    &:hover {
+      cursor: pointer;
+    }
+  }
 }
+.pairs {
+  display: flex;
+  justify-content: start;
+  flex-direction: column;
 
-.string {
-  padding: 1px 0;
+  .key {
+    background-color: #dae4ef;
+    padding-left: 5px;
+    vertical-align: top;
+  }
+
+  .value-container {
+    display: flex;
+    flex-direction: row;
+    justify-items: center;
+    padding-left: 5px;
+
+    .value {
+      flex: 1;
+    }
+
+    .index {
+      flex: none;
+      font-size: 0.9em;
+      color: #3f3f3f;
+      text-align: right;
+    }
+  }
 }
 </style>

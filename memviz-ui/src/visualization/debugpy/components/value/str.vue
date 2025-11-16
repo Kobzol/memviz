@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { type Ref, computed, ref, watch } from "vue";
+import { computed } from "vue";
 import { appState } from "../../../store";
-import { DeferredStrVal, Value } from "process-def/debugpy";
+import { DeferredStrVal } from "process-def/debugpy";
 import { inject } from "vue";
+import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 
 const props = defineProps<{
   value: DeferredStrVal;
@@ -10,24 +11,27 @@ const props = defineProps<{
 
 const frameIndex = inject<null | number>("frameIndex", null);
 
-// async function loadData() {
-//   if (frameIndex === null) {
-//     console.warn("No frame index provided for str, cannot load elements");
-//     return;
-//   }
-//   if (!props.value.length) {
-//     stringContents.value = "";
-//     return;
-//   }
-//   resolver.value
-//     .getStringContents(props.value.id, frameIndex, 0, props.value.length)
-//     .then((loadedString) => {
-//       console.log("Loaded string:", loadedString);
-//       stringContents.value = loadedString;
-//     });
-// }
+async function loadData() {
+  if (frameIndex === null) {
+    console.warn("No frame index provided for str, cannot load elements");
+    return;
+  }
+  if (!props.value.length) {
+    return;
+  }
+  const start = 0;
+  const length = props.value.length;
+  resolver.value
+    .getStringContents(props.value.id, frameIndex, start, length)
+    .then((resStr) => {
+      for (let i = 0; i < resStr.length; i++) {
+        props.value.content[start + i] = resStr[i];
+      }
+    });
+}
 
-// const resolver = computed(() => appState.value.resolver);
+const resolver = computed(() => appState.value.resolver);
+
 const stringContents = computed(() => {
   if (!props.value.content) {
     return "";
@@ -37,21 +41,35 @@ const stringContents = computed(() => {
     .sort((a, b) => a - b);
   return keys.map((k) => props.value.content[k]).join("");
 });
+
+const tooltip = computed(() => {
+  return `Id: <b>${props.value.id}</b>`;
+});
+
+function onClick() {
+  loadData();
+}
+
+function hasResolvedContent() {
+  return Object.keys(props.value.content).length >= props.value.length;
+}
 </script>
 
 <template>
-  <div class="str">
-    <code v-if="stringContents" class="string">
-      {{ stringContents }}
-    </code>
-  </div>
+  <TooltipContributor :tooltip="tooltip">
+    <div class="str">
+      <code v-if="hasResolvedContent()" class="string">
+        {{ stringContents }}
+      </code>
+      <code v-else class="string" @click="onClick"> ... </code>
+    </div>
+  </TooltipContributor>
 </template>
 
 <style scoped lang="scss">
 .str {
   display: flex;
-  justify-content: end;
-  padding: 0px 5px;
+  justify-content: start;
   font-family: monospace;
   font-size: 1.2em;
 

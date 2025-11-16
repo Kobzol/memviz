@@ -1,24 +1,31 @@
 <script setup lang="ts">
 import { ModuleVal } from "process-def/debugpy";
+import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
+import { computed } from "vue";
 
 const props = defineProps<{
   value: ModuleVal;
 }>();
+
+const tooltip = computed(() => {
+  return `Id: <b>${props.value.id}</b>`;
+});
 </script>
 
 <template>
-  <div class="module">
-    <code class="string">
-      {{ value.name }}
-    </code>
-  </div>
+  <TooltipContributor :tooltip="tooltip">
+    <div class="module">
+      <code class="string">
+        {{ value.name }}
+      </code>
+    </div>
+  </TooltipContributor>
 </template>
 
 <style scoped lang="scss">
 .module {
   display: flex;
-  justify-content: end;
-  padding: 0px 5px;
+  justify-content: start;
   font-family: monospace;
   font-size: 1.2em;
 }

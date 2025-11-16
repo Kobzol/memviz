@@ -23,12 +23,16 @@ const tooltip = computed(() => {
 
 <template>
   <div class="place">
-    <code
-      ><TooltipContributor :tooltip="tooltip">{{
-        props.place.name
-      }}</TooltipContributor></code
-    >
-    <ValueComponent v-if="value" :value="value" />
+    <div class="place-name">
+      <code
+        ><TooltipContributor :tooltip="tooltip">{{
+          props.place.name
+        }}</TooltipContributor></code
+      >
+    </div>
+    <div class="place-value">
+      <ValueComponent v-if="value" :value="value" />
+    </div>
   </div>
 </template>
 
@@ -39,9 +43,27 @@ const tooltip = computed(() => {
 
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
 
-  border: 1px solid #000000;
+  .place-name {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    word-break: break-all;
+
+    code {
+      border: 3px solid #000000;
+      padding: 3px;
+      margin: 5px 5px 0 0;
+      font-size: 1.2em;
+      background-color: #a4c5ea;
+      border-radius: 5px;
+    }
+  }
+
+  .place-value {
+    flex: 3;
+    min-width: 0;
+    word-break: break-all;
+  }
 }
 </style>

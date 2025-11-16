@@ -89,9 +89,9 @@ watch(
       </div>
     </TooltipContributor>
     <!-- TODO: v-show should be used instead of v-if to avoid destroying child state -->
-    <div v-if="expanded" class="inner">
+    <div v-if="expanded">
       <div v-if="places === null">Loading...</div>
-      <div v-if="places !== null">
+      <div v-if="places !== null" class="inner">
         <NamedPlace
           class="place"
           v-for="place in places"
@@ -141,5 +141,8 @@ watch(
   background: #ffffff;
   border-top: solid 1px #000000;
   padding: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 </style>

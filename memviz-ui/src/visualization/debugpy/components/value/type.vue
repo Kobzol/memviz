@@ -7,7 +7,7 @@ const props = defineProps<{
 }>();
 
 const tooltip = computed(() => {
-  return `Type <b>${props.value.module}.${props.value.name}</b>`;
+  return `Type <b>${props.value.module}.${props.value.name}</b>, Id: <b>${props.value.id}</b>`;
 });
 </script>
 
@@ -24,8 +24,7 @@ const tooltip = computed(() => {
 <style scoped lang="scss">
 .scalar {
   display: flex;
-  justify-content: end;
-  padding: 0px 5px;
+  justify-content: start;
   font-family: monospace;
   font-size: 1.2em;
 }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ComplexVal } from "process-def/debugpy";
+import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 import { computed } from "vue";
 
 const props = defineProps<{
@@ -11,21 +12,25 @@ const displayValue = computed(() => {
   const imaginary_value = Number(props.value.imaginary_value);
   return `${real_value} + ${imaginary_value}j`;
 });
+const tooltip = computed(() => {
+  return `Id: <b>${props.value.id}</b>`;
+});
 </script>
 
 <template>
-  <div class="complex">
-    <code class="string">
-      {{ displayValue }}
-    </code>
-  </div>
+  <TooltipContributor :tooltip="tooltip">
+    <div class="complex">
+      <code class="string">
+        {{ displayValue }}
+      </code>
+    </div>
+  </TooltipContributor>
 </template>
 
 <style scoped lang="scss">
 .complex {
   display: flex;
-  justify-content: end;
-  padding: 0px 5px;
+  justify-content: start;
   font-family: monospace;
   font-size: 1.2em;
 

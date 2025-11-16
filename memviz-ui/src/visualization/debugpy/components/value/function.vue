@@ -1,26 +1,45 @@
 <script setup lang="ts">
 import { FunctionVal } from "process-def/debugpy";
+import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
+import { computed } from "vue";
 
 const props = defineProps<{
   value: FunctionVal;
-  level: number;
 }>();
+
+const tooltip = computed(() => {
+  let escapedQualifiedName = props.value.qualified_name
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  let result = `Function <b>${escapedQualifiedName}</b>`;
+
+  if (props.value.module) {
+    result += ` in module <b>${props.value.module}</b>`;
+  }
+
+  result += `, Id: <b>${props.value.id}</b>`;
+
+  if (props.value.signature) {
+    result += `<b><pre>${props.value.name}${props.value.signature}</pre></b>`;
+  }
+
+  return result;
+});
 </script>
 
 <template>
-  <div class="function">
-    <span class="string">Function: {{ props.value.name }}</span>
-    <span class="string">Qualified Name: {{ props.value.qualified_name }}</span>
-    <span class="string">Module: {{ props.value.module }}</span>
-    <span class="string">Signature: {{ props.value.signature }}</span>
-  </div>
+  <TooltipContributor :tooltip="tooltip"
+    ><div class="function">
+      <span class="string">{{ value.name }}</span>
+    </div>
+  </TooltipContributor>
 </template>
 
 <style scoped lang="scss">
 .function {
   display: flex;
-  justify-content: end;
-  padding: 0px 5px;
+  justify-content: start;
   flex-direction: column;
 
   &:hover {
