@@ -31,7 +31,7 @@ const tooltip = computed(() => {
 <template>
   <TooltipContributor :tooltip="tooltip"
     ><div class="function">
-      <span class="string">{{ value.name }}</span>
+      <span class="string">{{ value.qualified_name }}</span>
     </div>
   </TooltipContributor>
 </template>

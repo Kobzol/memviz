@@ -510,19 +510,20 @@ def get_object(
     for attr_name in dir(obj):
         try:
             # passive inspection to avoid resolving descriptors
-            attr_value = inspect.getattr_static(obj, attr_name)
+            static_attr_value = inspect.getattr_static(obj, attr_name)
         except Exception:
             continue
 
-        if inspect.isdatadescriptor(attr_value):
+        if inspect.isdatadescriptor(static_attr_value):
             data_descriptors.append(attr_name)
-        elif inspect.isgetsetdescriptor(attr_value):
+        elif inspect.isgetsetdescriptor(static_attr_value):
             getset_descriptors.append(attr_name)
-        elif inspect.ismemberdescriptor(attr_value):
+        elif inspect.ismemberdescriptor(static_attr_value):
             member_descriptors.append(attr_name)
         else:
+            # need to get the attribute value dynamically to check if it's a method
+            attr_value = getattr(obj, attr_name)
             value_repr = make_value(attr_value)
-
             if inspect.ismethod(attr_value):
                 assert isinstance(value_repr, FunctionVal)
                 methods[attr_name] = value_repr

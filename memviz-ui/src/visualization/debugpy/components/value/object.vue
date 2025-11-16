@@ -63,7 +63,7 @@ function onClick() {
             <th colspan="2">Methods</th>
           </tr>
           <tr v-for="(val, key) in value.methods" :key="key">
-            <td class="string">{{ value.type_name }}."{{ key }}":</td>
+            <td class="string">{{ key }}</td>
             <td>
               <ValueComponent :value="val" />
             </td>
@@ -76,7 +76,7 @@ function onClick() {
             <th colspan="2">Attributes</th>
           </tr>
           <tr v-for="(val, key) in value.attributes" :key="key">
-            <td class="string">{{ key }}:</td>
+            <td class="string">{{ key }}</td>
             <td>
               <ValueComponent :value="val" />
             </td>
