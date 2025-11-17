@@ -12,9 +12,12 @@ const props = defineProps<{
 const tooltip = computed(() => {
   const type = props.value?.kind;
   let title = "";
-  title += `Place <b>${props.place.name}</b>`;
-  if (type) {
-    title += ` of type <b>${type}</b>`;
+  if (props.place.is_return_value) return "Return values dictionary";
+  else {
+    title += `Place <b>${props.place.name}</b>`;
+    if (type) {
+      title += ` of type <b>${type}</b>`;
+    }
   }
   title += `, id <b>${props.place.id}</b>`;
   return title;
@@ -24,7 +27,8 @@ const tooltip = computed(() => {
 <template>
   <div class="place">
     <div class="place-name">
-      <code
+      <code v-if="place.is_return_value" class="ret"> (return) </code>
+      <code v-else
         ><TooltipContributor :tooltip="tooltip">{{
           props.place.name
         }}</TooltipContributor></code
@@ -57,6 +61,10 @@ const tooltip = computed(() => {
       font-size: 1.2em;
       background-color: #a4c5ea;
       border-radius: 5px;
+
+      &.ret {
+        background-color: #ddd4f0;
+      }
     }
   }
 

@@ -28,6 +28,7 @@ export type {
 export interface Place {
   name: string;
   id: AddressStr;
+  is_return_value: boolean;
 }
 
 export interface Variables {

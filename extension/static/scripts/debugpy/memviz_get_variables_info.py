@@ -13,10 +13,14 @@ FrameIndex = int
 ValueAccessExpr = str
 
 
+RETURN_VALUES_DICT_NAME = "__pydevd_ret_val_dict"
+
+
 @dataclasses.dataclass(frozen=True)
 class Place:
     name: str
     id: PythonId
+    is_return_value: bool = False
 
 
 @dataclasses.dataclass()
@@ -403,9 +407,11 @@ def get_variables(frame_index: FrameIndex, debugged_file_path: str) -> Variables
             )
 
         values[value_repr.id] = value_repr
+
         place = Place(
             name=name,
             id=value_repr.id,
+            is_return_value=(name == RETURN_VALUES_DICT_NAME),
         )
         places.append(place)
 
