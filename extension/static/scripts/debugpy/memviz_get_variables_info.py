@@ -249,14 +249,18 @@ def make_value(val: Any) -> BaseVal:
             step=str(val.step),
         )
     elif inspect.isfunction(val) or inspect.ismethod(val):
+        try:
+            signature = inspect.signature(val)
+            signature = signature.format(max_width=50)
+        except Exception:
+            signature = None
+
         return FunctionVal(
             id=val_id,
             name=val.__name__,
             qualified_name=val.__qualname__,
             module=val.__module__,
-            signature=(
-                str(inspect.signature(val)) if hasattr(inspect, "signature") else None
-            ),
+            signature=signature,
         )
     else:
         return DeferredObjectVal(
