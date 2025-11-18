@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Place, Value } from "process-def/debugpy";
+import { Place, PlaceKind, Value } from "process-def/debugpy";
 import { computed } from "vue";
 import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 import ValueComponent from "../value/value.vue";
@@ -12,7 +12,7 @@ const props = defineProps<{
 const tooltip = computed(() => {
   const type = props.value?.kind;
   let title = "";
-  if (props.place.is_return_value) return "Return values dictionary";
+  if (props.place.kind === PlaceKind.Return) return "Return values dictionary";
   else {
     title += `Place <b>${props.place.name}</b>`;
     if (type) {
@@ -27,8 +27,12 @@ const tooltip = computed(() => {
 <template>
   <div class="place">
     <div class="place-name">
-      <code v-if="place.is_return_value" class="ret"> (return) </code>
-      <code v-else
+      <code v-if="place.kind === PlaceKind.Return" class="ret"> (return) </code>
+      <code
+        v-else
+        :class="{
+          param: place.kind === PlaceKind.Parameter,
+        }"
         ><TooltipContributor :tooltip="tooltip">{{
           props.place.name
         }}</TooltipContributor></code
@@ -63,7 +67,11 @@ const tooltip = computed(() => {
       border-radius: 5px;
 
       &.ret {
-        background-color: #ddd4f0;
+        background-color: #9de19a;
+      }
+
+      &.param {
+        background-color: #bca9e1;
       }
     }
   }

@@ -25,10 +25,16 @@ export type {
   TypeVal,
 } from "./value";
 
+export enum PlaceKind {
+  Variable = "v",
+  Parameter = "p",
+  Return = "r",
+}
+
 export interface Place {
   name: string;
   id: AddressStr;
-  is_return_value: boolean;
+  kind: PlaceKind;
 }
 
 export interface Variables {

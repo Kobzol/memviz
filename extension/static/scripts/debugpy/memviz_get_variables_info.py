@@ -20,7 +20,7 @@ RETURN_VALUES_DICT_NAME = "__pydevd_ret_val_dict"
 class Place:
     name: str
     id: PythonId
-    is_return_value: bool = False
+    kind: str
 
 
 @dataclasses.dataclass()
@@ -351,12 +351,23 @@ def validate_slicing_params(
     return collection_length
 
 
+def get_argument_names(frame: inspect.FrameInfo) -> List[str]:
+    argvalues = inspect.getargvalues(frame.frame)
+    arg_names = list(argvalues.args)
+    if argvalues.varargs:
+        arg_names.append(argvalues.varargs)
+    if argvalues.keywords:
+        arg_names.append(argvalues.keywords)
+    return arg_names
+
+
 def get_variables(frame_index: FrameIndex, debugged_file_path: str) -> Variables:
     frame_info = get_frame_by_index(frame_index, debugged_file_path)
     if frame_info is None:
         raise ValueError(f"Could not find frame for file {debugged_file_path}")
 
     frame = frame_info.frame
+    arg_names = get_argument_names(frame_info)
 
     places = []
     values: Dict[PythonId, BaseVal] = {}
@@ -408,11 +419,13 @@ def get_variables(frame_index: FrameIndex, debugged_file_path: str) -> Variables
 
         values[value_repr.id] = value_repr
 
-        place = Place(
-            name=name,
-            id=value_repr.id,
-            is_return_value=(name == RETURN_VALUES_DICT_NAME),
-        )
+        kind = "v"
+        if name == RETURN_VALUES_DICT_NAME:
+            kind = "r"
+        elif name in arg_names:
+            kind = "p"
+
+        place = Place(name=name, id=value_repr.id, kind=kind)
         places.append(place)
 
     return Variables(places=places, values=list(values.values()))
