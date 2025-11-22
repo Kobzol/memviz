@@ -153,7 +153,7 @@ class DeferredObjectVal(ObjectVal):
 @dataclasses.dataclass()
 class ResolvedObjectVal(ObjectVal):
     kind: str = dataclasses.field(init=False, default="object")
-    attributes: Dict[str, BaseVal] = dataclasses.field(default_factory=dict)
+    data_attributes: Dict[str, BaseVal] = dataclasses.field(default_factory=dict)
     methods: Dict[str, FunctionVal] = dataclasses.field(default_factory=dict)
     data_descriptors: List[str] = dataclasses.field(default_factory=list)
     getset_descriptors: List[str] = dataclasses.field(default_factory=list)
@@ -374,7 +374,6 @@ def get_variables(frame_index: FrameIndex, debugged_file_path: str) -> Variables
 
     for name, value in frame.f_locals.items():
         value_id = str(id(value))
-
         if value_id in values:
             value_repr = values[value_id]
         else:
@@ -424,6 +423,9 @@ def get_variables(frame_index: FrameIndex, debugged_file_path: str) -> Variables
             kind = "r"
         elif name in arg_names:
             kind = "p"
+        if name.startswith("__") and name.endswith("__"):
+            # special variable
+            kind = "s"
 
         place = Place(name=name, id=value_repr.id, kind=kind)
         places.append(place)
@@ -561,7 +563,7 @@ def get_object(
         id=object_id,
         size=get_size(obj),
         type_name=type(obj).__name__,
-        attributes=attributes,
+        data_attributes=attributes,
         methods=methods,
         data_descriptors=data_descriptors,
         getset_descriptors=getset_descriptors,

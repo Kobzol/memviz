@@ -105,7 +105,7 @@ export interface DeferredObjectVal extends ObjectVal {
 
 export interface ResolvedObjectVal extends ObjectVal {
   kind: "object";
-  attributes: { [key: string]: Value };
+  data_attributes: { [key: string]: Value };
   methods: { [key: string]: FunctionVal };
   data_descriptors: string[];
   getset_descriptors: string[];

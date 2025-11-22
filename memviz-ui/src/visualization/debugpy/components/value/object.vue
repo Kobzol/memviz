@@ -71,11 +71,11 @@ function onClick() {
         </tbody>
 
         <!-- Attributes -->
-        <tbody v-if="Object.keys(value.attributes).length > 0">
+        <tbody v-if="Object.keys(value.data_attributes).length > 0">
           <tr>
-            <th colspan="2">Attributes</th>
+            <th colspan="2">Data attributes</th>
           </tr>
-          <tr v-for="(val, key) in value.attributes" :key="key">
+          <tr v-for="(val, key) in value.data_attributes" :key="key">
             <td class="string">{{ key }}</td>
             <td>
               <ValueComponent :value="val" />
