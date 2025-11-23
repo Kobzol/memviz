@@ -184,13 +184,16 @@ class DeferredObjectVal(ObjectVal):
 
 
 @dataclasses.dataclass()
+class Attribute:
+    name: str
+    value: Optional[BaseVal] = None
+    is_descriptor: bool = False
+
+
+@dataclasses.dataclass()
 class ResolvedObjectVal(ObjectVal):
     kind: str = dataclasses.field(init=False, default="object")
-    data_attributes: Dict[str, BaseVal] = dataclasses.field(default_factory=dict)
-    methods: Dict[str, FunctionVal] = dataclasses.field(default_factory=dict)
-    data_descriptors: List[str] = dataclasses.field(default_factory=list)
-    getset_descriptors: List[str] = dataclasses.field(default_factory=list)
-    member_descriptors: List[str] = dataclasses.field(default_factory=list)
+    attributes: List[Attribute] = dataclasses.field(default_factory=list)
 
 
 @dataclasses.dataclass()
@@ -366,6 +369,14 @@ def get_variables(frame_index: FrameIndex, debugged_file_path: str) -> Variables
     values: Dict[PythonId, BaseVal] = {}
 
     for name, value in frame.f_locals.items():
+        if name.startswith("__") and name.endswith("__"):
+            # skip special variables
+            continue
+        if inspect.isfunction(value):
+            if name not in arg_names and name == value.__name__:
+                # skip local function definitions
+                continue
+
         value_id = str(id(value))
         if value_id in values:
             value_repr = values[value_id]
@@ -408,9 +419,6 @@ def get_variables(frame_index: FrameIndex, debugged_file_path: str) -> Variables
             kind = "r"
         elif name in arg_names:
             kind = "p"
-        if name.startswith("__") and name.endswith("__"):
-            # special variable
-            kind = "s"
 
         place = Place(name=name, id=value_repr.id, kind=kind)
         places.append(place)
@@ -475,46 +483,47 @@ def get_string_contents(
 def get_object(object_id: PythonId) -> ResolvedObjectVal:
     obj = IdMap.get(object_id)
 
-    attributes = {}
-    methods = {}
-    getset_descriptors = []
-    member_descriptors = []
-    data_descriptors = []
+    attributes = []
 
     for attr_name in dir(obj):
+        if attr_name.startswith("__") and attr_name.endswith("__"):
+            # skip special attributes
+            continue
         try:
             # passive inspection to avoid resolving descriptors
             static_attr_value = inspect.getattr_static(obj, attr_name)
         except Exception:
             continue
 
-        if inspect.isdatadescriptor(static_attr_value):
-            data_descriptors.append(attr_name)
-        elif inspect.isgetsetdescriptor(static_attr_value):
-            getset_descriptors.append(attr_name)
-        elif inspect.ismemberdescriptor(static_attr_value):
-            member_descriptors.append(attr_name)
+        attr = Attribute(name=attr_name)
+
+        if (
+            inspect.isdatadescriptor(static_attr_value)
+            or inspect.isgetsetdescriptor(static_attr_value)
+            or inspect.ismemberdescriptor(static_attr_value)
+        ):
+            attr.is_descriptor = True
+
         else:
             # need to get the attribute value dynamically to check if it's a method
             attr_value = getattr(obj, attr_name)
             value_repr = make_value(attr_value)
             if inspect.ismethod(attr_value):
-                assert isinstance(value_repr, FunctionVal)
-                methods[attr_name] = value_repr
+                continue
             else:
-                attributes[attr_name] = value_repr
+                attr.value = value_repr
 
             IdMap.register(value_repr.id, attr_value)
+
+        attributes.append(attr)
+
+    attributes.sort(key=lambda a: a.name.startswith("_"))
 
     return ResolvedObjectVal(
         id=object_id,
         size=get_size(obj),
         type_name=type(obj).__name__,
-        data_attributes=attributes,
-        methods=methods,
-        data_descriptors=data_descriptors,
-        getset_descriptors=getset_descriptors,
-        member_descriptors=member_descriptors,
+        attributes=attributes,
     )
 
 
@@ -533,12 +542,13 @@ class Result:
         return Result(ok=False, error=error)
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass()
 class Response:
-    message: str
+    message: str = dataclasses.field(init=False)
+    content: dataclasses.InitVar[Any]
 
-    def __init__(self, content: dataclasses.dataclass) -> None:
-        object.__setattr__(self, "message", json.dumps(dataclasses.asdict(content)))
+    def __init__(self, content: Any) -> None:
+        self.message = json.dumps(dataclasses.asdict(content))
 
     def __repr__(self) -> str:
         # Debugpy's evaluate returns Python repr() of the string result,

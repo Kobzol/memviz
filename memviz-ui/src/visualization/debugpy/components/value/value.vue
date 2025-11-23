@@ -7,7 +7,7 @@ import Collection from "./collection/collection.vue";
 import Dict from "./dict.vue";
 import Range from "./range.vue";
 import FunctionComponent from "./function.vue";
-import ObjectComponent from "./object.vue";
+import ObjectComponent from "./object/object.vue";
 import ModuleComponent from "./module.vue";
 import TypeComponent from "./type.vue";
 import type {
@@ -81,6 +81,9 @@ function isTypeVal(value: Value): value is TypeVal {
   return value.kind === "type";
 }
 function getValueTypeTitle(value: Value): string {
+  if (isNone(value)) {
+    return "";
+  }
   if (isObjectVal(value)) {
     return value.type_name;
   }

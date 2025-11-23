@@ -103,13 +103,15 @@ export interface DeferredObjectVal extends ObjectVal {
   kind: "deferred_object";
 }
 
+export interface Attribute {
+  name: string;
+  value: Value | null;
+  is_descriptor: boolean;
+}
+
 export interface ResolvedObjectVal extends ObjectVal {
   kind: "object";
-  data_attributes: { [key: string]: Value };
-  methods: { [key: string]: FunctionVal };
-  data_descriptors: string[];
-  getset_descriptors: string[];
-  member_descriptors: string[];
+  attributes: Attribute[];
 }
 
 export interface ModuleVal extends Value {

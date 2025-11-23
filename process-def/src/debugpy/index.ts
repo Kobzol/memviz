@@ -23,6 +23,7 @@ export type {
   ResolvedObjectVal,
   ModuleVal,
   TypeVal,
+  Attribute,
 } from "./value";
 
 export enum PlaceKind {
