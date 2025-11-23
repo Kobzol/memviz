@@ -2,27 +2,20 @@
 import { computed } from "vue";
 import { appState } from "../../../store";
 import { DeferredStrVal } from "process-def/debugpy";
-import { inject } from "vue";
 import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 
 const props = defineProps<{
   value: DeferredStrVal;
 }>();
 
-const frameIndex = inject<null | number>("frameIndex", null);
-
 async function loadData() {
-  if (frameIndex === null) {
-    console.warn("No frame index provided for str, cannot load elements");
-    return;
-  }
   if (!props.value.length) {
     return;
   }
   const start = 0;
   const length = props.value.length;
   resolver.value
-    .getStringContents(props.value.id, frameIndex, start, length)
+    .getStringContents(props.value.id, start, length)
     .then((resStr) => {
       for (let i = 0; i < resStr.length; i++) {
         props.value.content[start + i] = resStr[i];

@@ -116,7 +116,6 @@ export class VsCodeResolver implements ProcessResolver {
 
   async getCollectionElements(
     id: AddressStr,
-    frameIndex: number,
     startIndex: number,
     elementCount: number,
   ): Promise<PythonValue[]> {
@@ -131,7 +130,6 @@ export class VsCodeResolver implements ProcessResolver {
     >({
       kind: "get-collection-elements",
       id,
-      frameIndex,
       elementCount,
       startIndex,
     });
@@ -140,7 +138,6 @@ export class VsCodeResolver implements ProcessResolver {
 
   async getStringContents(
     id: AddressStr,
-    frameIndex: number,
     startIndex: number,
     length: number,
   ): Promise<string> {
@@ -155,7 +152,6 @@ export class VsCodeResolver implements ProcessResolver {
     >({
       kind: "get-string-contents",
       id,
-      frameIndex,
       startIndex,
       length,
     });
@@ -164,7 +160,6 @@ export class VsCodeResolver implements ProcessResolver {
 
   async getDictEntries(
     id: AddressStr,
-    frameIndex: number,
     startIndex: number,
     pairCount: number,
   ): Promise<KeyValuePair[]> {
@@ -174,24 +169,19 @@ export class VsCodeResolver implements ProcessResolver {
     const res = await this.sendRequest<GetDictEntriesReq, GetDictEntriesRes>({
       kind: "get-dict-entries",
       id,
-      frameIndex,
       startIndex,
       pairCount,
     });
     return res.entries;
   }
 
-  async getObject(
-    id: AddressStr,
-    frameIndex: number,
-  ): Promise<ResolvedObjectVal> {
+  async getObject(id: AddressStr): Promise<ResolvedObjectVal> {
     if (this.sessionType !== SessionType.Debugpy) {
       throw new Error("getObject is only supported in debugpy sessions");
     }
     const res = await this.sendRequest<GetObjectReq, GetObjectRes>({
       kind: "get-object",
       id,
-      frameIndex,
     });
     return res.object;
   }

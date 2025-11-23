@@ -73,7 +73,6 @@ export class EagerResolver implements ProcessResolver {
 
   async getCollectionElements(
     id: AddressStr,
-    frameIndex: number,
     startIndex: number,
     elementCount: number,
   ): Promise<PythonValue[]> {
@@ -83,7 +82,6 @@ export class EagerResolver implements ProcessResolver {
 
   async getStringContents(
     id: AddressStr,
-    frameIndex: number,
     startIndex: number,
     length: number,
   ): Promise<string> {
@@ -93,7 +91,6 @@ export class EagerResolver implements ProcessResolver {
 
   async getDictEntries(
     id: AddressStr,
-    frameIndex: number,
     startIndex: number,
     pairCount: number,
   ): Promise<KeyValuePair[]> {
@@ -101,7 +98,7 @@ export class EagerResolver implements ProcessResolver {
     return [];
   }
 
-  async getObject(id: AddressStr, frameIndex: number): Promise<any> {
+  async getObject(id: AddressStr): Promise<any> {
     console.error("EagerResolver.getObject not implemented");
     return {};
   }

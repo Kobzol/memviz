@@ -37,51 +37,30 @@ export class CachingResolver<T extends ProcessResolver>
 
   async getCollectionElements(
     id: AddressStr,
-    frameIndex: number,
     elementCount: number,
     startIndex: number,
   ): Promise<PythonValue[]> {
-    return await this.inner.getCollectionElements(
-      id,
-      frameIndex,
-      elementCount,
-      startIndex,
-    );
+    return await this.inner.getCollectionElements(id, elementCount, startIndex);
   }
 
   async getStringContents(
     id: AddressStr,
-    frameIndex: number,
     startIndex: number,
     length: number,
   ): Promise<string> {
-    return await this.inner.getStringContents(
-      id,
-      frameIndex,
-      startIndex,
-      length,
-    );
+    return await this.inner.getStringContents(id, startIndex, length);
   }
 
   async getDictEntries(
     id: AddressStr,
-    frameIndex: number,
     startIndex: number,
     pairCount: number,
   ): Promise<KeyValuePair[]> {
-    return await this.inner.getDictEntries(
-      id,
-      frameIndex,
-      startIndex,
-      pairCount,
-    );
+    return await this.inner.getDictEntries(id, startIndex, pairCount);
   }
 
-  async getObject(
-    id: AddressStr,
-    frameIndex: number,
-  ): Promise<ResolvedObjectVal> {
-    return await this.inner.getObject(id, frameIndex);
+  async getObject(id: AddressStr): Promise<ResolvedObjectVal> {
+    return await this.inner.getObject(id);
   }
 
   async readMemory(address: AddressStr, size: number): Promise<ArrayBuffer> {

@@ -3,26 +3,17 @@ import { type Ref, computed, ref, watch } from "vue";
 import ValueComponent from "./value.vue";
 import { appState } from "../../../store";
 import { ResolvedObjectVal, ObjectVal } from "process-def/debugpy";
-import { inject } from "vue";
 
 const props = defineProps<{
   value: ObjectVal;
 }>();
-
-const frameIndex = inject<null | number>("frameIndex", null);
 
 async function loadData() {
   if (isResolvedObject(props.value)) {
     // already loaded
     return;
   }
-  if (frameIndex === null) {
-    console.warn(
-      "No frame index provided for collection, cannot load elements"
-    );
-    return;
-  }
-  resolver.value.getObject(props.value.id, frameIndex).then((loadedObject) => {
+  resolver.value.getObject(props.value.id).then((loadedObject) => {
     object.value = loadedObject;
   });
 }

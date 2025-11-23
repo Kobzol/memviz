@@ -159,7 +159,6 @@ export interface GetPythonVariablesRepresentationReq extends Request {
 export interface GetCollectionElementsReq extends Request {
   kind: "get-collection-elements";
   id: AddressStr;
-  frameIndex: FrameIndex;
   startIndex: number;
   elementCount: number;
 }
@@ -167,7 +166,6 @@ export interface GetCollectionElementsReq extends Request {
 export interface GetDictEntriesReq extends Request {
   kind: "get-dict-entries";
   id: AddressStr;
-  frameIndex: FrameIndex;
   startIndex: number;
   pairCount: number;
 }
@@ -175,7 +173,6 @@ export interface GetDictEntriesReq extends Request {
 export interface GetStringContentsReq extends Request {
   kind: "get-string-contents";
   id: AddressStr;
-  frameIndex: FrameIndex;
   startIndex: number;
   length: number;
 }
@@ -183,7 +180,6 @@ export interface GetStringContentsReq extends Request {
 export interface GetObjectReq extends Request {
   kind: "get-object";
   id: AddressStr;
-  frameIndex: FrameIndex;
 }
 
 export interface ReadMemoryReq extends Request {

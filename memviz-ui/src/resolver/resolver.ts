@@ -17,21 +17,18 @@ export interface ProcessResolver {
   ): Promise<PythonVariables>;
   getCollectionElements(
     id: AddressStr,
-    frameIndex: number,
     startIndex: number,
     elementCount: number,
   ): Promise<PythonValue[]>;
   getStringContents(
     id: AddressStr,
-    frameIndex: number,
     startIndex: number,
     length: number,
   ): Promise<string>;
   getDictEntries(
     id: AddressStr,
-    frameIndex: number,
     startIndex: number,
     pairCount: number,
   ): Promise<KeyValuePair[]>;
-  getObject(id: AddressStr, frameIndex: number): Promise<ResolvedObjectVal>;
+  getObject(id: AddressStr): Promise<ResolvedObjectVal>;
 }

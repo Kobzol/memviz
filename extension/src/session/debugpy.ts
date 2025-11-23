@@ -44,12 +44,11 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
   async getCollectionElements(
     frameId: FrameId,
     id: AddressStr,
-    frameIndex: number,
     startIndex: number,
     elementCount: number,
   ): Promise<Value[]> {
     const result = await this.pythonEvaluate<Value[]>(
-      `get_collection_elements("${id}", ${frameIndex}, __file__, ${startIndex}, ${elementCount})`,
+      `get_collection_elements("${id}", ${startIndex}, ${elementCount})`,
       frameId,
     );
     return result;
@@ -58,12 +57,11 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
   async getDictEntries(
     frameId: FrameId,
     id: AddressStr,
-    frameIndex: number,
     startIndex: number,
     pairCount: number,
   ): Promise<KeyValuePair[]> {
     const result = await this.pythonEvaluate<KeyValuePair[]>(
-      `get_dict_entries("${id}", ${frameIndex}, __file__, ${startIndex}, ${pairCount})`,
+      `get_dict_entries("${id}", ${startIndex}, ${pairCount})`,
       frameId,
     );
     return result;
@@ -72,12 +70,11 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
   async getStringContents(
     frameId: FrameId,
     id: AddressStr,
-    frameIndex: number,
     startIndex: number,
     length: number,
   ): Promise<string> {
     const result = await this.pythonEvaluate<string>(
-      `get_string_contents("${id}", ${frameIndex}, __file__, ${startIndex}, ${length})`,
+      `get_string_contents("${id}", ${startIndex}, ${length})`,
       frameId,
     );
     return result;
@@ -86,10 +83,9 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
   async getObject(
     frameId: FrameId,
     id: AddressStr,
-    frameIndex: number,
   ): Promise<ResolvedObjectVal> {
     const result = await this.pythonEvaluate<ResolvedObjectVal>(
-      `get_object("${id}", ${frameIndex}, __file__)`,
+      `get_object("${id}")`,
       frameId,
     );
     return result;

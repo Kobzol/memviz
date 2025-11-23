@@ -8,13 +8,10 @@ import { Path } from "../../../gdb/pointers/path";
 import { AddressStr, StackFrame } from "process-def";
 import NamedPlace from "./named-place.vue";
 import { formatLocation } from "../../../utils/formatting";
-import { provide } from "vue";
 
 const props = defineProps<{
   frame: StackFrame;
 }>();
-
-provide("frameIndex", props.frame.index);
 
 function toggleExpanded() {
   expanded.value = !expanded.value;

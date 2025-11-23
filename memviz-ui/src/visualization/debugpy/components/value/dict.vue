@@ -3,25 +3,18 @@ import { computed } from "vue";
 import ValueComponent from "./value.vue";
 import { appState } from "../../../store";
 import { DeferredDictVal } from "process-def/debugpy";
-import { inject } from "vue";
 
 const props = defineProps<{
   value: DeferredDictVal;
 }>();
-
-const frameIndex = inject<null | number>("frameIndex", null);
 
 async function loadData() {
   if (Object.keys(props.value.pairs).length >= props.value.pair_count) {
     // empty or already loaded
     return;
   }
-  if (frameIndex === null) {
-    console.warn("No frame index provided for dict, cannot load elements");
-    return;
-  }
   resolver.value
-    .getDictEntries(props.value.id, frameIndex, 0, props.value.pair_count)
+    .getDictEntries(props.value.id, 0, props.value.pair_count)
     .then((pairs) => {
       props.value.pairs = pairs;
     });
