@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import ValueComponent from "./value.vue";
-import { appState } from "../../../store";
+import { processResolver } from "../../../store";
 import { DeferredDictVal } from "process-def/debugpy";
 
 const props = defineProps<{
@@ -13,14 +13,14 @@ async function loadData() {
     // empty or already loaded
     return;
   }
-  resolver.value
+  resolver.value.debugpy
     .getDictEntries(props.value.id, 0, props.value.pair_count)
     .then((pairs) => {
       props.value.pairs = pairs;
     });
 }
 
-const resolver = computed(() => appState.value.resolver);
+const resolver = computed(() => processResolver.value);
 
 async function onClick() {
   await loadData();

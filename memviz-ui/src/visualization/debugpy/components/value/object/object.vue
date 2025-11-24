@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type Ref, computed, ref, watch } from "vue";
 import ValueComponent from "./../value.vue";
-import { appState } from "../../../../store";
+import { processResolver } from "../../../../store";
 import { ResolvedObjectVal, ObjectVal } from "process-def/debugpy";
 import AttributeName from "./attribute-name.vue";
 
@@ -14,7 +14,7 @@ async function loadData() {
     // already loaded
     return;
   }
-  resolver.value.getObject(props.value.id).then((loadedObject) => {
+  resolver.value.debugpy.getObject(props.value.id).then((loadedObject) => {
     object.value = loadedObject;
   });
 }
@@ -29,7 +29,7 @@ function checkIfAlreadyResolved() {
   }
 }
 
-const resolver = computed(() => appState.value.resolver);
+const resolver = computed(() => processResolver.value);
 const object: Ref<ResolvedObjectVal | null> = ref(null);
 
 watch(

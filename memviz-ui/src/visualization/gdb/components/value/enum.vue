@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type Ref, computed, ref, shallowRef, watch } from "vue";
 import { addressToStr } from "../../../../utils";
-import { appState } from "../../../store";
+import { processResolver } from "../../../store";
 import { Path } from "../../pointers/path";
 import { Value } from "../../utils/value";
 import { TyEnum } from "process-def/gdb";
@@ -24,7 +24,7 @@ async function loadData() {
     return;
   }
 
-  buffer.value = await resolver.value.readMemory(
+  buffer.value = await resolver.value.gdb.readMemory(
     addressToStr(address),
     props.value.type.size
   );
@@ -38,7 +38,7 @@ function toggleDisplayMode() {
   }
 }
 
-const resolver = computed(() => appState.value.resolver);
+const resolver = computed(() => processResolver.value);
 const displayMode = ref(DisplayMode.EnumValue);
 
 const buffer: Ref<ArrayBuffer | null> = shallowRef(null);

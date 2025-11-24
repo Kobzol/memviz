@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, watch } from "vue";
 import { addressToStr } from "../../../../../utils";
-import { appState } from "../../../../store";
+import { processResolver } from "../../../../store";
 import { Type, TyStruct } from "process-def/gdb";
 import { Path } from "../../../pointers/path";
 import { Value } from "../../../utils/value";
@@ -28,7 +28,10 @@ async function loadData() {
   }
 
   // Preload the memory of the individual struct elements
-  await resolver.value.readMemory(addressToStr(address), props.value.type.size);
+  await resolver.value.gdb.readMemory(
+    addressToStr(address),
+    props.value.type.size
+  );
 }
 
 function createValue(field: Field): Value<Type> {
@@ -61,7 +64,7 @@ const tooltip = computed(() => {
   }</b> with <b>${fieldCount}</b> ${pluralize("field", fieldCount)}`;
 });
 
-const resolver = computed(() => appState.value.resolver);
+const resolver = computed(() => processResolver.value);
 
 watch(
   () => [props.value, resolver.value],

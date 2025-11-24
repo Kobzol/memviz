@@ -24,7 +24,7 @@ import type { MemoryAllocEvent } from "../messages";
 import { assert, addressToStr, strToAddress } from "../utils";
 import type { HeapAllocation } from "../visualization/gdb/allocation-tracker";
 import type { TyChar } from "../visualization/gdb/utils/types";
-import type { ProcessResolver } from "./resolver";
+import type { ProcessResolverCore } from "./core";
 
 export interface FullProcessState extends ProcessState {
   stackTrace: FullStackTrace;
@@ -40,7 +40,7 @@ interface FullStackFrame extends StackFrame {
   places: Place[];
 }
 
-export class EagerResolver implements ProcessResolver {
+export class EagerResolver implements ProcessResolverCore {
   constructor(private state: FullProcessState) {}
 
   async readMemory(address: AddressStr, size: number): Promise<ArrayBuffer> {

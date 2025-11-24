@@ -1,11 +1,11 @@
 import createPanZoom from "panzoom";
 import type { ProcessState, SessionType } from "process-def";
 import { createApp, triggerRef } from "vue";
-import type { ProcessResolver } from "../resolver/resolver";
 import App from "./app.vue";
-import { allocationState, appState } from "./store";
+import { allocationState, appState, processResolver } from "./store";
 import "tippy.js/dist/tippy.css";
 import type { MemoryAllocEvent } from "../messages";
+import type { ProcessResolver } from "../resolver/resolver";
 import { strToAddress } from "../utils";
 
 export class Memviz {
@@ -35,11 +35,11 @@ export class Memviz {
     console.debug("Root state changed");
     appState.value = {
       processState,
-      resolver,
       sessionType,
     };
+    processResolver.value = resolver;
 
-    const events = await resolver.takeAllocEvents();
+    const events = await resolver.gdb.takeAllocEvents();
     processAllocEvents(events);
   }
 }

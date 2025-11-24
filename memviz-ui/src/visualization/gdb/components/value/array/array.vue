@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type Ref, computed, ref, watch } from "vue";
 import { addressToStr, assert } from "../../../../../utils";
-import { appState } from "../../../../store";
+import { processResolver } from "../../../../store";
 import { pluralize } from "../../../utils/formatting";
 import { TyArray, Type } from "process-def/gdb";
 import ValueComponent from "../value.vue";
@@ -31,7 +31,7 @@ async function loadData() {
   const startAddress = address + BigInt(index * innerType.size);
 
   // Preload the memory of the individual array elements
-  await resolver.value.readMemory(
+  await resolver.value.gdb.readMemory(
     addressToStr(startAddress),
     innerType.size * count
   );
@@ -101,7 +101,7 @@ const tooltip = computed(() => {
   }</b> ${pluralize("element", activeCount.value)}`;
 });
 
-const resolver = computed(() => appState.value.resolver);
+const resolver = computed(() => processResolver.value);
 
 // How many elements the user wants to show
 const targetCount: Ref<number> = ref(DEFAULT_ELEMENT_COUNT);

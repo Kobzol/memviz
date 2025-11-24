@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { appState } from "../../../store";
+import { processResolver } from "../../../store";
 import { DeferredStrVal } from "process-def/debugpy";
 import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 
@@ -14,7 +14,7 @@ async function loadData() {
   }
   const start = 0;
   const length = props.value.length;
-  resolver.value
+  resolver.value.debugpy
     .getStringContents(props.value.id, start, length)
     .then((resStr) => {
       for (let i = 0; i < resStr.length; i++) {
@@ -23,7 +23,7 @@ async function loadData() {
     });
 }
 
-const resolver = computed(() => appState.value.resolver);
+const resolver = computed(() => processResolver.value);
 
 const stringContents = computed(() => {
   if (!props.value.content) {

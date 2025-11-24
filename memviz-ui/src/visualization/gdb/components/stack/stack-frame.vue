@@ -3,7 +3,7 @@ import type { StackFrame } from "process-def";
 import { computed, ref, watch } from "vue";
 import type { Ref } from "vue";
 import { addressToStr, strToAddress } from "../../../../utils";
-import { appState } from "../../../store";
+import { processResolver } from "../../../store";
 import NamedPlace from "./named-place.vue";
 import { formatLocation } from "../../../utils/formatting";
 import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
@@ -51,7 +51,7 @@ function sortPlacesForRender(places: Place[]): Place[] {
 // TODO: deduplicate loading
 async function maybeLoadPlaces() {
   if (expanded.value && places.value === null) {
-    const framePlaces = await resolver.value.getPlaces(props.frame.index);
+    const framePlaces = await resolver.value.gdb.getPlaces(props.frame.index);
     // Preload stack data
     const placesByAddress = sortPlacesByAddress(framePlaces);
 
@@ -63,13 +63,13 @@ async function maybeLoadPlaces() {
       const size = end - start;
       // Pre-cache the memory of the stack frame in a single batch, to avoid many requests
       // for the individual stack places
-      await resolver.value.readMemory(addressToStr(start), Number(size));
+      await resolver.value.gdb.readMemory(addressToStr(start), Number(size));
     }
     places.value = sortPlacesForRender(framePlaces);
   }
 }
 
-const resolver = computed(() => appState.value.resolver);
+const resolver = computed(() => processResolver.value);
 const places: Ref<Place[] | null> = ref(null);
 
 const location = computed(() =>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type Ref, computed, ref, shallowRef, watch } from "vue";
 import { addressToStr } from "../../../../../utils";
-import { appState } from "../../../../store";
+import { processResolver } from "../../../../store";
 import {
   bufferAsBigUnsignedInt,
   formatAddress,
@@ -31,7 +31,7 @@ async function loadData() {
     return;
   }
 
-  ptrBuffer.value = await resolver.value.readMemory(
+  ptrBuffer.value = await resolver.value.gdb.readMemory(
     addressToStr(address),
     props.value.type.size
   );
@@ -45,7 +45,7 @@ function toggleDisplayMode() {
   }
 }
 
-const resolver = computed(() => appState.value.resolver);
+const resolver = computed(() => processResolver.value);
 const displayMode = ref(DisplayMode.String);
 
 const ptrBuffer: Ref<ArrayBuffer | null> = shallowRef(null);

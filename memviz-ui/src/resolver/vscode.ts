@@ -1,10 +1,4 @@
-import {
-  type AddressStr,
-  type FrameIndex,
-  SessionType,
-  type StackTrace,
-  type ThreadId,
-} from "process-def";
+import type { AddressStr, FrameIndex, StackTrace, ThreadId } from "process-def";
 import type {
   KeyValuePair,
   Value as PythonValue,
@@ -39,7 +33,7 @@ import type {
   TakeAllocEventsRes,
 } from "../messages";
 import { deserializePlaces } from "../visualization/gdb/type";
-import type { ProcessResolver } from "./resolver";
+import type { ProcessResolverCore } from "./core";
 
 type ExtractData<T extends { data: unknown }> = T["data"];
 
@@ -48,14 +42,13 @@ interface InFlightRequest {
   reject: (error: string) => void;
 }
 
-export class VsCodeResolver implements ProcessResolver {
+export class VsCodeResolver implements ProcessResolverCore {
   private requestId: RequestId = 0;
   private requestMap: Map<RequestId, InFlightRequest> = new Map();
 
   public constructor(
     private vscode: WebviewApi<unknown>,
     private resolverId: ResolverId,
-    private sessionType: SessionType,
   ) {}
 
   handleMessage(message: ExtensionToMemvizResponse) {
@@ -98,11 +91,6 @@ export class VsCodeResolver implements ProcessResolver {
   async createVariablesRepresentation(
     frameIndex: FrameIndex,
   ): Promise<PythonVariables> {
-    if (this.sessionType !== SessionType.Debugpy) {
-      throw new Error(
-        "createVariablesRepresentation is only supported in debugpy sessions",
-      );
-    }
     const res = await this.sendRequest<
       GetPythonVariablesRepresentationReq,
       GetPythonVariablesRepresentationRes
@@ -119,11 +107,6 @@ export class VsCodeResolver implements ProcessResolver {
     startIndex: number,
     elementCount: number,
   ): Promise<PythonValue[]> {
-    if (this.sessionType !== SessionType.Debugpy) {
-      throw new Error(
-        "getCollectionElements is only supported in debugpy sessions",
-      );
-    }
     const res = await this.sendRequest<
       GetCollectionElementsReq,
       GetCollectionElementsRes
@@ -141,11 +124,6 @@ export class VsCodeResolver implements ProcessResolver {
     startIndex: number,
     length: number,
   ): Promise<string> {
-    if (this.sessionType !== SessionType.Debugpy) {
-      throw new Error(
-        "getStringContents is only supported in debugpy sessions",
-      );
-    }
     const res = await this.sendRequest<
       GetStringContentsReq,
       GetStringContentsRes
@@ -163,9 +141,6 @@ export class VsCodeResolver implements ProcessResolver {
     startIndex: number,
     pairCount: number,
   ): Promise<KeyValuePair[]> {
-    if (this.sessionType !== SessionType.Debugpy) {
-      throw new Error("getDictEntries is only supported in debugpy sessions");
-    }
     const res = await this.sendRequest<GetDictEntriesReq, GetDictEntriesRes>({
       kind: "get-dict-entries",
       id,
@@ -176,9 +151,6 @@ export class VsCodeResolver implements ProcessResolver {
   }
 
   async getObject(id: AddressStr): Promise<ResolvedObjectVal> {
-    if (this.sessionType !== SessionType.Debugpy) {
-      throw new Error("getObject is only supported in debugpy sessions");
-    }
     const res = await this.sendRequest<GetObjectReq, GetObjectRes>({
       kind: "get-object",
       id,

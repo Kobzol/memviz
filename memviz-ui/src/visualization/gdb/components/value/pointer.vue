@@ -11,7 +11,7 @@ import {
 import { addressToStr, assert } from "../../../../utils";
 import {
   allocationState,
-  appState,
+  processResolver,
   componentMap,
   pointerMap,
   uiConfiguration,
@@ -37,7 +37,7 @@ async function loadData() {
   if (address === null) {
     return;
   }
-  buffer.value = await resolver.value.readMemory(
+  buffer.value = await resolver.value.gdb.readMemory(
     addressToStr(address),
     props.value.type.size
   );
@@ -176,7 +176,7 @@ const targetAddress = computed((): Address | null => {
   return bufferAsBigUnsignedInt(buffer.value, type.size);
 });
 
-const resolver = computed(() => appState.value.resolver);
+const resolver = computed(() => processResolver.value);
 const enabled = computed(() => {
   return uiConfiguration.value.visualizePointers;
 });

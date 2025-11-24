@@ -2,7 +2,7 @@
 import { Place, Value } from "process-def/debugpy";
 import { computed, ref, watch } from "vue";
 import type { Ref } from "vue";
-import { appState } from "../../../store";
+import { processResolver } from "../../../store";
 import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 import { Path } from "../../../gdb/pointers/path";
 import { AddressStr, StackFrame } from "process-def";
@@ -19,9 +19,10 @@ function toggleExpanded() {
 
 async function maybeLoadPlaces() {
   if (expanded.value && places.value === null) {
-    const variables = await resolver.value.createVariablesRepresentation(
-      props.frame.index
-    );
+    const variables =
+      await resolver.value.debugpy.createVariablesRepresentation(
+        props.frame.index
+      );
 
     places.value = variables.places;
     values.value = new Map<AddressStr, Value>(
@@ -30,7 +31,7 @@ async function maybeLoadPlaces() {
   }
 }
 
-const resolver = computed(() => appState.value.resolver);
+const resolver = computed(() => processResolver.value);
 const places: Ref<Place[] | null> = ref(null);
 const values: Ref<Map<AddressStr, Value>> = ref(new Map());
 const location = computed(() =>
@@ -41,10 +42,6 @@ const tooltip = computed(() => {
 });
 const isTopFrame = computed(() => props.frame.index === 0);
 const expanded = ref(isTopFrame.value);
-
-const path = computed(() => {
-  return Path.stackFrame(props.frame.index);
-});
 
 watch(
   () => props.frame,

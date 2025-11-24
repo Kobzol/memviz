@@ -1,7 +1,7 @@
 import { SessionType } from "process-def";
 import type { WebviewApi } from "vscode-webview";
 import type { ExtensionToMemvizMsg } from "./messages";
-import { CachingResolver } from "./resolver/cache";
+import { CachingResolver } from "./resolver/cache/cache";
 import { VsCodeResolver } from "./resolver/vscode";
 import { buildStruct } from "./test-programs";
 import { Memviz } from "./visualization";
@@ -24,7 +24,7 @@ export { PlaceKind } from "process-def/gdb";
 function runMemvizInVsCode(vscode: WebviewApi<unknown>) {
   let resolverId = 0;
   let resolver: CachingResolver<VsCodeResolver> = new CachingResolver(
-    new VsCodeResolver(vscode, resolverId, SessionType.GDB),
+    new VsCodeResolver(vscode, resolverId),
   );
   const memviz = new Memviz(document.getElementById("app")!);
 
@@ -35,11 +35,7 @@ function runMemvizInVsCode(vscode: WebviewApi<unknown>) {
       if (message.kind === "process-stopped") {
         // We need to reset the resolver to break caches
         resolverId++;
-        const innerResolver = new VsCodeResolver(
-          vscode,
-          resolverId,
-          message.sessionType,
-        );
+        const innerResolver = new VsCodeResolver(vscode, resolverId);
         resolver = new CachingResolver(innerResolver);
         memviz.showState(message.state, resolver, message.sessionType);
       } else {

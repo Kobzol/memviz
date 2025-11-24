@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type Ref, computed, shallowRef, watch } from "vue";
-import { appState } from "../../../../store";
+import { processResolver } from "../../../../store";
 import { Address } from "process-def";
 import { CStringLoadResult, loadCString } from "../../../utils/string";
 
@@ -15,7 +15,7 @@ async function loadData() {
   loadedString.value = result;
 }
 
-const resolver = computed(() => appState.value.resolver);
+const resolver = computed(() => processResolver.value);
 
 const loadedString: Ref<CStringLoadResult | null> = shallowRef(null);
 const stringAsText = computed(() => {

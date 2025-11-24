@@ -19,7 +19,10 @@ export async function loadCString(
 
   while (buffer.byteLength < limit) {
     const remaining = Math.min(limit - buffer.byteLength, segmentSize);
-    let segment = await resolver.readMemory(addressToStr(address), remaining);
+    let segment = await resolver.gdb.readMemory(
+      addressToStr(address),
+      remaining,
+    );
     // Some error ocurred while loading the data
     if (segment.byteLength === 0) {
       hasMore = false;
