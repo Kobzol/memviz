@@ -8,7 +8,7 @@ const props = defineProps<{
 }>();
 
 const tooltip = computed(() => {
-  return `Id: <b>${props.value.id}</b>`;
+  return `Id: <b>${props.value.id}</b>, size: <b>${props.value.size} B</b>`;
 });
 </script>
 

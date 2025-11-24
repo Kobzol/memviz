@@ -1,12 +1,10 @@
-from abc import ABC
 import dataclasses
-import json
 import inspect
 import itertools
-from types import FunctionType, ModuleType
+import json
+import sys
+from abc import ABC
 from typing import Any, Callable, Dict, List, Optional, Tuple
-from sys import getsizeof
-from gc import get_referents
 from weakref import WeakValueDictionary
 
 
@@ -215,25 +213,11 @@ class Variables:
     values: List[BaseVal]
 
 
-def get_size(val: Any) -> int:
-    ids_seen = set()
-
-    def sizeof_inner(v: Any) -> int:
-        if id(v) in ids_seen or isinstance(v, (type, ModuleType, FunctionType)):
-            return 0
-        ids_seen.add(id(v))
-        size = getsizeof(v)
-        for ref in get_referents(v):
-            size += sizeof_inner(ref)
-        return size
-
-    return sizeof_inner(val)
-
-
 def make_value(val: Any) -> BaseVal:
     val_id = str(id(val))
+    size = sys.getsizeof(val)
     if val is None:
-        return NoneVal(id=val_id, size=get_size(val))
+        return NoneVal(id=val_id, size=size)
     elif inspect.ismodule(val):
         return ModuleVal(id=val_id, name=val.__name__)
     elif inspect.isclass(val):
@@ -243,38 +227,38 @@ def make_value(val: Any) -> BaseVal:
             module=val.__module__,
         )
     elif isinstance(val, bool):
-        return BoolVal(id=val_id, size=get_size(val), value=val)
+        return BoolVal(id=val_id, size=size, value=val)
     elif isinstance(val, int):
-        return IntVal(id=val_id, size=get_size(val), value=str(val))
+        return IntVal(id=val_id, size=size, value=str(val))
     elif isinstance(val, float):
-        return FloatVal(id=val_id, size=get_size(val), value=str(val))
+        return FloatVal(id=val_id, size=size, value=str(val))
     elif isinstance(val, complex):
         return ComplexVal(
             id=val_id,
-            size=get_size(val),
+            size=size,
             real_value=str(val.real),
             imaginary_value=str(val.imag),
         )
     elif isinstance(val, str):
-        return DeferredStrVal(id=val_id, size=get_size(val), length=len(val))
+        return DeferredStrVal(id=val_id, size=size, length=len(val))
     elif isinstance(val, dict):
-        return DeferredDictVal(id=val_id, size=get_size(val), pair_count=len(val))
+        return DeferredDictVal(id=val_id, size=size, pair_count=len(val))
     elif isinstance(val, list):
-        return DeferredListVal(id=val_id, size=get_size(val), element_count=len(val))
+        return DeferredListVal(id=val_id, size=size, element_count=len(val))
     elif isinstance(val, tuple):
-        return DeferredTupleVal(id=val_id, size=get_size(val), element_count=len(val))
+        return DeferredTupleVal(id=val_id, size=size, element_count=len(val))
     elif isinstance(val, set):
-        return DeferredSetVal(id=val_id, size=get_size(val), element_count=len(val))
+        return DeferredSetVal(id=val_id, size=size, element_count=len(val))
     elif isinstance(val, frozenset):
         return DeferredFrozenSetVal(
             id=val_id,
-            size=get_size(val),
+            size=size,
             element_count=len(val),
         )
     elif isinstance(val, range):
         return RangeVal(
             id=val_id,
-            size=get_size(val),
+            size=size,
             start=str(val.start),
             stop=str(val.stop),
             step=str(val.step),
@@ -296,7 +280,7 @@ def make_value(val: Any) -> BaseVal:
     else:
         return DeferredObjectVal(
             id=val_id,
-            size=get_size(val),
+            size=size,
             type_name=type(val).__name__,
         )
 
@@ -521,7 +505,7 @@ def get_object(object_id: PythonId) -> ResolvedObjectVal:
 
     return ResolvedObjectVal(
         id=object_id,
-        size=get_size(obj),
+        size=sys.getsizeof(obj),
         type_name=type(obj).__name__,
         attributes=attributes,
     )

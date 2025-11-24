@@ -36,7 +36,7 @@ const stringContents = computed(() => {
 });
 
 const tooltip = computed(() => {
-  return `Id: <b>${props.value.id}</b>`;
+  return `Id: <b>${props.value.id}</b>, size: <b>${props.value.size} B</b>`;
 });
 
 function onClick() {

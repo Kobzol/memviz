@@ -57,7 +57,9 @@ function isSetCollection(
       <SetCollection v-else-if="isSetCollection(value)" :value="value" />
       <div v-else>Unsupported collection type: {{ value.kind }}</div>
     </div>
-    <div v-else @click="onClick" class="not-resolved">...</div>
+    <div v-else @click="onClick" class="not-resolved">
+      <code> ... </code>
+    </div>
   </div>
 </template>
 

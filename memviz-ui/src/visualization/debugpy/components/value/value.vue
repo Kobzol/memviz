@@ -135,5 +135,6 @@ function getValueTypeTitle(value: Value): string {
 .type-name {
   font-size: 0.9em;
   color: #3f3f3f;
+  min-height: 0.9em;
 }
 </style>
