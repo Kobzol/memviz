@@ -58,17 +58,6 @@ export abstract class DebuggerSession<TEvaluator extends Evaluator> {
     return await this.evaluator.customRequest("setFunctionBreakpoints", args);
   }
 
-  async readMemory(
-    address: string,
-    size: number,
-  ): Promise<ExtractBody<Required<DebugProtocol.ReadMemoryResponse>>> {
-    const args: DebugProtocol.ReadMemoryArguments = {
-      memoryReference: address,
-      count: size,
-    };
-    return await this.evaluator.customRequest("readMemory", args);
-  }
-
   async next(threadId: ThreadId) {
     const args: DebugProtocol.NextArguments = {
       threadId,

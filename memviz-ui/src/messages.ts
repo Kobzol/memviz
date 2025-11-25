@@ -110,12 +110,12 @@ export interface ErrorRes extends Response {
   error: string;
 }
 
-export type ExtensionToMemvizCommonResponse =
-  | GetStackTraceRes
-  | ReadMemoryRes
-  | ErrorRes;
+export type ExtensionToMemvizCommonResponse = GetStackTraceRes | ErrorRes;
 
-export type ExtensionToMemvizGDBResponse = GetPlacesRes | TakeAllocEventsRes;
+export type ExtensionToMemvizGDBResponse =
+  | GetPlacesRes
+  | TakeAllocEventsRes
+  | ReadMemoryRes;
 
 export type ExtensionToMemvizDebugpyResponse =
   | GetPythonVariablesRepresentationRes

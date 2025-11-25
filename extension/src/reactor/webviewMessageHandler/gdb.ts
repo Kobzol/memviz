@@ -1,14 +1,16 @@
-import type { MemvizToExtensionMsg } from "memviz-ui";
+import type { MemvizToExtensionMsg, ReadMemoryReq } from "memviz-ui";
 import type {
   ExtensionToMemvizGDBResponse,
   GetPlacesReq,
   GetPlacesRes,
   ProcessStoppedEvent,
+  ReadMemoryRes,
   TakeAllocEventsReq,
   TakeAllocEventsRes,
 } from "memviz-ui/src/messages";
 import { SessionType } from "process-def";
 import type { GDBDebuggerSession } from "../../session/gdb";
+import { decodeBase64 } from "../../utils";
 import { WebviewMessageHandler } from "./webviewMessageHandler";
 
 export class GDBWebviewMessageHandler extends WebviewMessageHandler<
@@ -24,6 +26,9 @@ export class GDBWebviewMessageHandler extends WebviewMessageHandler<
     }
     if (message.kind === "take-alloc-events") {
       return this.performTakeAllocEventsRequest(message, session);
+    }
+    if (message.kind === "read-memory") {
+      return this.performReadMemoryRequest(message, session);
     }
     return super.getHandleCallback(message, session);
   }
@@ -77,6 +82,22 @@ export class GDBWebviewMessageHandler extends WebviewMessageHandler<
         kind: "take-alloc-events",
         data: {
           events,
+        },
+      };
+    };
+  }
+
+  private performReadMemoryRequest(
+    message: ReadMemoryReq,
+    session: GDBDebuggerSession,
+  ): () => Promise<Omit<ReadMemoryRes, "requestId" | "resolverId">> {
+    return async () => {
+      const result = await session.readMemory(message.address, message.size);
+      const data = await decodeBase64(result.data ?? "");
+      return {
+        kind: "read-memory",
+        data: {
+          data,
         },
       };
     };

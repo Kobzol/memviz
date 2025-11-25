@@ -1,3 +1,4 @@
+import type { DebugProtocol } from "@vscode/debugprotocol";
 import type { InternedPlaceList, MemoryAllocEvent } from "memviz-ui";
 import {
   type AddressRange,
@@ -7,6 +8,7 @@ import {
 } from "process-def";
 import type { DebugSession } from "vscode";
 import { GDBWebviewMessageHandler } from "../reactor/webviewMessageHandler/gdb";
+import type { ExtractBody } from "../utils";
 import { GDBEvaluator } from "./evaluator/gdb";
 import type { ScriptPathProvider } from "./scriptPathProvider";
 import { DebuggerSession } from "./session";
@@ -115,6 +117,17 @@ export class GDBDebuggerSession extends DebuggerSession<GDBEvaluator> {
       frameIndex,
     );
     return placeResponse;
+  }
+
+  async readMemory(
+    address: string,
+    size: number,
+  ): Promise<ExtractBody<Required<DebugProtocol.ReadMemoryResponse>>> {
+    const args: DebugProtocol.ReadMemoryArguments = {
+      memoryReference: address,
+      count: size,
+    };
+    return await this.evaluator.customRequest("readMemory", args);
   }
 }
 
