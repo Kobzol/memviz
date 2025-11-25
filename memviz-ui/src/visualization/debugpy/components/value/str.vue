@@ -54,7 +54,7 @@ function hasResolvedContent() {
       <code v-if="hasResolvedContent()" class="string">
         {{ stringContents }}
       </code>
-      <code v-else class="string" @click="onClick"> ... </code>
+      <code v-else class="not-resolved" @click="onClick"> ... </code>
     </div>
   </TooltipContributor>
 </template>
@@ -66,8 +66,10 @@ function hasResolvedContent() {
   font-family: monospace;
   font-size: 1.2em;
 
-  &:hover {
-    cursor: pointer;
+  .not-resolved {
+    &:hover {
+      cursor: pointer;
+    }
   }
 }
 </style>
