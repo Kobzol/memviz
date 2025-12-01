@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { Place, Value } from "process-def/debugpy";
+import { Place } from "process-def/debugpy";
 import { computed, ref, watch } from "vue";
 import type { Ref } from "vue";
 import { processResolver } from "../../../store";
 import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
-import { Path } from "../../../gdb/pointers/path";
-import { AddressStr, StackFrame } from "process-def";
+import { StackFrame } from "process-def";
 import NamedPlace from "./named-place.vue";
 import { formatLocation } from "../../../utils/formatting";
+import { valueState } from "../../../store";
 
 const props = defineProps<{
   frame: StackFrame;
@@ -25,15 +25,12 @@ async function maybeLoadPlaces() {
       );
 
     places.value = variables.places;
-    values.value = new Map<AddressStr, Value>(
-      variables.values.map((val) => [val.id, val])
-    );
+    valueState.value.addValues(variables.values);
   }
 }
 
 const resolver = computed(() => processResolver.value);
 const places: Ref<Place[] | null> = ref(null);
-const values: Ref<Map<AddressStr, Value>> = ref(new Map());
 const location = computed(() =>
   formatLocation(props.frame.file, props.frame.line)
 );
@@ -91,7 +88,7 @@ watch(
           v-for="place in places"
           :key="place.name"
           :place="place"
-          :value="values.get(place.id) ?? null"
+          :value="valueState.getValueById(place.id)"
         />
       </div>
     </div>

@@ -5,6 +5,7 @@ import { ProcessResolver } from "../resolver/resolver";
 import { AllocationTracker } from "./gdb/allocation-tracker";
 import { ComponentMap } from "./gdb/pointers/component-map";
 import { PointerMap } from "./gdb/pointers/pointer-map";
+import { ValueTracker } from "./debugpy/value-tracker";
 
 interface AppState {
   processState: Readonly<ProcessState>;
@@ -25,6 +26,10 @@ export const processResolver: ShallowRef<ProcessResolver> = shallowRef(
 
 export const allocationState: ShallowRef<AllocationTracker> = shallowRef(
   new AllocationTracker(),
+);
+
+export const valueState: ShallowRef<ValueTracker> = shallowRef(
+  new ValueTracker(),
 );
 
 export interface UIConfiguration {
