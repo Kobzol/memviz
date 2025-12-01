@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { TypeVal } from "process-def/debugpy";
+import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 import { computed } from "vue";
 
 const props = defineProps<{
