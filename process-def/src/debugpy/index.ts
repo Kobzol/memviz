@@ -2,6 +2,7 @@ import type { AddressStr } from "..";
 import type { Value } from "./value";
 
 export type {
+  PythonId,
   Value,
   NoneVal,
   BoolVal,

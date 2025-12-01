@@ -1,6 +1,8 @@
+export type PythonId = string;
+
 export interface Value {
   kind: string;
-  id: string;
+  id: PythonId;
 }
 
 export interface NoneVal extends Value {
