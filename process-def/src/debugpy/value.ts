@@ -34,7 +34,7 @@ export interface ComplexVal extends Value {
 }
 
 export interface DeferredStrVal extends Value {
-  kind: "defStr";
+  kind: "str";
   size: number;
   length: number;
   content: { [key: number]: string };
@@ -46,22 +46,22 @@ export interface CollectionVal extends Value {
 }
 
 export interface DeferredListVal extends CollectionVal {
-  kind: "defList";
+  kind: "list";
   size: number;
 }
 
 export interface DeferredTupleVal extends CollectionVal {
-  kind: "defTuple";
+  kind: "tuple";
   size: number;
 }
 
 export interface DeferredSetVal extends CollectionVal {
-  kind: "defSet";
+  kind: "set";
   size: number;
 }
 
 export interface DeferredFrozenSetVal extends CollectionVal {
-  kind: "defFrozenset";
+  kind: "frozenset";
   size: number;
 }
 
@@ -71,7 +71,7 @@ export interface KeyValuePair {
 }
 
 export interface DeferredDictVal extends Value {
-  kind: "defDict";
+  kind: "dict";
   size: number;
   pair_count: number;
   pairs: { [key: number]: KeyValuePair };
