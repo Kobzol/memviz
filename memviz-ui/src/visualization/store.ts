@@ -2,10 +2,10 @@ import { type ProcessState, SessionType } from "process-def";
 import { type Ref, type ShallowRef, ref, shallowRef } from "vue";
 import { ProcessBuilder } from "../resolver/eager";
 import { ProcessResolver } from "../resolver/resolver";
+import { ValueTracker } from "./debugpy/value-tracker";
 import { AllocationTracker } from "./gdb/allocation-tracker";
 import { ComponentMap } from "./gdb/pointers/component-map";
 import { PointerMap } from "./gdb/pointers/pointer-map";
-import { ValueTracker } from "./debugpy/value-tracker";
 
 interface AppState {
   processState: Readonly<ProcessState>;

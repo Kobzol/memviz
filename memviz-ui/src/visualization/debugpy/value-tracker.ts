@@ -1,4 +1,4 @@
-import type { Value, PythonId } from "process-def/debugpy";
+import type { PythonId, Value } from "process-def/debugpy";
 import { reactive } from "vue";
 
 export class ValueTracker {

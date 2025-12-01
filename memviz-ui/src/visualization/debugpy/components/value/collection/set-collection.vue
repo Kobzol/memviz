@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { DeferredSetVal, DeferredFrozenSetVal } from "process-def/debugpy";
-import ValueComponent from "../value.vue";
+import ValueWrapper from "../value-wrapper.vue";
 
 const props = defineProps<{
   value: DeferredSetVal | DeferredFrozenSetVal;
@@ -14,7 +14,7 @@ const props = defineProps<{
         <td>
           <div class="element">
             <div class="value">
-              <ValueComponent :value="el" />
+              <ValueWrapper :value="el" />
             </div>
             <div class="index">{{ index }}</div>
           </div>

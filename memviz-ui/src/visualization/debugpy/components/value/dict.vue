@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import ValueComponent from "./value.vue";
+import ValueWrapper from "./value.vue";
 import { processResolver } from "../../../store";
 import { DeferredDictVal } from "process-def/debugpy";
 
@@ -38,12 +38,12 @@ function hasResolvedPairs() {
         <table>
           <tr v-for="(pair, index) in value.pairs" :key="index">
             <td class="key">
-              <ValueComponent :value="pair.key" />
+              <ValueWrapper :value="pair.key" />
             </td>
             <td>
               <div class="value-container">
                 <div class="value">
-                  <ValueComponent :value="pair.value" />
+                  <ValueWrapper :value="pair.value" />
                 </div>
                 <div class="index">{{ index }}</div>
               </div>
