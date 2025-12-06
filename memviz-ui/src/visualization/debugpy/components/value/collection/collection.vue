@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import SequenceCollection from "./sequence-collection.vue";
 import SetCollection from "./set-collection.vue";
-import { processResolver } from "../../../../store";
+import { processResolver, valueState } from "../../../../store";
 import {
   CollectionVal,
   DeferredFrozenSetVal,
@@ -24,6 +24,7 @@ async function loadData() {
     .getCollectionElements(props.value.id, 0, props.value.element_count)
     .then((loadedElements) => {
       props.value.elements = loadedElements;
+      valueState.value.addValues(Object.values(loadedElements));
     });
 }
 

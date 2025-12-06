@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type Ref, computed, ref, watch } from "vue";
 import ValueWrapper from "../value-wrapper.vue";
-import { processResolver } from "../../../../store";
+import { processResolver, valueState } from "../../../../store";
 import { ResolvedObjectVal, ObjectVal } from "process-def/debugpy";
 import AttributeName from "./attribute-name.vue";
 
@@ -16,6 +16,10 @@ async function loadData() {
   }
   resolver.value.debugpy.getObject(props.value.id).then((loadedObject) => {
     object.value = loadedObject;
+    const loadedValues = loadedObject.attributes
+      .filter((attr) => attr.value !== null)
+      .map((attr) => attr.value!);
+    valueState.value.addValues(loadedValues);
   });
 }
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import ValueWrapper from "./value.vue";
-import { processResolver } from "../../../store";
+import { processResolver, valueState } from "../../../store";
 import { DeferredDictVal } from "process-def/debugpy";
 
 const props = defineProps<{
@@ -17,6 +17,9 @@ async function loadData() {
     .getDictEntries(props.value.id, 0, props.value.pair_count)
     .then((pairs) => {
       props.value.pairs = pairs;
+      valueState.value.addValues(
+        pairs.flatMap((pair) => [pair.key, pair.value])
+      );
     });
 }
 
