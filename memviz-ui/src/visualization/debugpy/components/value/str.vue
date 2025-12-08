@@ -12,6 +12,9 @@ async function loadData() {
   if (!props.value.length) {
     return;
   }
+  if (hasResolvedContent()) {
+    return;
+  }
   const start = 0;
   const length = props.value.length;
   resolver.value.debugpy

@@ -240,7 +240,13 @@ def make_value(val: Any) -> BaseVal:
             imaginary_value=str(val.imag),
         )
     elif isinstance(val, str):
-        return DeferredStrVal(id=val_id, size=size, length=len(val))
+        length = len(val)
+        return DeferredStrVal(
+            id=val_id,
+            size=size,
+            length=length,
+            content=dict(enumerate(val)),
+        )
     elif isinstance(val, dict):
         return DeferredDictVal(id=val_id, size=size, pair_count=len(val))
     elif isinstance(val, list):
@@ -383,14 +389,6 @@ def get_variables(frame_index: FrameIndex, debugged_file_path: str) -> Variables
                 pair_count=value_repr.pair_count,
             )
             value_repr.pairs = {i: pair for i, pair in enumerate(pairs)}
-        elif isinstance(value_repr, DeferredStrVal) and value_repr.length > 0:
-            content = get_string_contents(
-                str_id=value_repr.id,
-                start_index=0,
-                length=value_repr.length,
-            )
-            value_repr.content = {i: ch for i, ch in enumerate(content)}
-
         elif isinstance(value_repr, DeferredObjectVal):
             value_repr = get_object(
                 object_id=value_repr.id,
