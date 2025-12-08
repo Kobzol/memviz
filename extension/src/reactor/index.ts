@@ -7,14 +7,12 @@ import type {
   ExtensionToMemvizResponse,
   MemvizToExtensionMsg,
 } from "memviz-ui";
-import { type FrameId, SessionType } from "process-def";
+import type { FrameId } from "process-def";
 import type { Settings } from "../menu/settings";
 import type { Evaluator } from "../session/evaluator/evaluator";
-import { GDBDebuggerSession } from "../session/gdb";
 import type { DebuggerSession } from "../session/session";
 import {
   isSetBreakpointsRequest,
-  isSetFunctionBreakpointsRequest,
   isSetFunctionBreakpointsResponse,
   isStoppedEvent,
 } from "./guards";
@@ -29,7 +27,6 @@ export class Reactor<
   private status: Status = {
     kind: "waiting-for-set-function-breakpoints",
   };
-  private trackDynamicAllocations: boolean;
 
   // Breakpoint management
   private breakpointMap = new BreakpointMap();
@@ -42,24 +39,13 @@ export class Reactor<
   constructor(
     private panel: vscode.WebviewPanel,
     private session: TSession,
-    settings: Settings,
+    private settings: Settings,
   ) {
-    this.trackDynamicAllocations = settings.trackDynamicAllocations;
-
     this.webviewMessageHandler = session.createWebviewMessageHandler();
   }
 
   applyMessageChanges(message: DebugProtocol.ProtocolMessage): void {
-    if (this.session.getSessionType() === SessionType.GDB) {
-      // The client sends setFunctionBreakpoints at the very beginning of the debug session.
-      // Add main to the list, so that we can perform some basic initialization at the start
-      // of the debugged program.
-      if (isSetFunctionBreakpointsRequest(message)) {
-        message.arguments.breakpoints.push({
-          name: "main",
-        });
-      }
-    }
+    this.session.applyDebugAdapterMessageChanges(message);
   }
 
   async handleMessageFromClient(message: DebugProtocol.ProtocolMessage) {
@@ -97,7 +83,7 @@ export class Reactor<
 
         const loadResult = await this.session.initEvaluator(frameId);
         console.assert(loadResult.result.trim() === "");
-        await this.handleInitialBreakpointEvent(frameId, stopLocation);
+        await this.handleInitialBreakpointEvent(frameId);
 
         if (hasUserBreakpoint) {
           await this.onThreadStopped();
@@ -140,29 +126,14 @@ export class Reactor<
   private handleSetFunctionBreakpointsResponse(
     message: DebugProtocol.SetFunctionBreakpointsResponse,
   ) {
-    if (this.session.getSessionType() === SessionType.GDB) {
-      // The last breakpoint is the one we artificially created
-      const breakpoints = message.body.breakpoints;
-      console.assert(breakpoints.length > 0);
-    }
+    this.session.handleSetFunctionBreakpointsDebugAdapterResponse(message);
     this.status = {
       kind: "waiting-for-main-breakpoint",
     };
   }
 
-  private async handleInitialBreakpointEvent(
-    frameId: FrameId,
-    stopLocation: Location,
-  ) {
-    // GDB: The program has stopped at main
-    // Perform all initialization actions
-    if (
-      this.session instanceof GDBDebuggerSession &&
-      this.trackDynamicAllocations
-    ) {
-      await this.session.initDynAllocTracking(frameId);
-    }
-
+  private async handleInitialBreakpointEvent(frameId: FrameId) {
+    await this.session.handleInitialBreakpointEvent(frameId, this.settings);
     // We need to change the status BEFORE starting the asynchronous continue
     this.status = { kind: "initialized" };
   }

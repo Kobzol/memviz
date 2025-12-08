@@ -7,6 +7,8 @@ import {
   SessionType,
 } from "process-def";
 import type { DebugSession } from "vscode";
+import type { Settings } from "../menu/settings";
+import { isSetFunctionBreakpointsRequest } from "../reactor/guards";
 import { GDBWebviewMessageHandler } from "../reactor/webviewMessageHandler/gdb";
 import type { ExtractBody } from "../utils";
 import { GDBEvaluator } from "./evaluator/gdb";
@@ -28,7 +30,37 @@ export class GDBDebuggerSession extends DebuggerSession<GDBEvaluator> {
     return new GDBWebviewMessageHandler();
   }
 
-  async initDynAllocTracking(frameId: FrameId): Promise<void> {
+  override applyDebugAdapterMessageChanges(
+    message: DebugProtocol.ProtocolMessage,
+  ): void {
+    // The client sends setFunctionBreakpoints at the very beginning of the debug session.
+    // Add main to the list, so that we can perform some basic initialization at the start
+    // of the debugged program.
+    if (isSetFunctionBreakpointsRequest(message)) {
+      message.arguments.breakpoints.push({
+        name: "main",
+      });
+    }
+  }
+
+  override async handleInitialBreakpointEvent(
+    frameId: FrameId,
+    settings: Settings,
+  ) {
+    // The program has stopped at main
+    if (settings.trackDynamicAllocations) {
+      await this.initDynAllocTracking(frameId);
+    }
+  }
+
+  override handleSetFunctionBreakpointsDebugAdapterResponse(
+    message: DebugProtocol.SetFunctionBreakpointsResponse,
+  ): void {
+    const breakpoints = message.body.breakpoints;
+    console.assert(breakpoints.length > 0);
+  }
+
+  private async initDynAllocTracking(frameId: FrameId): Promise<void> {
     await this.pythonEvaluate("configure_alloc_tracking()", frameId);
   }
 

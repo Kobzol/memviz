@@ -7,6 +7,7 @@ import {
   type ThreadId,
 } from "process-def";
 import type { DebugSession } from "vscode";
+import type { Settings } from "../menu/settings";
 import type { WebviewMessageHandler } from "../reactor/webviewMessageHandler/webviewMessageHandler";
 import type { ExtractBody } from "../utils";
 import type { Evaluator } from "./evaluator/evaluator";
@@ -20,6 +21,18 @@ export abstract class DebuggerSession<TEvaluator extends Evaluator> {
     this,
     ExtensionToMemvizResponse
   >;
+  public applyDebugAdapterMessageChanges(
+    message: DebugProtocol.ProtocolMessage,
+  ): void {}
+  public handleSetFunctionBreakpointsDebugAdapterResponse(
+    message: DebugProtocol.SetFunctionBreakpointsResponse,
+  ): void {}
+  public handleInitialBreakpointEvent(
+    frameId: FrameId,
+    settings: Settings,
+  ): Promise<void> {
+    return Promise.resolve();
+  }
 
   public getSessionType(): SessionType {
     switch (this.session.configuration.type) {
