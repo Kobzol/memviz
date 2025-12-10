@@ -1,6 +1,7 @@
+import { SessionType } from "process-def";
 import type { WebviewApi } from "vscode-webview";
 import type { ExtensionToMemvizMsg } from "./messages";
-import { CachingResolver } from "./resolver/cache";
+import { CachingResolver } from "./resolver/cache/cache";
 import { VsCodeResolver } from "./resolver/vscode";
 import { buildStruct } from "./test-programs";
 import { Memviz } from "./visualization";
@@ -16,8 +17,9 @@ export type {
   ReadMemoryReq,
   TakeAllocEventsReq,
 } from "./messages";
-export type { InternedPlaceList } from "./type";
-export { PlaceKind } from "process-def";
+
+export type { InternedPlaceList } from "./visualization/gdb/type";
+export { PlaceKind } from "process-def/gdb";
 
 function runMemvizInVsCode(vscode: WebviewApi<unknown>) {
   let resolverId = 0;
@@ -35,9 +37,7 @@ function runMemvizInVsCode(vscode: WebviewApi<unknown>) {
         resolverId++;
         const innerResolver = new VsCodeResolver(vscode, resolverId);
         resolver = new CachingResolver(innerResolver);
-        if (message.type === "gdb") memviz.showState(message.state, resolver);
-        else if (message.type === "debugpy") {
-        }
+        memviz.showState(message.state, resolver, message.sessionType);
       } else {
         resolver.inner.handleMessage(message);
       }
@@ -53,7 +53,7 @@ async function runMemVizTest() {
 
   const [state, resolver] = builder.build();
   state.memory.dump();
-  memviz.showState(state, new CachingResolver(resolver));
+  memviz.showState(state, new CachingResolver(resolver), SessionType.GDB);
 }
 
 try {

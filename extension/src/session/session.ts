@@ -1,37 +1,37 @@
 import type { DebugProtocol } from "@vscode/debugprotocol";
-import type { InternedPlaceList, MemoryAllocEvent } from "memviz-ui";
-import type { AddressRange, FrameId, StackFrame, ThreadId } from "process-def";
+import type { ExtensionToMemvizResponse } from "memviz-ui";
+import {
+  type FrameId,
+  SessionType,
+  type StackFrame,
+  type ThreadId,
+} from "process-def";
 import type { DebugSession } from "vscode";
+import type { Settings } from "../menu/settings";
+import type { WebviewMessageHandler } from "../reactor/webviewMessageHandler/webviewMessageHandler";
 import type { ExtractBody } from "../utils";
-import { DebugpyEvaluator } from "./evaluator/debugpy";
 import type { Evaluator } from "./evaluator/evaluator";
-import { GDBEvaluator } from "./evaluator/gdb";
-import type { ScriptPathProvider } from "./scriptPathProvider";
-import { SessionType } from "./sessionType";
 
-export class DebuggerSession {
-  private evaluator: Evaluator;
+export abstract class DebuggerSession<TEvaluator extends Evaluator> {
+  protected abstract evaluator: TEvaluator;
 
-  constructor(
-    private session: DebugSession,
-    scriptPathProvider: ScriptPathProvider,
-  ) {
-    const sessionType = this.getSessionType();
-    if (sessionType === SessionType.GDB) {
-      this.evaluator = new GDBEvaluator(
-        session,
-        scriptPathProvider.getInitScriptPath(SessionType.GDB),
-      );
-    } else if (sessionType === SessionType.Debugpy) {
-      this.evaluator = new DebugpyEvaluator(
-        session,
-        scriptPathProvider.getInitScriptPath(SessionType.Debugpy),
-      );
-    } else {
-      throw new Error(
-        `Unsupported session type: ${this.session.configuration.type}`,
-      );
-    }
+  constructor(protected session: DebugSession) {}
+
+  public abstract createWebviewMessageHandler(): WebviewMessageHandler<
+    this,
+    ExtensionToMemvizResponse
+  >;
+  public applyDebugAdapterMessageChanges(
+    message: DebugProtocol.ProtocolMessage,
+  ): void {}
+  public handleSetFunctionBreakpointsDebugAdapterResponse(
+    message: DebugProtocol.SetFunctionBreakpointsResponse,
+  ): void {}
+  public handleInitialBreakpointEvent(
+    frameId: FrameId,
+    settings: Settings,
+  ): Promise<void> {
+    return Promise.resolve();
   }
 
   public getSessionType(): SessionType {
@@ -69,79 +69,6 @@ export class DebuggerSession {
       breakpoints,
     };
     return await this.evaluator.customRequest("setFunctionBreakpoints", args);
-  }
-
-  async getStackAddressRange(frameId: FrameId): Promise<AddressRange | null> {
-    const result = await this.pythonEvaluate<string[] | null>(
-      "get_stack_address_range()",
-      frameId,
-    );
-    if (result !== null) {
-      const [start, end] = result;
-      return {
-        start,
-        end,
-      };
-    }
-    return null;
-  }
-
-  async initDynAllocTracking(frameId: FrameId) {
-    await this.pythonEvaluate("configure_alloc_tracking()", frameId);
-  }
-
-  async takeAllocEvents(frameId: FrameId): Promise<MemoryAllocEvent[]> {
-    const records = await this.pythonEvaluate<FunctionCallRecord[]>(
-      "take_alloc_records()",
-      frameId,
-    );
-    const events: MemoryAllocEvent[] = [];
-    for (const record of records) {
-      if (record.name === "free") {
-        events.push({
-          kind: "mem-freed",
-          address: record.args[0] as string,
-        });
-      } else if (record.name === "malloc") {
-        events.push({
-          kind: "mem-allocated",
-          size: Number(record.args[0]),
-          address: record.return_value as string,
-        });
-      } else if (record.name === "realloc") {
-        events.push({
-          kind: "mem-freed",
-          address: record.args[0] as string,
-        });
-        events.push({
-          kind: "mem-allocated",
-          size: Number(record.args[1]),
-          address: record.return_value as string,
-        });
-      } else if (record.name === "calloc") {
-        events.push({
-          kind: "mem-allocated",
-          size: Number(record.args[0]) * Number(record.args[1]),
-          address: record.return_value as string,
-        });
-      } else {
-        throw new Error(
-          `Unknown allocation record for function ${record.name}`,
-        );
-      }
-    }
-    return events;
-  }
-
-  async readMemory(
-    address: string,
-    size: number,
-  ): Promise<ExtractBody<Required<DebugProtocol.ReadMemoryResponse>>> {
-    const args: DebugProtocol.ReadMemoryArguments = {
-      memoryReference: address,
-      count: size,
-    };
-    return await this.evaluator.customRequest("readMemory", args);
   }
 
   async next(threadId: ThreadId) {
@@ -197,27 +124,6 @@ export class DebuggerSession {
     return [threadId, stackFrame[0].id];
   }
 
-  async getCurrentFnArgs(frameId: FrameId): Promise<string[]> {
-    const result = await this.evaluator.evaluate("info args", frameId);
-    const args = [];
-    for (let arg of result.result.split("\n")) {
-      arg = arg.trim();
-      const argParts = arg.split("=");
-      if (argParts.length === 2) {
-        args.push(argParts[1].trim());
-      }
-    }
-    return args;
-  }
-
-  async finishCurrentFnAndGetReturnValue(frameId: FrameId): Promise<string> {
-    // Finish the current function
-    await this.evaluator.evaluate("finish", frameId);
-    // Get last saved value
-    const result = await this.evaluator.evaluate(`printf "%p",$`);
-    return result.result.trim();
-  }
-
   async getStackTrace(
     threadId: ThreadId,
     values = false,
@@ -260,20 +166,12 @@ export class DebuggerSession {
     return await this.evaluator.customRequest("variables", args);
   }
 
-  async getPlaces(frameIndex: number): Promise<InternedPlaceList> {
-    const placeResponse = await this.pythonEvaluate<InternedPlaceList>(
-      `get_frame_places(${frameIndex})`,
-      frameIndex,
-    );
-    return placeResponse;
-  }
-
-  private async pythonEvaluate<T>(
+  protected async pythonEvaluate<T>(
     command: string,
     frameId?: FrameId,
   ): Promise<T> {
     const start = performance.now();
-    const gdbResult = await this.evaluator.evaluate(command, frameId);
+    const evaluatorResult = await this.evaluator.evaluate(command, frameId);
     const duration = performance.now() - start;
     // console.debug(
     // `Py command ${command} took ${duration.toFixed(2)}ms, response size: ${gdbResult.result.length}`,
@@ -281,10 +179,10 @@ export class DebuggerSession {
 
     let pyResult: PyResult<T>;
     try {
-      pyResult = JSON.parse(gdbResult.result);
+      pyResult = JSON.parse(evaluatorResult.result);
     } catch (err) {
       throw new Error(
-        `Python command ${command} returned non-JSON response:\n${gdbResult.result.trim()}`,
+        `Python command ${command} returned non-JSON response:\n${evaluatorResult.result.trim()}`,
       );
     }
     if (!pyResult.ok) {
@@ -292,13 +190,6 @@ export class DebuggerSession {
     }
     return pyResult.value as T;
   }
-}
-export class GDBDebuggerSession extends DebuggerSession {}
-export class DebugpyDebuggerSession extends DebuggerSession {}
-interface FunctionCallRecord {
-  name: string;
-  args: unknown[];
-  return_value: unknown | null;
 }
 
 interface PyResult<T> {

@@ -1,24 +1,24 @@
 import type {
   AddressStr,
-  GDBProcessState,
+  FrameIndex,
+  ProcessState,
+  SessionType,
   StackTrace,
   ThreadId,
 } from "process-def";
-import type { InternedPlaceList } from "./type";
+import type {
+  KeyValuePair,
+  Value as PythonValue,
+  Variables as PythonVariables,
+  ResolvedObjectVal,
+} from "process-def/debugpy";
+import type { InternedPlaceList } from "./visualization/gdb/type";
 
-export type GDBProcessStoppedEvent = {
+export type ProcessStoppedEvent = {
   kind: "process-stopped";
-  type: "gdb";
-  state: GDBProcessState;
+  sessionType: SessionType;
+  state: ProcessState;
 };
-export type DebugpyProcessStoppedEvent = {
-  kind: "process-stopped";
-  type: "debugpy";
-};
-
-export type ProcessStoppedEvent =
-  | GDBProcessStoppedEvent
-  | DebugpyProcessStoppedEvent;
 
 // Events from the extension
 export type ExtensionEvent = ProcessStoppedEvent;
@@ -40,6 +40,41 @@ export interface GetPlacesRes extends Response {
   kind: "get-places";
   data: {
     places: InternedPlaceList;
+  };
+}
+
+export interface GetPythonVariablesRepresentationRes extends Response {
+  kind: "get-python-variables-representation";
+  data: {
+    variables: PythonVariables;
+  };
+}
+
+export interface GetCollectionElementsRes extends Response {
+  kind: "get-collection-elements";
+  data: {
+    elements: PythonValue[];
+  };
+}
+
+export interface GetDictEntriesRes extends Response {
+  kind: "get-dict-entries";
+  data: {
+    entries: KeyValuePair[];
+  };
+}
+
+export interface GetStringContentsRes extends Response {
+  kind: "get-string-contents";
+  data: {
+    contents: string;
+  };
+}
+
+export interface GetObjectRes extends Response {
+  kind: "get-object";
+  data: {
+    object: ResolvedObjectVal;
   };
 }
 
@@ -75,12 +110,24 @@ export interface ErrorRes extends Response {
   error: string;
 }
 
-export type ExtensionToMemvizResponse =
-  | GetStackTraceRes
+export type ExtensionToMemvizCommonResponse = GetStackTraceRes | ErrorRes;
+
+export type ExtensionToMemvizGDBResponse =
   | GetPlacesRes
-  | ReadMemoryRes
   | TakeAllocEventsRes
-  | ErrorRes;
+  | ReadMemoryRes;
+
+export type ExtensionToMemvizDebugpyResponse =
+  | GetPythonVariablesRepresentationRes
+  | GetCollectionElementsRes
+  | GetDictEntriesRes
+  | GetStringContentsRes
+  | GetObjectRes;
+
+export type ExtensionToMemvizResponse =
+  | ExtensionToMemvizCommonResponse
+  | ExtensionToMemvizGDBResponse
+  | ExtensionToMemvizDebugpyResponse;
 
 // Any message from the extension
 export type ExtensionToMemvizMsg = ExtensionEvent | ExtensionToMemvizResponse;
@@ -101,7 +148,38 @@ export interface GetStackTraceReq extends Request {
 
 export interface GetPlacesReq extends Request {
   kind: "get-places";
-  frameIndex: number;
+  frameIndex: FrameIndex;
+}
+
+export interface GetPythonVariablesRepresentationReq extends Request {
+  kind: "get-python-variables-representation";
+  frameIndex: FrameIndex;
+}
+
+export interface GetCollectionElementsReq extends Request {
+  kind: "get-collection-elements";
+  id: AddressStr;
+  startIndex: number;
+  elementCount: number;
+}
+
+export interface GetDictEntriesReq extends Request {
+  kind: "get-dict-entries";
+  id: AddressStr;
+  startIndex: number;
+  pairCount: number;
+}
+
+export interface GetStringContentsReq extends Request {
+  kind: "get-string-contents";
+  id: AddressStr;
+  startIndex: number;
+  length: number;
+}
+
+export interface GetObjectReq extends Request {
+  kind: "get-object";
+  id: AddressStr;
 }
 
 export interface ReadMemoryReq extends Request {
@@ -117,5 +195,10 @@ export interface TakeAllocEventsReq extends Request {
 export type MemvizToExtensionMsg =
   | GetStackTraceReq
   | GetPlacesReq
+  | GetPythonVariablesRepresentationReq
+  | GetCollectionElementsReq
+  | GetDictEntriesReq
+  | GetStringContentsReq
+  | GetObjectReq
   | ReadMemoryReq
   | TakeAllocEventsReq;

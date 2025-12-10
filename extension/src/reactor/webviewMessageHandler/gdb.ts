@@ -1,41 +1,41 @@
-import type { MemvizToExtensionMsg } from "memviz-ui";
+import type { MemvizToExtensionMsg, ReadMemoryReq } from "memviz-ui";
 import type {
-  ExtensionToMemvizResponse,
-  GDBProcessStoppedEvent,
+  ExtensionToMemvizGDBResponse,
   GetPlacesReq,
-  GetStackTraceReq,
-  ReadMemoryReq,
+  GetPlacesRes,
+  ProcessStoppedEvent,
+  ReadMemoryRes,
   TakeAllocEventsReq,
+  TakeAllocEventsRes,
 } from "memviz-ui/src/messages";
-import type { GDBDebuggerSession } from "../../session/session";
+import { SessionType } from "process-def";
+import type { GDBDebuggerSession } from "../../session/gdb";
 import { decodeBase64 } from "../../utils";
-import type { WebviewMessageHandler } from "./webviewMessageHandler";
+import { WebviewMessageHandler } from "./webviewMessageHandler";
 
-export class GDBWebviewMessageHandler
-  implements WebviewMessageHandler<GDBDebuggerSession>
-{
+export class GDBWebviewMessageHandler extends WebviewMessageHandler<
+  GDBDebuggerSession,
+  ExtensionToMemvizGDBResponse
+> {
   public getHandleCallback(
     message: MemvizToExtensionMsg,
     session: GDBDebuggerSession,
   ) {
-    if (message.kind === "get-stack-trace") {
-      return this.performGetStackTraceRequest(message, session);
-    }
     if (message.kind === "get-places") {
       return this.performGetPlacesRequest(message, session);
-    }
-    if (message.kind === "read-memory") {
-      return this.performReadMemoryRequest(message, session);
     }
     if (message.kind === "take-alloc-events") {
       return this.performTakeAllocEventsRequest(message, session);
     }
-    return null;
+    if (message.kind === "read-memory") {
+      return this.performReadMemoryRequest(message, session);
+    }
+    return super.getHandleCallback(message, session);
   }
 
   public async getProcessStoppedMessage(
     session: GDBDebuggerSession,
-  ): Promise<GDBProcessStoppedEvent> {
+  ): Promise<ProcessStoppedEvent> {
     const response = await session.getThreads();
     const stackTrace = await session.getStackTrace(
       response.threads[0].id,
@@ -46,7 +46,7 @@ export class GDBWebviewMessageHandler
 
     return {
       kind: "process-stopped",
-      type: "gdb",
+      sessionType: SessionType.GDB,
       state: {
         stackTrace: {
           frames: stackTrace,
@@ -56,31 +56,10 @@ export class GDBWebviewMessageHandler
     } as const;
   }
 
-  private performGetStackTraceRequest(
-    message: GetStackTraceReq,
-    session: GDBDebuggerSession,
-  ): () => Promise<
-    Omit<ExtensionToMemvizResponse, "requestId" | "resolverId">
-  > {
-    return async () => {
-      const frames = await session.getStackTrace(message.threadId);
-      return {
-        kind: "get-stack-trace",
-        data: {
-          stackTrace: {
-            frames,
-          },
-        },
-      };
-    };
-  }
-
   private performGetPlacesRequest(
     message: GetPlacesReq,
     session: GDBDebuggerSession,
-  ): () => Promise<
-    Omit<ExtensionToMemvizResponse, "requestId" | "resolverId">
-  > {
+  ): () => Promise<Omit<GetPlacesRes, "requestId" | "resolverId">> {
     return async () => {
       const places = await session.getPlaces(message.frameIndex);
       return {
@@ -92,30 +71,10 @@ export class GDBWebviewMessageHandler
     };
   }
 
-  private performReadMemoryRequest(
-    message: ReadMemoryReq,
-    session: GDBDebuggerSession,
-  ): () => Promise<
-    Omit<ExtensionToMemvizResponse, "requestId" | "resolverId">
-  > {
-    return async () => {
-      const result = await session.readMemory(message.address, message.size);
-      const data = await decodeBase64(result.data ?? "");
-      return {
-        kind: "read-memory",
-        data: {
-          data,
-        },
-      };
-    };
-  }
-
   private performTakeAllocEventsRequest(
     message: TakeAllocEventsReq,
     session: GDBDebuggerSession,
-  ): () => Promise<
-    Omit<ExtensionToMemvizResponse, "requestId" | "resolverId">
-  > {
+  ): () => Promise<Omit<TakeAllocEventsRes, "requestId" | "resolverId">> {
     return async () => {
       const [_, frameId] = await session.getCurrentThreadAndFrameId();
       const events = await session.takeAllocEvents(frameId);
@@ -123,6 +82,22 @@ export class GDBWebviewMessageHandler
         kind: "take-alloc-events",
         data: {
           events,
+        },
+      };
+    };
+  }
+
+  private performReadMemoryRequest(
+    message: ReadMemoryReq,
+    session: GDBDebuggerSession,
+  ): () => Promise<Omit<ReadMemoryRes, "requestId" | "resolverId">> {
+    return async () => {
+      const result = await session.readMemory(message.address, message.size);
+      const data = await decodeBase64(result.data ?? "");
+      return {
+        kind: "read-memory",
+        data: {
+          data,
         },
       };
     };

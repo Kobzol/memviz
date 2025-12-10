@@ -1,24 +1,32 @@
-import {
-  type Address,
-  type AddressStr,
-  type GDBProcessState,
-  PlaceKind,
-  type StackFrame,
-  type TyArray,
-  type TyFloat,
-  type TyInt,
-  type TyPtr,
-  type Type,
+import type {
+  Address,
+  AddressStr,
+  FrameIndex,
+  ProcessState,
+  StackFrame,
 } from "process-def";
-import type { Place } from "process-def/src";
-import type { HeapAllocation } from "../allocation-tracker";
+import type {
+  KeyValuePair,
+  Value as PythonValue,
+  Variables as PythonVariables,
+} from "process-def/debugpy";
+import type {
+  Place,
+  TyArray,
+  TyFloat,
+  TyInt,
+  TyPtr,
+  Type,
+} from "process-def/gdb";
+import { PlaceKind } from "process-def/gdb";
 import { MemoryMap } from "../memory-map";
 import type { MemoryAllocEvent } from "../messages";
 import { assert, addressToStr, strToAddress } from "../utils";
-import type { TyChar } from "../visualization/utils/types";
-import type { ProcessResolver } from "./resolver";
+import type { HeapAllocation } from "../visualization/gdb/allocation-tracker";
+import type { TyChar } from "../visualization/gdb/utils/types";
+import type { ProcessResolverCore } from "./core";
 
-export interface FullGDBProcessState extends GDBProcessState {
+export interface FullProcessState extends ProcessState {
   stackTrace: FullStackTrace;
   memory: MemoryMap;
   heapAllocations: HeapAllocation[];
@@ -32,8 +40,8 @@ interface FullStackFrame extends StackFrame {
   places: Place[];
 }
 
-export class EagerResolver implements ProcessResolver {
-  constructor(private state: FullGDBProcessState) {}
+export class EagerResolver implements ProcessResolverCore {
+  constructor(private state: FullProcessState) {}
 
   async readMemory(address: AddressStr, size: number): Promise<ArrayBuffer> {
     console.log(`Resolving address ${address} (${size} bytes)`);
@@ -47,8 +55,52 @@ export class EagerResolver implements ProcessResolver {
     return res;
   }
 
-  async getPlaces(frameIndex: number): Promise<Place[]> {
+  async getPlaces(frameIndex: FrameIndex): Promise<Place[]> {
     return this.state.stackTrace.frames[frameIndex].places;
+  }
+
+  async createVariablesRepresentation(
+    frameIndex: FrameIndex,
+  ): Promise<PythonVariables> {
+    console.error(
+      "EagerResolver.createVariablesRepresentation not implemented",
+    );
+    return {
+      places: [],
+      values: [],
+    };
+  }
+
+  async getCollectionElements(
+    id: AddressStr,
+    startIndex: number,
+    elementCount: number,
+  ): Promise<PythonValue[]> {
+    console.error("EagerResolver.getCollectionElements not implemented");
+    return [];
+  }
+
+  async getStringContents(
+    id: AddressStr,
+    startIndex: number,
+    length: number,
+  ): Promise<string> {
+    console.error("EagerResolver.getStringContents not implemented");
+    return "";
+  }
+
+  async getDictEntries(
+    id: AddressStr,
+    startIndex: number,
+    pairCount: number,
+  ): Promise<KeyValuePair[]> {
+    console.error("EagerResolver.getDictEntries not implemented");
+    return [];
+  }
+
+  async getObject(id: AddressStr): Promise<any> {
+    console.error("EagerResolver.getObject not implemented");
+    return {};
   }
 
   async takeAllocEvents(): Promise<MemoryAllocEvent[]> {
@@ -164,14 +216,14 @@ export class ProcessBuilder {
     return new PlaceBuilder(address, this.map);
   }
 
-  build(): [FullGDBProcessState, EagerResolver] {
+  build(): [FullProcessState, EagerResolver] {
     if (this.activeFrame !== null) {
       this.endFrame();
     }
 
     const frames = this.frames.slice().reverse();
 
-    const processState: FullGDBProcessState = {
+    const processState: FullProcessState = {
       stackTrace: {
         frames: frames.map((f, index) => ({ ...f, id: index, index })),
       },

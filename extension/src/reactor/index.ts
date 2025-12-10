@@ -9,57 +9,43 @@ import type {
 } from "memviz-ui";
 import type { FrameId } from "process-def";
 import type { Settings } from "../menu/settings";
+import type { Evaluator } from "../session/evaluator/evaluator";
 import type { DebuggerSession } from "../session/session";
-import { SessionType } from "../session/sessionType";
 import {
   isSetBreakpointsRequest,
-  isSetFunctionBreakpointsRequest,
   isSetFunctionBreakpointsResponse,
   isStoppedEvent,
 } from "./guards";
 import type { Status } from "./handlers";
 import { BreakpointMap, type Location } from "./locations";
-import { DebugpyWebviewMessageHandler } from "./webviewMessageHandler/debugpy";
-import { GDBWebviewMessageHandler } from "./webviewMessageHandler/gdb";
 import type { WebviewMessageHandler } from "./webviewMessageHandler/webviewMessageHandler";
 
-export class Reactor {
+export class Reactor<
+  TEvaluator extends Evaluator,
+  TSession extends DebuggerSession<TEvaluator>,
+> {
   private status: Status = {
     kind: "waiting-for-set-function-breakpoints",
   };
-  private trackDynamicAllocations: boolean;
 
   // Breakpoint management
   private breakpointMap = new BreakpointMap();
 
-  private webviewMessageHandler: WebviewMessageHandler<DebuggerSession>;
+  private webviewMessageHandler: WebviewMessageHandler<
+    TSession,
+    ExtensionToMemvizResponse
+  >;
 
   constructor(
     private panel: vscode.WebviewPanel,
-    private session: DebuggerSession,
-    settings: Settings,
+    private session: TSession,
+    private settings: Settings,
   ) {
-    this.trackDynamicAllocations = settings.trackDynamicAllocations;
-
-    const sessionType = session.getSessionType();
-    if (sessionType === SessionType.GDB) {
-      this.webviewMessageHandler = new GDBWebviewMessageHandler();
-    } else if (sessionType === SessionType.Debugpy) {
-      this.webviewMessageHandler = new DebugpyWebviewMessageHandler();
-    } else {
-      throw new Error(`Unsupported session type: ${sessionType}`);
-    }
+    this.webviewMessageHandler = session.createWebviewMessageHandler();
   }
 
   applyMessageChanges(message: DebugProtocol.ProtocolMessage): void {
-    // The client sends setFunctionBreakpoints at the very beginning of the debug session.
-    // Add main to the list, so that we can perform some basic initialization at the start
-    // of the debugged program.
-    if (isSetFunctionBreakpointsRequest(message)) {
-      message.arguments.breakpoints.push({
-        name: "main",
-      });
-    }
+    this.session.applyDebugAdapterMessageChanges(message);
   }
 
   async handleMessageFromClient(message: DebugProtocol.ProtocolMessage) {
@@ -97,7 +83,7 @@ export class Reactor {
 
         const loadResult = await this.session.initEvaluator(frameId);
         console.assert(loadResult.result.trim() === "");
-        await this.handleMainBreakpointEvent(frameId);
+        await this.handleInitialBreakpointEvent(frameId);
 
         if (hasUserBreakpoint) {
           await this.onThreadStopped();
@@ -140,26 +126,14 @@ export class Reactor {
   private handleSetFunctionBreakpointsResponse(
     message: DebugProtocol.SetFunctionBreakpointsResponse,
   ) {
-    if (this.session.getSessionType() === SessionType.GDB) {
-      // The last breakpoint is the one we artificially created
-      const breakpoints = message.body.breakpoints;
-      console.assert(breakpoints.length > 0);
-    }
+    this.session.handleSetFunctionBreakpointsDebugAdapterResponse(message);
     this.status = {
       kind: "waiting-for-main-breakpoint",
     };
   }
 
-  private async handleMainBreakpointEvent(frameId: FrameId) {
-    // The program has stopped at main
-    // Perform all initialization actions
-    if (
-      this.session.getSessionType() === SessionType.GDB &&
-      this.trackDynamicAllocations
-    ) {
-      await this.session.initDynAllocTracking(frameId);
-    }
-
+  private async handleInitialBreakpointEvent(frameId: FrameId) {
+    await this.session.handleInitialBreakpointEvent(frameId, this.settings);
     // We need to change the status BEFORE starting the asynchronous continue
     this.status = { kind: "initialized" };
   }

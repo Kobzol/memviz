@@ -1,11 +1,28 @@
-import type { AddressStr, Place, StackTrace, ThreadId } from "process-def";
+import type { AddressStr, FrameIndex, StackTrace, ThreadId } from "process-def";
+import type {
+  KeyValuePair,
+  Value as PythonValue,
+  Variables as PythonVariables,
+  ResolvedObjectVal,
+} from "process-def/debugpy";
+import type { Place as GDBPlace } from "process-def/gdb";
 import type { WebviewApi } from "vscode-webview";
 import type {
   ExtensionToMemvizResponse,
+  GetCollectionElementsReq,
+  GetCollectionElementsRes,
+  GetDictEntriesReq,
+  GetDictEntriesRes,
+  GetObjectReq,
+  GetObjectRes,
   GetPlacesReq,
   GetPlacesRes,
+  GetPythonVariablesRepresentationReq,
+  GetPythonVariablesRepresentationRes,
   GetStackTraceReq,
   GetStackTraceRes,
+  GetStringContentsReq,
+  GetStringContentsRes,
   MemoryAllocEvent,
   MemvizToExtensionMsg,
   ReadMemoryReq,
@@ -15,8 +32,8 @@ import type {
   TakeAllocEventsReq,
   TakeAllocEventsRes,
 } from "../messages";
-import { deserializePlaces } from "../type";
-import type { ProcessResolver } from "./resolver";
+import { deserializePlaces } from "../visualization/gdb/type";
+import type { ProcessResolverCore } from "./core";
 
 type ExtractData<T extends { data: unknown }> = T["data"];
 
@@ -25,7 +42,7 @@ interface InFlightRequest {
   reject: (error: string) => void;
 }
 
-export class VsCodeResolver implements ProcessResolver {
+export class VsCodeResolver implements ProcessResolverCore {
   private requestId: RequestId = 0;
   private requestMap: Map<RequestId, InFlightRequest> = new Map();
 
@@ -63,12 +80,82 @@ export class VsCodeResolver implements ProcessResolver {
     return res.stackTrace;
   }
 
-  async getPlaces(frameIndex: number): Promise<Place[]> {
+  async getPlaces(frameIndex: FrameIndex): Promise<GDBPlace[]> {
     const res = await this.sendRequest<GetPlacesReq, GetPlacesRes>({
       kind: "get-places",
       frameIndex,
     });
     return deserializePlaces(res.places);
+  }
+
+  async createVariablesRepresentation(
+    frameIndex: FrameIndex,
+  ): Promise<PythonVariables> {
+    const res = await this.sendRequest<
+      GetPythonVariablesRepresentationReq,
+      GetPythonVariablesRepresentationRes
+    >({
+      kind: "get-python-variables-representation",
+      frameIndex,
+    });
+
+    return res.variables;
+  }
+
+  async getCollectionElements(
+    id: AddressStr,
+    startIndex: number,
+    elementCount: number,
+  ): Promise<PythonValue[]> {
+    const res = await this.sendRequest<
+      GetCollectionElementsReq,
+      GetCollectionElementsRes
+    >({
+      kind: "get-collection-elements",
+      id,
+      elementCount,
+      startIndex,
+    });
+    return res.elements;
+  }
+
+  async getStringContents(
+    id: AddressStr,
+    startIndex: number,
+    length: number,
+  ): Promise<string> {
+    const res = await this.sendRequest<
+      GetStringContentsReq,
+      GetStringContentsRes
+    >({
+      kind: "get-string-contents",
+      id,
+      startIndex,
+      length,
+    });
+    return res.contents;
+  }
+
+  async getDictEntries(
+    id: AddressStr,
+    startIndex: number,
+    pairCount: number,
+  ): Promise<KeyValuePair[]> {
+    const res = await this.sendRequest<GetDictEntriesReq, GetDictEntriesRes>({
+      kind: "get-dict-entries",
+      id,
+      startIndex,
+      pairCount,
+    });
+    return res.entries;
+  }
+
+  async getObject(id: AddressStr): Promise<ResolvedObjectVal> {
+    const res = await this.sendRequest<GetObjectReq, GetObjectRes>({
+      kind: "get-object",
+      id,
+    });
+    return res.object;
   }
 
   async readMemory(address: AddressStr, size: number): Promise<ArrayBuffer> {

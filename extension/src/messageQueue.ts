@@ -1,5 +1,7 @@
 import type { DebugProtocol } from "@vscode/debugprotocol";
 import type { Reactor } from "./reactor";
+import type { Evaluator } from "./session/evaluator/evaluator";
+import type { DebuggerSession } from "./session/session";
 
 export enum MessageType {
   Incoming = "incoming",
@@ -13,10 +15,10 @@ interface QueueTask {
 
 export class MessageQueue {
   private prepQueue: QueueTask[] = [];
-  private handler: Reactor | null = null;
+  private handler: Reactor<Evaluator, DebuggerSession<Evaluator>> | null = null;
   private last: Promise<void> = Promise.resolve();
 
-  setHandler(handler: Reactor) {
+  setHandler(handler: Reactor<Evaluator, DebuggerSession<Evaluator>>) {
     this.handler = handler;
 
     while (this.prepQueue.length > 0) {

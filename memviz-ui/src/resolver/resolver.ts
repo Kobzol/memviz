@@ -1,8 +1,12 @@
-import type { AddressStr, Place } from "process-def";
-import type { MemoryAllocEvent } from "../messages";
+import { DebugpyResolver } from "./adapters/debugpy";
+import { GDBResolver } from "./adapters/gdb";
+import type { ProcessResolverCore } from "./core";
 
-export interface ProcessResolver {
-  getPlaces(frameIndex: number): Promise<Place[]>;
-  readMemory(address: AddressStr, size: number): Promise<ArrayBuffer>;
-  takeAllocEvents(): Promise<MemoryAllocEvent[]>;
+export class ProcessResolver {
+  constructor(resolver: ProcessResolverCore) {
+    this.gdb = new GDBResolver(resolver);
+    this.debugpy = new DebugpyResolver(resolver);
+  }
+  public gdb: GDBResolver;
+  public debugpy: DebugpyResolver;
 }
