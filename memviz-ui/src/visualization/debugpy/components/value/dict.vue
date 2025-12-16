@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import ValueWrapper from "./value.vue";
 import { processResolver, valueState } from "../../../store";
 import { DeferredDictVal } from "process-def/debugpy";
+import MemorySlot from "../memory-slot.vue";
 
 const props = defineProps<{
   value: DeferredDictVal;
@@ -41,12 +41,12 @@ function hasResolvedPairs() {
         <table>
           <tr v-for="(pair, index) in value.pairs" :key="index">
             <td class="key">
-              <ValueWrapper :value="pair.key" />
+              <MemorySlot :value="pair.key" />
             </td>
             <td>
               <div class="value-container">
                 <div class="value">
-                  <ValueWrapper :value="pair.value" />
+                  <MemorySlot :value="pair.value" />
                 </div>
                 <div class="index">{{ index }}</div>
               </div>

@@ -12,7 +12,7 @@ import { addressToStr, assert } from "../../../../utils";
 import {
   allocationState,
   processResolver,
-  componentMap,
+  gdbComponentMap,
   pointerMap,
   uiConfiguration,
 } from "../../../store";
@@ -20,7 +20,7 @@ import { bufferAsBigUnsignedInt, formatAddress } from "../../utils/formatting";
 import { Path } from "../../pointers/path";
 import { Address } from "process-def";
 import { LeaderLine } from "leader-line";
-import { withDisabledPanZoom } from "../../utils/panzoom";
+import { withDisabledPanZoom } from "../../../utils/panzoom";
 import { ComponentWithAddress } from "../../pointers/component-map";
 import { Value, valueToRegion } from "../../utils/value";
 import PtrTarget from "../ptr-target.vue";
@@ -60,7 +60,7 @@ function tryAddArrow() {
     return;
   }
   const target = selectTarget(
-    componentMap.value.getComponentsAt(targetAddress.value)
+    gdbComponentMap.value.getComponentsAt(targetAddress.value)
   );
   if (target === null) {
     tryRemoveArrow();
@@ -192,7 +192,7 @@ watch(
   { immediate: true }
 );
 
-watch(componentMap, () => {
+watch(gdbComponentMap, () => {
   tryAddArrow();
 });
 watch(enabled, () => {

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { type Ref, computed, ref, watch } from "vue";
-import ValueWrapper from "../value-wrapper.vue";
 import { processResolver, valueState } from "../../../../store";
 import { ResolvedObjectVal, ObjectVal } from "process-def/debugpy";
 import AttributeName from "./attribute-name.vue";
+import MemorySlot from "../../memory-slot.vue";
 
 const props = defineProps<{
   value: ObjectVal;
@@ -61,7 +61,7 @@ function onClick() {
             <AttributeName :attribute="attr" />
           </td>
           <td v-if="attr.value">
-            <ValueWrapper :value="attr.value" />
+            <MemorySlot :value="attr.value" />
           </td>
         </tr>
       </table>

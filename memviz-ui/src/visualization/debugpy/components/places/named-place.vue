@@ -2,8 +2,8 @@
 import { Place, PlaceKind, Value } from "process-def/debugpy";
 import { computed } from "vue";
 import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
-import ValueWrapper from "../value/value-wrapper.vue";
 import { DisplayMode } from "../../value-display-settings";
+import MemorySlot from "../memory-slot.vue";
 
 const props = defineProps<{
   place: Place;
@@ -40,11 +40,7 @@ const tooltip = computed(() => {
       >
     </div>
     <div class="place-value">
-      <ValueWrapper
-        v-if="value"
-        :value="value"
-        :displayMode="DisplayMode.INLINE"
-      />
+      <MemorySlot v-if="value" :value="value" :context="DisplayMode.INLINE" />
     </div>
   </div>
 </template>

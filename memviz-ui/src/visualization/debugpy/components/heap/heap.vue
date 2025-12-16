@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { valueState } from "../../../store";
-import ValueWrapper from "../value/value-wrapper.vue";
 import { DisplayMode } from "../../value-display-settings";
+import MemorySlot from "../memory-slot.vue";
 
 const values = computed(() => valueState.value.getValues());
 </script>
@@ -10,11 +10,11 @@ const values = computed(() => valueState.value.getValues());
 <template>
   <div class="heap" v-if="values.length > 0">
     <div class="header">Heap</div>
-    <ValueWrapper
+    <MemorySlot
       v-for="value in values"
       :key="value.id"
       :value="value"
-      :displayMode="DisplayMode.DETACHED"
+      :context="DisplayMode.DETACHED"
     />
   </div>
 </template>

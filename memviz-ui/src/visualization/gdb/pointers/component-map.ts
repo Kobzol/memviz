@@ -104,14 +104,14 @@ export class ComponentMap {
     );
     assert(
       this.components.delete(id),
-      `element with ID ${id} did not exist in component map`,
+      `element with ID ${id} did not exist in GDB component map`,
     );
     triggerRef(ref);
   }
 
   private getElement(id: ComponentId): ComponentWithAddress {
     const component = this.components.get(id)!;
-    assert(component !== undefined, "inconsistent component map");
+    assert(component !== undefined, "inconsistent GDB component map");
     return component;
   }
 }

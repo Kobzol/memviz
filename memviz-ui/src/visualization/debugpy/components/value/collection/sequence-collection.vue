@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { DeferredListVal, DeferredTupleVal } from "process-def/debugpy";
-import ValueWrapper from "../value-wrapper.vue";
+import MemorySlot from "../../memory-slot.vue";
 
 const props = defineProps<{
   value: DeferredListVal | DeferredTupleVal;
@@ -13,7 +13,7 @@ const props = defineProps<{
       <tr v-for="(el, index) in value.elements" :key="index">
         <td class="index">{{ index }}</td>
         <td class="value">
-          <ValueWrapper :value="el" />
+          <MemorySlot :value="el" />
         </td>
       </tr>
     </table>

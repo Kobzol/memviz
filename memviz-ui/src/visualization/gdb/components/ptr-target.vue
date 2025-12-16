@@ -7,7 +7,7 @@ import {
   shallowRef,
   watch,
 } from "vue";
-import { componentMap } from "../../store";
+import { gdbComponentMap } from "../../store";
 import { assert } from "../../../utils";
 import { ComponentUnsubscribeFn } from "../../gdb/pointers/component-map";
 import { AddressRegion } from "../../gdb/pointers/region";
@@ -34,14 +34,14 @@ async function updateComponentInMap() {
     removeComponentFromMap();
 
     if (elementRef.value !== null) {
-      unsubscribeFn.value = componentMap.value.addComponent(
+      unsubscribeFn.value = gdbComponentMap.value.addComponent(
         {
           address,
           element: elementRef.value,
           size: props.region.size,
           path: props.path,
         },
-        componentMap
+        gdbComponentMap
       );
     }
   });
