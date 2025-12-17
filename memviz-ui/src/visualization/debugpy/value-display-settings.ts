@@ -6,7 +6,7 @@ export enum DisplayMode {
 export const valueDisplaySettings: Map<string, DisplayMode> = new Map([
   ["none", DisplayMode.INLINE],
   ["bool", DisplayMode.INLINE],
-  ["int", DisplayMode.DETACHED],
+  ["int", DisplayMode.INLINE],
   ["float", DisplayMode.INLINE],
   ["complex", DisplayMode.INLINE],
   ["str", DisplayMode.INLINE],

@@ -40,15 +40,17 @@ function hasResolvedPairs() {
       <div class="pairs">
         <table>
           <tr v-for="(pair, index) in value.pairs" :key="index">
-            <td class="key">
-              <MemorySlot :value="pair.key" />
-            </td>
-            <td>
-              <div class="value-container">
-                <div class="value">
-                  <MemorySlot :value="pair.value" />
+            <td class="key-cell">
+              <div class="key-container">
+                <div class="key">
+                  <MemorySlot :value="pair.key" />
                 </div>
                 <div class="index">{{ index }}</div>
+              </div>
+            </td>
+            <td>
+              <div class="value">
+                <MemorySlot :value="pair.value" />
               </div>
             </td>
           </tr>
@@ -83,19 +85,20 @@ table {
   justify-content: start;
   flex-direction: column;
 
-  .key {
-    background-color: #dae4ef;
+  .value {
     padding-left: 5px;
-    vertical-align: top;
   }
 
-  .value-container {
+  .key-cell {
+    background-color: #dae4ef;
+  }
+
+  .key-container {
     display: flex;
     flex-direction: row;
-    justify-items: center;
     padding-left: 5px;
 
-    .value {
+    .key {
       flex: 1;
     }
 
@@ -104,6 +107,7 @@ table {
       font-size: 0.9em;
       color: #3f3f3f;
       text-align: right;
+      justify-content: flex-end;
     }
   }
 }

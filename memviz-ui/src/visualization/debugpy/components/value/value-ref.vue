@@ -72,8 +72,8 @@ onBeforeUnmount(() => {
   <div
     class="value-ref"
     :ref="(el: any) => elementRef = el"
-    v-on:mouseenter="highlightArrows"
-    v-on:mouseleave="unhighlightArrows"
+    @mouseenter.stop="highlightArrows"
+    @mouseleave.stop="unhighlightArrows"
   ></div>
 </template>
 
@@ -81,5 +81,6 @@ onBeforeUnmount(() => {
 .value-ref {
   display: flex;
   height: 100%;
+  min-height: 1.5em;
 }
 </style>

@@ -45,10 +45,3 @@ const valueDisplayMode: ComputedRef<DisplayMode> = computed(
   />
   <!-- in case of detached context and inline value display mode, nothing is shown -->
 </template>
-
-<style scoped lang="scss">
-.value {
-  display: flex;
-  flex-direction: column;
-}
-</style>
