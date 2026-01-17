@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { processResolver, valueState } from "../../../store";
+import { processResolver } from "../../../store";
 import { DeferredDictVal } from "process-def/debugpy";
 import MemorySlot from "../memory-slot.vue";
+import { valueState } from "../../store";
 
 const props = defineProps<{
   value: DeferredDictVal;
@@ -18,7 +19,7 @@ async function loadData() {
     .then((pairs) => {
       props.value.pairs = pairs;
       valueState.value.addValues(
-        pairs.flatMap((pair) => [pair.key, pair.value])
+        pairs.flatMap((pair) => [pair.key, pair.value]),
       );
     });
 }

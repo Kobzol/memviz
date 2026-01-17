@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { valueState } from "../../../store";
 import { DisplayMode } from "../../value-display-settings";
 import MemorySlot from "../memory-slot.vue";
+import { valueState } from "../../store";
 
 const values = computed(() => valueState.value.getValues());
 </script>

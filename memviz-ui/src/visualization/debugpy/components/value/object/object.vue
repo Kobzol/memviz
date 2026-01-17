@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { type Ref, computed, ref, watch } from "vue";
-import { processResolver, valueState } from "../../../../store";
+import { processResolver } from "../../../../store";
 import { ResolvedObjectVal, ObjectVal } from "process-def/debugpy";
 import AttributeName from "./attribute-name.vue";
 import MemorySlot from "../../memory-slot.vue";
+import { valueState } from "../../../store";
 
 const props = defineProps<{
   value: ObjectVal;
@@ -41,7 +42,7 @@ watch(
   () => {
     checkIfAlreadyResolved();
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 function onClick() {

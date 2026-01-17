@@ -1,21 +1,23 @@
-import type { PythonId, Value } from "process-def/debugpy";
+import type { PythonId } from "process-def/debugpy";
 import { reactive } from "vue";
+import type { RichValue } from "./type";
 
 export class ValueTracker {
-  private values = reactive(new Map<PythonId, Value>());
+  private values = reactive(new Map<PythonId, RichValue>());
 
-  getValues(): Value[] {
+  getValues(): RichValue[] {
     return Array.from(this.values.values());
   }
 
-  addValues(values: Value[]) {
-    console.log("Adding values:", values);
+  addValues(values: RichValue[]) {
     for (const value of values) {
-      this.values.set(value.id, value);
+      if (!this.values.has(value.id)) {
+        this.values.set(value.id, value);
+      }
     }
   }
 
-  getValueById(id: PythonId): Value | null {
+  getValueById(id: PythonId): RichValue | null {
     return this.values.get(id) ?? null;
   }
 }

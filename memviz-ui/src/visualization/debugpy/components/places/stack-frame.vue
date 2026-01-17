@@ -7,7 +7,7 @@ import TooltipContributor from "../../../components/tooltip/tooltip-contributor.
 import { StackFrame } from "process-def";
 import NamedPlace from "./named-place.vue";
 import { formatLocation } from "../../../utils/formatting";
-import { valueState } from "../../../store";
+import { valueState } from "../../store";
 
 const props = defineProps<{
   frame: StackFrame;
@@ -21,18 +21,17 @@ async function maybeLoadPlaces() {
   if (expanded.value && places.value === null) {
     const variables =
       await resolver.value.debugpy.createVariablesRepresentation(
-        props.frame.index
+        props.frame.index,
       );
 
     places.value = variables.places;
-    valueState.value.addValues(variables.values);
   }
 }
 
 const resolver = computed(() => processResolver.value);
 const places: Ref<Place[] | null> = ref(null);
 const location = computed(() =>
-  formatLocation(props.frame.file, props.frame.line)
+  formatLocation(props.frame.file, props.frame.line),
 );
 const tooltip = computed(() => {
   return `Stack frame of function <b>${props.frame.name}</b> located at <b>${location.value}</b>`;
@@ -46,7 +45,7 @@ watch(
     if (newFrame.index != oldFrame.index || newFrame.name != oldFrame.name) {
       expanded.value = isTopFrame.value;
     }
-  }
+  },
 );
 
 watch(
@@ -54,7 +53,7 @@ watch(
   () => {
     places.value = null;
     maybeLoadPlaces();
-  }
+  },
 );
 
 watch(
@@ -62,7 +61,7 @@ watch(
   () => {
     maybeLoadPlaces();
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // https://www.color-hex.com/color-palette/24003

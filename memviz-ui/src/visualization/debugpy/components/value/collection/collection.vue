@@ -2,7 +2,7 @@
 import { computed } from "vue";
 import SequenceCollection from "./sequence-collection.vue";
 import SetCollection from "./set-collection.vue";
-import { processResolver, valueState } from "../../../../store";
+import { processResolver } from "../../../../store";
 import {
   CollectionVal,
   DeferredFrozenSetVal,
@@ -10,6 +10,7 @@ import {
   DeferredSetVal,
   DeferredTupleVal,
 } from "process-def/debugpy";
+import { valueState } from "../../../store";
 
 const props = defineProps<{
   value: CollectionVal;
@@ -39,13 +40,13 @@ function hasResolvedElements() {
 }
 
 function isSequenceCollection(
-  value: CollectionVal
+  value: CollectionVal,
 ): value is DeferredListVal | DeferredTupleVal {
   return value.kind === "list" || value.kind === "tuple";
 }
 
 function isSetCollection(
-  value: CollectionVal
+  value: CollectionVal,
 ): value is DeferredSetVal | DeferredFrozenSetVal {
   return value.kind === "set" || value.kind === "frozenset";
 }

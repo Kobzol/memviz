@@ -3,7 +3,6 @@ import { type Ref, type ShallowRef, ref, shallowRef } from "vue";
 import { ProcessBuilder } from "../resolver/eager";
 import { ProcessResolver } from "../resolver/resolver";
 import { ComponentMap as DebugpyComponentMap } from "./debugpy/component-map";
-import { ValueTracker } from "./debugpy/value-tracker";
 import { AllocationTracker } from "./gdb/allocation-tracker";
 import { ComponentMap as GDBComponentMap } from "./gdb/pointers/component-map";
 import { PointerMap } from "./gdb/pointers/pointer-map";
@@ -27,10 +26,6 @@ export const processResolver: ShallowRef<ProcessResolver> = shallowRef(
 
 export const allocationState: ShallowRef<AllocationTracker> = shallowRef(
   new AllocationTracker(),
-);
-
-export const valueState: ShallowRef<ValueTracker> = shallowRef(
-  new ValueTracker(),
 );
 
 export interface UIConfiguration {
