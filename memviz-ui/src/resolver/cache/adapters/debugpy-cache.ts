@@ -11,7 +11,7 @@ export class CachingDebugpyResolver extends DebugpyResolver {
   async createVariablesRepresentation(
     frameIndex: FrameIndex,
   ): Promise<Variables> {
-    return await this.resolver.createVariablesRepresentation(frameIndex);
+    return await super.createVariablesRepresentation(frameIndex);
   }
 
   async getCollectionElements(
@@ -19,11 +19,7 @@ export class CachingDebugpyResolver extends DebugpyResolver {
     elementCount: number,
     startIndex: number,
   ): Promise<Value[]> {
-    return await this.resolver.getCollectionElements(
-      id,
-      elementCount,
-      startIndex,
-    );
+    return await super.getCollectionElements(id, elementCount, startIndex);
   }
 
   async getStringContents(
@@ -31,7 +27,7 @@ export class CachingDebugpyResolver extends DebugpyResolver {
     startIndex: number,
     length: number,
   ): Promise<string> {
-    return await this.resolver.getStringContents(id, startIndex, length);
+    return await super.getStringContents(id, startIndex, length);
   }
 
   async getDictEntries(
@@ -39,10 +35,10 @@ export class CachingDebugpyResolver extends DebugpyResolver {
     startIndex: number,
     pairCount: number,
   ): Promise<KeyValuePair[]> {
-    return await this.resolver.getDictEntries(id, startIndex, pairCount);
+    return await super.getDictEntries(id, startIndex, pairCount);
   }
 
   async getObject(id: AddressStr): Promise<ResolvedObjectVal> {
-    return await this.resolver.getObject(id);
+    return await super.getObject(id);
   }
 }
