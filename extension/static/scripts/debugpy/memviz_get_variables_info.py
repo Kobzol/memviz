@@ -13,6 +13,7 @@ FrameIndex = int
 
 
 RETURN_VALUES_DICT_NAME = "__pydevd_ret_val_dict"
+SEQUENCE_LOAD_ITEM_COUNT = 15
 
 
 class IdMap:
@@ -319,27 +320,6 @@ def check_type(value: Any, expected_types: Tuple[str, ...]) -> None:
         )
 
 
-def validate_slicing_params(
-    value: Any,
-    start_index: int,
-    count: int,
-) -> int:
-    collection_length = len(value)
-    if not (
-        (0 <= start_index < collection_length)
-        or (start_index == collection_length and count == 0)
-    ):
-        raise ValueError(
-            f"Start_index {start_index} out of range [0, {collection_length}] for {value}."
-        )
-    if start_index + count > collection_length:
-        raise ValueError(
-            f"Count {count} out of range. Collection {value} has length {collection_length}, "
-            f"so maximum allowed count is {collection_length - start_index} for start_index {start_index}."
-        )
-    return collection_length
-
-
 def get_argument_names(frame: inspect.FrameInfo) -> List[str]:
     argvalues = inspect.getargvalues(frame.frame)
     arg_names = list(argvalues.args)
@@ -378,17 +358,29 @@ def get_variables(frame_index: FrameIndex, debugged_file_path: str) -> Variables
         if isinstance(value_repr, CollectionVal) and value_repr.element_count > 0:
             elements = get_collection_elements(
                 collection_id=value_repr.id,
-                start_index=0,
-                element_count=value_repr.element_count,
+                element_indices=list(
+                    range(
+                        min(SEQUENCE_LOAD_ITEM_COUNT, value_repr.element_count)
+                    )
+                ),
             )
             value_repr.elements = {i: elem for i, elem in enumerate(elements)}
         elif isinstance(value_repr, DeferredDictVal) and value_repr.pair_count > 0:
             pairs = get_dict_entries(
                 dict_id=value_repr.id,
-                start_index=0,
-                pair_count=value_repr.pair_count,
+                pair_indices=list(
+                    range(min(SEQUENCE_LOAD_ITEM_COUNT, value_repr.pair_count))
+                ),
             )
             value_repr.pairs = {i: pair for i, pair in enumerate(pairs)}
+        elif isinstance(value_repr, DeferredStrVal) and value_repr.length > 0:
+            content = get_string_contents(
+                str_id=value_repr.id,
+                char_indices=list(
+                    range(min(SEQUENCE_LOAD_ITEM_COUNT, value_repr.length))
+                ),
+            )
+            value_repr.content = {i: ch for i, ch in enumerate(content)}
         elif isinstance(value_repr, DeferredObjectVal):
             value_repr = get_object(
                 object_id=value_repr.id,
@@ -410,17 +402,20 @@ def get_variables(frame_index: FrameIndex, debugged_file_path: str) -> Variables
 
 def get_collection_elements(
     collection_id: PythonId,
-    start_index: int,
-    element_count: int,
+    element_indices: List[int],
 ) -> List[BaseVal]:
     value = IdMap.get(collection_id)
 
     allowed_types = ("list", "tuple", "set", "frozenset")
     check_type(value, allowed_types)
-    validate_slicing_params(value, start_index, element_count)
+    # validate_slicing_params(value, start_index, element_count)
 
     elements = []
-    for element in itertools.islice(value, start_index, start_index + element_count):
+    for idx in element_indices:
+        if idx < 0 or idx >= len(value):
+            elements.append(None)
+            continue
+        element = list(value)[idx]
         value_repr = make_value(element)
         elements.append(value_repr)
         IdMap.register(value_repr.id, element)
@@ -429,17 +424,18 @@ def get_collection_elements(
 
 def get_dict_entries(
     dict_id: PythonId,
-    start_index: int,
-    pair_count: int,
+    pair_indices: List[int],
 ) -> List[KeyValuePair]:
     value = IdMap.get(dict_id)
     check_type(value, ("dict",))
-    validate_slicing_params(value, start_index, pair_count)
 
     entries = []
-    for key, val in itertools.islice(
-        value.items(), start_index, start_index + pair_count
-    ):
+    for idx in pair_indices:
+        if idx < 0 or idx >= len(value):
+            entries.append(None)
+            continue
+        key = list(value.keys())[idx]
+        val = value[key]
         key_repr = make_value(key)
         value_repr = make_value(val)
         entries.append(KeyValuePair(key_repr, value_repr))
@@ -450,16 +446,19 @@ def get_dict_entries(
 
 def get_string_contents(
     str_id: PythonId,
-    start_index: int,
-    length: int,
+    char_indices: List[int],
 ) -> str:
 
     value = IdMap.get(str_id)
 
     check_type(value, ("str",))
-    validate_slicing_params(value, start_index, length)
-
-    return value[start_index : start_index + length]
+    content_chars = []
+    for idx in char_indices:
+        if idx < 0 or idx >= len(value):
+            content_chars.append("")
+            continue
+        content_chars.append(value[idx])
+    return "".join(content_chars)
 
 
 def get_object(object_id: PythonId) -> ResolvedObjectVal:

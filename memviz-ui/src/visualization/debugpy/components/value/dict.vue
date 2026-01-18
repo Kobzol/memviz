@@ -15,7 +15,7 @@ async function loadData() {
     return;
   }
   resolver.value.debugpy
-    .getDictEntries(props.value.id, 0, props.value.pair_count)
+    .getDictEntries(props.value.id, [0])
     .then((pairs) => {
       props.value.pairs = pairs;
       valueState.value.addValues(

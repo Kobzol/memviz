@@ -1,44 +1,41 @@
 import type { AddressStr, FrameIndex } from "process-def";
+import type { Attribute } from "process-def/debugpy";
 import type {
-  KeyValuePair,
-  ResolvedObjectVal,
-  Value,
-  Variables,
-} from "process-def/debugpy";
+  RichKeyValuePair,
+  RichValue,
+  RichVariables,
+} from "../../../visualization/debugpy/type/type";
 import { DebugpyResolver } from "../../adapters/debugpy";
 
 export class CachingDebugpyResolver extends DebugpyResolver {
   async createVariablesRepresentation(
     frameIndex: FrameIndex,
-  ): Promise<Variables> {
+  ): Promise<RichVariables> {
     return await super.createVariablesRepresentation(frameIndex);
   }
 
   async getCollectionElements(
     id: AddressStr,
-    elementCount: number,
-    startIndex: number,
-  ): Promise<Value[]> {
-    return await super.getCollectionElements(id, elementCount, startIndex);
+    elementIndices: number[],
+  ): Promise<RichValue[]> {
+    return await super.getCollectionElements(id, elementIndices);
   }
 
   async getStringContents(
     id: AddressStr,
-    startIndex: number,
-    length: number,
+    charIndices: number[],
   ): Promise<string> {
-    return await super.getStringContents(id, startIndex, length);
+    return await super.getStringContents(id, charIndices);
   }
 
   async getDictEntries(
     id: AddressStr,
-    startIndex: number,
-    pairCount: number,
-  ): Promise<KeyValuePair[]> {
-    return await super.getDictEntries(id, startIndex, pairCount);
+    pairIndices: number[],
+  ): Promise<RichKeyValuePair[]> {
+    return await super.getDictEntries(id, pairIndices);
   }
 
-  async getObject(id: AddressStr): Promise<ResolvedObjectVal> {
+  async getObject(id: AddressStr): Promise<Attribute[]> {
     return await super.getObject(id);
   }
 }

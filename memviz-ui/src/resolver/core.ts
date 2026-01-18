@@ -1,34 +1,26 @@
 import type { AddressStr, FrameIndex } from "process-def";
-import type {
-  KeyValuePair,
-  Value as PythonValue,
-  Variables as PythonVariables,
-  ResolvedObjectVal,
-} from "process-def/debugpy";
+import type { Attribute } from "process-def/debugpy";
 import type { Place as GDBPlace } from "process-def/gdb";
 import type { MemoryAllocEvent } from "../messages";
+import type {
+  RichKeyValuePair,
+  RichValue,
+  RichVariables,
+} from "../visualization/debugpy/type/type";
 
 export interface ProcessResolverCore {
   getPlaces(frameIndex: FrameIndex): Promise<GDBPlace[]>;
   readMemory(address: AddressStr, size: number): Promise<ArrayBuffer>;
   takeAllocEvents(): Promise<MemoryAllocEvent[]>;
-  createVariablesRepresentation(
-    frameIndex: FrameIndex,
-  ): Promise<PythonVariables>;
+  createVariablesRepresentation(frameIndex: FrameIndex): Promise<RichVariables>;
   getCollectionElements(
     id: AddressStr,
-    startIndex: number,
-    elementCount: number,
-  ): Promise<PythonValue[]>;
-  getStringContents(
-    id: AddressStr,
-    startIndex: number,
-    length: number,
-  ): Promise<string>;
+    elementIndices: number[],
+  ): Promise<RichValue[]>;
+  getStringContents(id: AddressStr, charIndices: number[]): Promise<string>;
   getDictEntries(
     id: AddressStr,
-    startIndex: number,
-    pairCount: number,
-  ): Promise<KeyValuePair[]>;
-  getObject(id: AddressStr): Promise<ResolvedObjectVal>;
+    pairIndices: number[],
+  ): Promise<RichKeyValuePair[]>;
+  getObject(id: AddressStr): Promise<Attribute[]>;
 }

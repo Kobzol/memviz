@@ -5,11 +5,7 @@ import type {
   ProcessState,
   StackFrame,
 } from "process-def";
-import type {
-  KeyValuePair,
-  Value as PythonValue,
-  Variables as PythonVariables,
-} from "process-def/debugpy";
+import type { Attribute } from "process-def/debugpy";
 import type {
   Place,
   TyArray,
@@ -22,6 +18,11 @@ import { PlaceKind } from "process-def/gdb";
 import { MemoryMap } from "../memory-map";
 import type { MemoryAllocEvent } from "../messages";
 import { assert, addressToStr, strToAddress } from "../utils";
+import type {
+  RichKeyValuePair,
+  RichValue,
+  RichVariables,
+} from "../visualization/debugpy/type/type";
 import type { HeapAllocation } from "../visualization/gdb/allocation-tracker";
 import type { TyChar } from "../visualization/gdb/utils/types";
 import type { ProcessResolverCore } from "./core";
@@ -61,7 +62,7 @@ export class EagerResolver implements ProcessResolverCore {
 
   async createVariablesRepresentation(
     frameIndex: FrameIndex,
-  ): Promise<PythonVariables> {
+  ): Promise<RichVariables> {
     console.error(
       "EagerResolver.createVariablesRepresentation not implemented",
     );
@@ -73,17 +74,15 @@ export class EagerResolver implements ProcessResolverCore {
 
   async getCollectionElements(
     id: AddressStr,
-    startIndex: number,
-    elementCount: number,
-  ): Promise<PythonValue[]> {
+    elementIndices: number[],
+  ): Promise<RichValue[]> {
     console.error("EagerResolver.getCollectionElements not implemented");
     return [];
   }
 
   async getStringContents(
     id: AddressStr,
-    startIndex: number,
-    length: number,
+    charIndices: number[],
   ): Promise<string> {
     console.error("EagerResolver.getStringContents not implemented");
     return "";
@@ -91,16 +90,15 @@ export class EagerResolver implements ProcessResolverCore {
 
   async getDictEntries(
     id: AddressStr,
-    startIndex: number,
-    pairCount: number,
-  ): Promise<KeyValuePair[]> {
+    pairIndices: number[],
+  ): Promise<RichKeyValuePair[]> {
     console.error("EagerResolver.getDictEntries not implemented");
     return [];
   }
 
-  async getObject(id: AddressStr): Promise<any> {
+  async getObject(id: AddressStr): Promise<Attribute[]> {
     console.error("EagerResolver.getObject not implemented");
-    return {};
+    return [];
   }
 
   async takeAllocEvents(): Promise<MemoryAllocEvent[]> {

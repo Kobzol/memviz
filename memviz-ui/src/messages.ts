@@ -159,22 +159,19 @@ export interface GetPythonVariablesRepresentationReq extends Request {
 export interface GetCollectionElementsReq extends Request {
   kind: "get-collection-elements";
   id: AddressStr;
-  startIndex: number;
-  elementCount: number;
+  elementIndices: number[];
 }
 
 export interface GetDictEntriesReq extends Request {
   kind: "get-dict-entries";
   id: AddressStr;
-  startIndex: number;
-  pairCount: number;
+  pairIndices: number[];
 }
 
 export interface GetStringContentsReq extends Request {
   kind: "get-string-contents";
   id: AddressStr;
-  startIndex: number;
-  length: number;
+  charIndices: number[];
 }
 
 export interface GetObjectReq extends Request {

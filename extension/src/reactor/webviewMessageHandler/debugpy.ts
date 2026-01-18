@@ -106,8 +106,7 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
       const elements = await session.getCollectionElements(
         frameId,
         message.id,
-        message.startIndex,
-        message.elementCount,
+        message.elementIndices,
       );
       return {
         kind: "get-collection-elements",
@@ -127,8 +126,7 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
       const entries = await session.getDictEntries(
         frameId,
         message.id,
-        message.startIndex,
-        message.pairCount,
+        message.pairIndices,
       );
       return {
         kind: "get-dict-entries",
@@ -148,8 +146,7 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
       const contents = await session.getStringContents(
         frameId,
         message.id,
-        message.startIndex,
-        message.length,
+        message.charIndices,
       );
       return {
         kind: "get-string-contents",

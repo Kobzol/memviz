@@ -1,9 +1,5 @@
 import type { AddressStr, FrameIndex, StackTrace, ThreadId } from "process-def";
-import type {
-  KeyValuePair,
-  Value as PythonValue,
-  ResolvedObjectVal,
-} from "process-def/debugpy";
+import type { Attribute } from "process-def/debugpy";
 import type { Place as GDBPlace } from "process-def/gdb";
 import type { WebviewApi } from "vscode-webview";
 import type {
@@ -31,8 +27,12 @@ import type {
   TakeAllocEventsReq,
   TakeAllocEventsRes,
 } from "../messages";
-import { rawToRichValues } from "../visualization/debugpy/type/raw-to-rich";
-import type { RichVariables as RichPythonVariables } from "../visualization/debugpy/type/type";
+import type {
+  RichKeyValuePair,
+  RichVariables as RichPythonVariables,
+  RichValue,
+} from "../visualization/debugpy/type/type";
+import { rawToRichValues } from "../visualization/debugpy/type/value-mapper";
 import { deserializePlaces } from "../visualization/gdb/type";
 import type { ProcessResolverCore } from "./core";
 
@@ -108,25 +108,22 @@ export class VsCodeResolver implements ProcessResolverCore {
 
   async getCollectionElements(
     id: AddressStr,
-    startIndex: number,
-    elementCount: number,
-  ): Promise<PythonValue[]> {
+    elementIndices: number[],
+  ): Promise<RichValue[]> {
     const res = await this.sendRequest<
       GetCollectionElementsReq,
       GetCollectionElementsRes
     >({
       kind: "get-collection-elements",
       id,
-      elementCount,
-      startIndex,
+      elementIndices,
     });
-    return res.elements;
+    return rawToRichValues(res.elements);
   }
 
   async getStringContents(
     id: AddressStr,
-    startIndex: number,
-    length: number,
+    charIndices: number[],
   ): Promise<string> {
     const res = await this.sendRequest<
       GetStringContentsReq,
@@ -134,32 +131,32 @@ export class VsCodeResolver implements ProcessResolverCore {
     >({
       kind: "get-string-contents",
       id,
-      startIndex,
-      length,
+      charIndices,
     });
     return res.contents;
   }
 
   async getDictEntries(
     id: AddressStr,
-    startIndex: number,
-    pairCount: number,
-  ): Promise<KeyValuePair[]> {
+    pairIndices: number[],
+  ): Promise<RichKeyValuePair[]> {
     const res = await this.sendRequest<GetDictEntriesReq, GetDictEntriesRes>({
       kind: "get-dict-entries",
       id,
-      startIndex,
-      pairCount,
+      pairIndices,
     });
-    return res.entries;
+    return res.entries.map((entry) => ({
+      key: rawToRichValues([entry.key])[0],
+      value: rawToRichValues([entry.value])[0],
+    }));
   }
 
-  async getObject(id: AddressStr): Promise<ResolvedObjectVal> {
+  async getObject(id: AddressStr): Promise<Attribute[]> {
     const res = await this.sendRequest<GetObjectReq, GetObjectRes>({
       kind: "get-object",
       id,
     });
-    return res.object;
+    return res.object.attributes;
   }
 
   async readMemory(address: AddressStr, size: number): Promise<ArrayBuffer> {
