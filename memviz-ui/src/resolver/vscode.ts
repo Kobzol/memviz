@@ -2,7 +2,6 @@ import type { AddressStr, FrameIndex, StackTrace, ThreadId } from "process-def";
 import type {
   KeyValuePair,
   Value as PythonValue,
-  Variables as PythonVariables,
   ResolvedObjectVal,
 } from "process-def/debugpy";
 import type { Place as GDBPlace } from "process-def/gdb";
@@ -32,6 +31,8 @@ import type {
   TakeAllocEventsReq,
   TakeAllocEventsRes,
 } from "../messages";
+import { rawToRichValues } from "../visualization/debugpy/type/raw-to-rich";
+import type { RichVariables as RichPythonVariables } from "../visualization/debugpy/type/type";
 import { deserializePlaces } from "../visualization/gdb/type";
 import type { ProcessResolverCore } from "./core";
 
@@ -90,7 +91,7 @@ export class VsCodeResolver implements ProcessResolverCore {
 
   async createVariablesRepresentation(
     frameIndex: FrameIndex,
-  ): Promise<PythonVariables> {
+  ): Promise<RichPythonVariables> {
     const res = await this.sendRequest<
       GetPythonVariablesRepresentationReq,
       GetPythonVariablesRepresentationRes
@@ -99,7 +100,10 @@ export class VsCodeResolver implements ProcessResolverCore {
       frameIndex,
     });
 
-    return res.variables;
+    return {
+      places: res.variables.places,
+      values: rawToRichValues(res.variables.values),
+    };
   }
 
   async getCollectionElements(

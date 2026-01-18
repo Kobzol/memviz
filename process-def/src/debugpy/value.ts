@@ -1,42 +1,62 @@
 export type PythonId = string;
 
+export enum ValueKind {
+  NONE = "none",
+  BOOL = "bool",
+  INT = "int",
+  FLOAT = "float",
+  COMPLEX = "complex",
+  STR = "str",
+  LIST = "list",
+  TUPLE = "tuple",
+  SET = "set",
+  FROZENSET = "frozenset",
+  DICT = "dict",
+  RANGE = "range",
+  FUNCTION = "function",
+  DEFERRED_OBJECT = "deferred_object",
+  OBJECT = "object",
+  MODULE = "module",
+  TYPE = "type",
+}
+
 export interface Value {
   kind: string;
   id: PythonId;
 }
 
 export interface NoneVal extends Value {
-  kind: "none";
+  kind: ValueKind.NONE;
   size: number;
 }
 
 export interface BoolVal extends Value {
-  kind: "bool";
+  kind: ValueKind.BOOL;
   size: number;
   value: boolean;
 }
 
 export interface IntVal extends Value {
-  kind: "int";
+  kind: ValueKind.INT;
   size: number;
   value: number;
 }
 
 export interface FloatVal extends Value {
-  kind: "float";
+  kind: ValueKind.FLOAT;
   size: number;
   value: number;
 }
 
 export interface ComplexVal extends Value {
-  kind: "complex";
+  kind: ValueKind.COMPLEX;
   size: number;
   real_value: string;
   imaginary_value: string;
 }
 
 export interface DeferredStrVal extends Value {
-  kind: "str";
+  kind: ValueKind.STR;
   size: number;
   length: number;
   content: { [key: number]: string };
@@ -48,22 +68,22 @@ export interface CollectionVal extends Value {
 }
 
 export interface DeferredListVal extends CollectionVal {
-  kind: "list";
+  kind: ValueKind.LIST;
   size: number;
 }
 
 export interface DeferredTupleVal extends CollectionVal {
-  kind: "tuple";
+  kind: ValueKind.TUPLE;
   size: number;
 }
 
 export interface DeferredSetVal extends CollectionVal {
-  kind: "set";
+  kind: ValueKind.SET;
   size: number;
 }
 
 export interface DeferredFrozenSetVal extends CollectionVal {
-  kind: "frozenset";
+  kind: ValueKind.FROZENSET;
   size: number;
 }
 
@@ -73,14 +93,14 @@ export interface KeyValuePair {
 }
 
 export interface DeferredDictVal extends Value {
-  kind: "dict";
+  kind: ValueKind.DICT;
   size: number;
   pair_count: number;
   pairs: { [key: number]: KeyValuePair };
 }
 
 export interface RangeVal extends Value {
-  kind: "range";
+  kind: ValueKind.RANGE;
   size: number;
   start: number | null;
   stop: number | null;
@@ -88,7 +108,7 @@ export interface RangeVal extends Value {
 }
 
 export interface FunctionVal extends Value {
-  kind: "function";
+  kind: ValueKind.FUNCTION;
   name: string;
   qualified_name: string;
   module: string | null;
@@ -102,7 +122,7 @@ export interface ObjectVal extends Value {
 }
 
 export interface DeferredObjectVal extends ObjectVal {
-  kind: "deferred_object";
+  kind: ValueKind.DEFERRED_OBJECT;
 }
 
 export interface Attribute {
@@ -112,17 +132,17 @@ export interface Attribute {
 }
 
 export interface ResolvedObjectVal extends ObjectVal {
-  kind: "object";
+  kind: ValueKind.OBJECT;
   attributes: Attribute[];
 }
 
 export interface ModuleVal extends Value {
-  kind: "module";
+  kind: ValueKind.MODULE;
   name: string;
 }
 
 export interface TypeVal extends Value {
-  kind: "type";
+  kind: ValueKind.TYPE;
   name: string;
   module: string;
 }

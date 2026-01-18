@@ -27,6 +27,8 @@ export type {
   Attribute,
 } from "./value";
 
+export { ValueKind } from "./value";
+
 export enum PlaceKind {
   Variable = "v",
   Parameter = "p",
