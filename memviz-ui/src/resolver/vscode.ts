@@ -35,6 +35,7 @@ import type {
 import { rawToRichValues } from "../visualization/debugpy/type/value-mapper";
 import { deserializePlaces } from "../visualization/gdb/type";
 import type { ProcessResolverCore } from "./core";
+import { assert } from "../utils";
 
 type ExtractData<T extends { data: unknown }> = T["data"];
 
@@ -156,6 +157,10 @@ export class VsCodeResolver implements ProcessResolverCore {
       kind: "get-object",
       id,
     });
+    assert(
+      res.object.attributes !== null,
+      `Object ${id} received null attributes`,
+    );
     return res.object.attributes;
   }
 

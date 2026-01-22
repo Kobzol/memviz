@@ -13,7 +13,7 @@ const values = computed(() => valueState.value.getValues());
     <MemorySlot
       v-for="value in values"
       :key="value.id"
-      :value="value"
+      :id="value.id"
       :context="DisplayMode.DETACHED"
     />
   </div>

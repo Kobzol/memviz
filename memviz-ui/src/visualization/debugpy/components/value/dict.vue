@@ -1,63 +1,70 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { processResolver } from "../../../store";
-import { DeferredDictVal } from "process-def/debugpy";
+import { PythonId } from "process-def/debugpy";
 import MemorySlot from "../memory-slot.vue";
 import { valueState } from "../../store";
+import { LazyDictVal } from "../../type/lazy-value";
+import { isDict } from "../../utils/types";
+import { assert } from "../../../../utils";
+import { RichKeyValuePair } from "../../type/type";
 
 const props = defineProps<{
-  value: DeferredDictVal;
+  id: PythonId;
 }>();
 
-async function loadData() {
-  if (Object.keys(props.value.pairs).length >= props.value.pair_count) {
-    // empty or already loaded
-    return;
-  }
-  resolver.value.debugpy
-    .getDictEntries(props.value.id, [0])
-    .then((pairs) => {
-      props.value.pairs = pairs;
-      valueState.value.addValues(
-        pairs.flatMap((pair) => [pair.key, pair.value]),
-      );
-    });
-}
+const isLoaded = ref(false);
+const pythonValue = computed(() => {
+  const val = valueState.value.getValueOrThrow(props.id);
+  assert(isDict(val), `Value with id ${props.id} is not a LazyDictVal`);
+  return val as LazyDictVal;
+});
 
-const resolver = computed(() => processResolver.value);
+const visiblePairs = ref<RichKeyValuePair[]>([]);
+
+async function loadData() {
+  if (visiblePairs.value.length > 0) return;
+
+  const resolver = processResolver.value;
+  if (!resolver) return;
+
+  visiblePairs.value = await pythonValue.value.getElements(
+    resolver.debugpy,
+    0,
+    pythonValue.value.pair_count,
+  );
+}
 
 async function onClick() {
   await loadData();
-}
-
-function hasResolvedPairs() {
-  return Object.keys(props.value.pairs).length > 0;
+  isLoaded.value = true;
 }
 </script>
 
 <template>
-  <div v-if="value.pair_count > 0" class="dict">
-    <div v-if="hasResolvedPairs()">
+  <div v-if="pythonValue.pair_count > 0" class="dict">
+    <div v-if="isLoaded">
       <div class="pairs">
         <table>
-          <tr v-for="(pair, index) in value.pairs" :key="index">
+          <tr v-for="(pair, index) in visiblePairs" :key="index">
             <td class="key-cell">
               <div class="key-container">
                 <div class="key">
-                  <MemorySlot :value="pair.key" />
+                  <MemorySlot :id="pair.key.id" />
                 </div>
                 <div class="index">{{ index }}</div>
               </div>
             </td>
             <td>
               <div class="value">
-                <MemorySlot :value="pair.value" />
+                <MemorySlot :id="pair.value.id" />
               </div>
             </td>
           </tr>
         </table>
       </div>
     </div>
+
     <div v-else @click="onClick" class="not-resolved">...</div>
   </div>
 </template>
@@ -66,7 +73,6 @@ function hasResolvedPairs() {
 table {
   border-collapse: collapse;
   border: 3px solid black;
-
   margin: 5px 5px 0 0;
 
   td {

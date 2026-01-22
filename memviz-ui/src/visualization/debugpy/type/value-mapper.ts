@@ -56,13 +56,13 @@ function isRawDictVal(v: Value): v is DeferredDictVal {
   return v.kind === ValueKind.DICT;
 }
 
-function isObjectVal(v: Value): v is ObjectVal {
+function isRawObjectVal(v: Value): v is ObjectVal {
   return v.kind === ValueKind.OBJECT;
 }
 
 export function rawToRichValues(rawValues: Value[]): RichValue[] {
   const richValues = rawValues.map((val) => {
-    const existingVal = valueState.value.getValueById(val.id);
+    const existingVal = valueState.value.getValue(val.id);
     if (existingVal) {
       assert(existingVal.kind === val.kind, "Mismatched kinds for value id");
       return existingVal;
@@ -124,7 +124,7 @@ export function rawToRichValues(rawValues: Value[]): RichValue[] {
       valueState.value.addValue(richFlatCollectionVal);
       return richFlatCollectionVal;
     }
-    if (isObjectVal(val)) {
+    if (isRawObjectVal(val)) {
       let attributes: RichAttribute[] | null = null;
       if (val.attributes !== null) {
         attributes = val.attributes.map((attr) => {

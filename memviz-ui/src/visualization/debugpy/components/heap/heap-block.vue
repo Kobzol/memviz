@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import type { Value } from "process-def/debugpy";
+import type { PythonId } from "process-def/debugpy";
 import {
   onBeforeUnmount,
   onMounted,
   onUpdated,
-  PropType,
   shallowRef,
   ShallowRef,
   watch,
@@ -14,12 +13,9 @@ import { debugpyComponentMap } from "../../../store";
 import { assert } from "../../../../utils";
 import { ComponentUnsubscribeFn } from "../../component-map";
 
-const props = defineProps({
-  value: {
-    type: Object as PropType<Value>,
-    required: true,
-  },
-});
+const props = defineProps<{
+  id: PythonId;
+}>();
 
 async function updateComponentInMap() {
   assert(elementRef.value !== null, "component has not been mounted yet");
@@ -32,10 +28,10 @@ async function updateComponentInMap() {
     if (elementRef.value !== null) {
       unsubscribeFn.value = debugpyComponentMap.value.addComponent(
         {
-          id: props.value.id,
+          id: props.id,
           element: elementRef.value,
         },
-        debugpyComponentMap
+        debugpyComponentMap,
       );
     }
   });
@@ -49,10 +45,10 @@ function removeComponentFromMap() {
 }
 
 function highlightArrows() {
-  debugpyComponentMap.value.highlightValue(props.value.id);
+  debugpyComponentMap.value.highlightValue(props.id);
 }
 function unhighlightArrows() {
-  debugpyComponentMap.value.unhighlightValue(props.value.id);
+  debugpyComponentMap.value.unhighlightValue(props.id);
 }
 const elementRef = shallowRef<HTMLElement | null>(null);
 const unsubscribeFn: ShallowRef<ComponentUnsubscribeFn | null> =
@@ -62,19 +58,19 @@ onMounted(() => updateComponentInMap());
 onUpdated(() => updateComponentInMap());
 onBeforeUnmount(() => removeComponentFromMap());
 watch(
-  () => props.value,
-  () => updateComponentInMap()
+  () => props.id,
+  () => updateComponentInMap(),
 );
 </script>
 
 <template>
   <div
     class="heap-block"
-    :ref="(el: any) => elementRef = el"
+    :ref="(el: any) => (elementRef = el)"
     @mouseenter.stop="highlightArrows"
     @mouseleave.stop="unhighlightArrows"
   >
-    <ValueComponent :value="value" />
+    <ValueComponent :id="props.id" />
   </div>
 </template>
 

@@ -1,14 +1,23 @@
 <script setup lang="ts">
-import { TypeVal } from "process-def/debugpy";
 import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 import { computed } from "vue";
+import { RichTypeVal } from "../../type/type";
+import { assert } from "../../../../utils";
+import { valueState } from "../../store";
+import { isType } from "../../utils/types";
+import { PythonId } from "process-def/debugpy";
 
 const props = defineProps<{
-  value: TypeVal;
+  id: PythonId;
 }>();
 
+const pythonValue = computed(() => {
+  const val = valueState.value.getValueOrThrow(props.id);
+  assert(isType(val), `Value with id ${props.id} is not a RichTypeVal`);
+  return val as RichTypeVal;
+});
 const tooltip = computed(() => {
-  return `Type <b>${props.value.module}.${props.value.name}</b>, Id: <b>${props.value.id}</b>`;
+  return `Type <b>${pythonValue.value.module}.${pythonValue.value.name}</b>, Id: <b>${pythonValue.value.id}</b>`;
 });
 </script>
 
@@ -16,7 +25,7 @@ const tooltip = computed(() => {
   <TooltipContributor :tooltip="tooltip">
     <div class="type">
       <code class="string">
-        {{ value.name }}
+        {{ pythonValue.name }}
       </code>
     </div>
   </TooltipContributor>

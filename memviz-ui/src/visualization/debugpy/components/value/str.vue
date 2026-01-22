@@ -1,62 +1,58 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { processResolver } from "../../../store";
-import { DeferredStrVal } from "process-def/debugpy";
 import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
+import { LazyStrVal } from "../../type/lazy-value";
+import { assert } from "../../../../utils";
+import { valueState } from "../../store";
+import { isStr } from "../../utils/types";
+import { PythonId } from "process-def/debugpy";
 
 const props = defineProps<{
-  value: DeferredStrVal;
+  id: PythonId;
 }>();
 
-async function loadData() {
-  if (!props.value.length) {
-    return;
-  }
-  if (hasResolvedContent()) {
-    return;
-  }
-  const start = 0;
-  const length = props.value.length;
-  resolver.value.debugpy
-    .getStringContents(props.value.id, start, length)
-    .then((resStr) => {
-      for (let i = 0; i < resStr.length; i++) {
-        props.value.content[start + i] = resStr[i];
-      }
-    });
-}
+const pythonValue = computed(() => {
+  const val = valueState.value.getValueOrThrow(props.id);
+  assert(isStr(val), `Value with id ${props.id} is not a LazyStrVal`);
+  return val as LazyStrVal;
+});
+const resolvedContent = ref<string>("");
+const isLoaded = ref(false);
 
 const resolver = computed(() => processResolver.value);
 
-const stringContents = computed(() => {
-  if (!props.value.content) {
-    return "";
+async function loadData() {
+  if (!resolver.value) return;
+
+  if (pythonValue.value.length === 0) {
+    resolvedContent.value = "";
+    isLoaded.value = true;
+    return;
   }
-  const keys = Object.keys(props.value.content)
-    .map((k) => parseInt(k))
-    .sort((a, b) => a - b);
-  return keys.map((k) => props.value.content[k]).join("");
-});
+  const resolvedChars = await pythonValue.value.getElements(
+    resolver.value.debugpy,
+    0,
+    pythonValue.value.length,
+  );
+  resolvedContent.value = resolvedChars.join("");
+  isLoaded.value = true;
+}
 
 const tooltip = computed(() => {
-  return `Id: <b>${props.value.id}</b>, size: <b>${props.value.size} B</b>`;
+  return `Id: <b>${props.id}</b>, size: <b>${pythonValue.value.size} B</b>`;
 });
 
 function onClick() {
   loadData();
-}
-
-function hasResolvedContent() {
-  return Object.keys(props.value.content).length >= props.value.length;
 }
 </script>
 
 <template>
   <TooltipContributor :tooltip="tooltip">
     <div class="str">
-      <code v-if="hasResolvedContent()" class="string">
-        {{ stringContents }}
-      </code>
+      <code v-if="isLoaded" class="string"> "{{ resolvedContent }}" </code>
+
       <code v-else class="not-resolved" @click="onClick"> ... </code>
     </div>
   </TooltipContributor>
@@ -68,6 +64,10 @@ function hasResolvedContent() {
   justify-content: start;
   font-family: monospace;
   font-size: 1.2em;
+
+  .string {
+    white-space: pre-wrap;
+  }
 
   .not-resolved {
     &:hover {

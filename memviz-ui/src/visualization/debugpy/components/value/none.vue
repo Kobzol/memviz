@@ -1,14 +1,23 @@
 <script setup lang="ts">
 import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 import { computed } from "vue";
-import { NoneVal } from "process-def/debugpy";
+import { RichNoneVal } from "../../type/type";
+import { assert } from "../../../../utils";
+import { valueState } from "../../store";
+import { isNone } from "../../utils/types";
+import { PythonId } from "process-def/debugpy";
 
 const props = defineProps<{
-  value: NoneVal;
+  id: PythonId;
 }>();
 
+const pythonValue = computed(() => {
+  const val = valueState.value.getValueOrThrow(props.id);
+  assert(isNone(val), `Value with id ${props.id} is not a RichNoneVal`);
+  return val as RichNoneVal;
+});
 const tooltip = computed(() => {
-  return `Id: <b>${props.value.id}</b>, size: <b>${props.value.size} B</b>`;
+  return `Id: <b>${pythonValue.value.id}</b>, size: <b>${pythonValue.value.size} B</b>`;
 });
 </script>
 

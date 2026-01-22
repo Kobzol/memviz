@@ -21,7 +21,15 @@ export class ValueTracker {
     }
   }
 
-  getValueById(id: PythonId): RichValue | null {
+  getValue(id: PythonId): RichValue | null {
     return this.values.get(id) ?? null;
+  }
+
+  getValueOrThrow(id: PythonId): RichValue {
+    const val = this.values.get(id);
+    if (!val) {
+      throw new Error(`Value with id ${id} not found`);
+    }
+    return val;
   }
 }

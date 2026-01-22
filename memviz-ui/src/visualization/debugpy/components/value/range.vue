@@ -1,23 +1,32 @@
 <script setup lang="ts">
-import { RangeVal } from "process-def/debugpy";
 import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 import { computed } from "vue";
+import { RichRangeVal } from "../../type/type";
+import { assert } from "../../../../utils";
+import { valueState } from "../../store";
+import { isRange } from "../../utils/types";
+import { PythonId } from "process-def/debugpy";
 
 const props = defineProps<{
-  value: RangeVal;
+  id: PythonId;
 }>();
 
+const pythonValue = computed(() => {
+  const val = valueState.value.getValueOrThrow(props.id);
+  assert(isRange(val), `Value with id ${props.id} is not a RichRangeVal`);
+  return val as RichRangeVal;
+});
 const tooltip = computed(() => {
-  return `Id: <b>${props.value.id}</b>, size: <b>${props.value.size} B</b>`;
+  return `Id: <b>${pythonValue.value.id}</b>, size: <b>${pythonValue.value.size} B</b>`;
 });
 </script>
 
 <template>
   <TooltipContributor :tooltip="tooltip">
     <div class="range">
-      <span class="string">start: {{ value.start }}</span>
-      <span class="string">stop: {{ value.stop }}</span>
-      <span class="string">step: {{ value.step }}</span>
+      <span class="string">start: {{ pythonValue.start }}</span>
+      <span class="string">stop: {{ pythonValue.stop }}</span>
+      <span class="string">step: {{ pythonValue.step }}</span>
     </div>
   </TooltipContributor>
 </template>

@@ -1,17 +1,19 @@
 <script setup lang="ts">
-import { Place, PlaceKind, Value } from "process-def/debugpy";
+import { Place, PlaceKind, PythonId } from "process-def/debugpy";
 import { computed } from "vue";
 import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 import { DisplayMode } from "../../value-display-settings";
 import MemorySlot from "../memory-slot.vue";
+import { valueState } from "../../store";
+import { RichValue } from "../../type/type";
 
 const props = defineProps<{
   place: Place;
-  value: Value | null;
+  id: PythonId;
 }>();
 
 const tooltip = computed(() => {
-  const type = props.value?.kind;
+  const type = pythonValue.value.kind;
   let title = "";
   if (props.place.kind === PlaceKind.Return) return "Return values dictionary";
   else {
@@ -22,6 +24,9 @@ const tooltip = computed(() => {
   }
   title += `, id <b>${props.place.id}</b>`;
   return title;
+});
+const pythonValue = computed<RichValue>(() => {
+  return valueState.value.getValueOrThrow(props.id);
 });
 </script>
 
@@ -40,7 +45,7 @@ const tooltip = computed(() => {
       >
     </div>
     <div class="place-value">
-      <MemorySlot v-if="value" :value="value" :context="DisplayMode.INLINE" />
+      <MemorySlot :id="props.id" :context="DisplayMode.INLINE" />
     </div>
   </div>
 </template>

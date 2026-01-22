@@ -14,7 +14,6 @@ export enum ValueKind {
   DICT = "dict",
   RANGE = "range",
   FUNCTION = "function",
-  DEFERRED_OBJECT = "deferred_object",
   OBJECT = "object",
   MODULE = "module",
   TYPE = "type",
@@ -119,21 +118,13 @@ export interface ObjectVal extends Value {
   kind: string;
   size: number;
   type_name: string;
-}
-
-export interface DeferredObjectVal extends ObjectVal {
-  kind: ValueKind.DEFERRED_OBJECT;
+  attributes: Attribute[] | null;
 }
 
 export interface Attribute {
   name: string;
   value: Value | null;
   is_descriptor: boolean;
-}
-
-export interface ResolvedObjectVal extends ObjectVal {
-  kind: ValueKind.OBJECT;
-  attributes: Attribute[];
 }
 
 export interface ModuleVal extends Value {

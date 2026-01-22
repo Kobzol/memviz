@@ -1,25 +1,28 @@
 <script setup lang="ts">
-import type { Value } from "process-def/debugpy";
-import { computed, ComputedRef, PropType } from "vue";
+import { computed, ComputedRef } from "vue";
 import { DisplayMode, valueDisplaySettings } from "../value-display-settings";
 import ValueRef from "./value/value-ref.vue";
 import ValueComponent from "./value/value.vue";
 import HeapBlock from "./heap/heap-block.vue";
+import { PythonId } from "process-def/debugpy";
+import { valueState } from "../store";
 
-const props = defineProps({
-  value: {
-    type: Object as PropType<Value>,
-    required: true,
+const props = withDefaults(
+  defineProps<{
+    id: PythonId;
+    context?: DisplayMode;
+  }>(),
+  {
+    context: DisplayMode.INLINE,
   },
-  context: {
-    type: String as PropType<DisplayMode>,
-    default: DisplayMode.INLINE,
-  },
-});
+);
 
 const valueDisplayMode: ComputedRef<DisplayMode> = computed(
-  () => valueDisplaySettings.get(props.value.kind) || DisplayMode.INLINE
+  () => valueDisplaySettings.get(pythonValue.value.kind) || DisplayMode.INLINE,
 );
+const pythonValue = computed(() => {
+  return valueState.value.getValueOrThrow(props.id);
+});
 </script>
 
 <template>
@@ -27,21 +30,21 @@ const valueDisplayMode: ComputedRef<DisplayMode> = computed(
     v-if="
       context === DisplayMode.INLINE && valueDisplayMode === DisplayMode.INLINE
     "
-    :value="value"
+    :id="props.id"
   />
   <ValueRef
     v-else-if="
       context === DisplayMode.INLINE &&
       valueDisplayMode === DisplayMode.DETACHED
     "
-    :value="value"
+    :id="props.id"
   />
   <HeapBlock
     v-else-if="
       context === DisplayMode.DETACHED &&
       valueDisplayMode === DisplayMode.DETACHED
     "
-    :value="value"
+    :id="props.id"
   />
   <!-- in case of detached context and inline value display mode, nothing is shown -->
 </template>

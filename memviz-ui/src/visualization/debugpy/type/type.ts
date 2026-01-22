@@ -1,8 +1,8 @@
-import type { Place, ValueKind } from "process-def/debugpy";
+import type { Place, PythonId, ValueKind } from "process-def/debugpy";
 
 export abstract class RichValue {
   abstract readonly kind: string;
-  constructor(public readonly id: string) {}
+  constructor(public readonly id: PythonId) {}
 }
 
 export interface RichNoneVal extends RichValue {
@@ -35,48 +35,9 @@ export interface RichComplexVal extends RichValue {
   readonly imaginary_value: string;
 }
 
-export interface RichDeferredStrVal extends RichValue {
-  readonly kind: ValueKind.STR;
-  readonly size: number;
-  readonly length: number;
-  readonly content: { [key: number]: string };
-}
-
-export interface RichCollectionVal extends RichValue {
-  readonly element_count: number;
-  readonly elements: { [key: number]: RichValue };
-}
-
-export interface RichDeferredListVal extends RichCollectionVal {
-  readonly kind: ValueKind.LIST;
-  readonly size: number;
-}
-
-export interface RichDeferredTupleVal extends RichCollectionVal {
-  readonly kind: ValueKind.TUPLE;
-  readonly size: number;
-}
-
-export interface RichDeferredSetVal extends RichCollectionVal {
-  readonly kind: ValueKind.SET;
-  readonly size: number;
-}
-
-export interface RichDeferredFrozenSetVal extends RichCollectionVal {
-  readonly kind: ValueKind.FROZENSET;
-  readonly size: number;
-}
-
 export interface RichKeyValuePair {
   readonly key: RichValue;
   readonly value: RichValue;
-}
-
-export interface RichDeferredDictVal extends RichValue {
-  readonly kind: ValueKind.DICT;
-  readonly size: number;
-  readonly pair_count: number;
-  readonly pairs: { [key: number]: RichKeyValuePair };
 }
 
 export interface RichRangeVal extends RichValue {
@@ -95,25 +56,10 @@ export interface RichFunctionVal extends RichValue {
   readonly signature: string | null;
 }
 
-export interface RichObjectVal extends RichValue {
-  readonly kind: string;
-  readonly size: number;
-  readonly type_name: string;
-}
-
-export interface RichDeferredObjectVal extends RichObjectVal {
-  readonly kind: ValueKind.DEFERRED_OBJECT;
-}
-
 export interface RichAttribute {
   readonly name: string;
   readonly value: RichValue | null;
   readonly is_descriptor: boolean;
-}
-
-export interface RichResolvedObjectVal extends RichObjectVal {
-  readonly kind: ValueKind.OBJECT;
-  readonly attributes: RichAttribute[];
 }
 
 export interface RichModuleVal extends RichValue {

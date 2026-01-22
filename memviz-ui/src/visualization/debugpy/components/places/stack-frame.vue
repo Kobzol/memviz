@@ -7,7 +7,6 @@ import TooltipContributor from "../../../components/tooltip/tooltip-contributor.
 import { StackFrame } from "process-def";
 import NamedPlace from "./named-place.vue";
 import { formatLocation } from "../../../utils/formatting";
-import { valueState } from "../../store";
 
 const props = defineProps<{
   frame: StackFrame;
@@ -87,7 +86,7 @@ watch(
           v-for="place in places"
           :key="place.name"
           :place="place"
-          :value="valueState.getValueById(place.id)"
+          :id="place.id"
         />
       </div>
     </div>

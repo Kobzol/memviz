@@ -1,14 +1,22 @@
 <script setup lang="ts">
-import { ScalarVal } from "../../utils/types";
 import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 import { computed } from "vue";
+import { isScalar, RichScalarVal } from "../../utils/types";
+import { valueState } from "../../store";
+import { assert } from "../../../../utils";
+import { PythonId } from "process-def/debugpy";
 
 const props = defineProps<{
-  value: ScalarVal;
+  id: PythonId;
 }>();
 
+const pythonValue = computed(() => {
+  const val = valueState.value.getValueOrThrow(props.id);
+  assert(isScalar(val), `Value with id ${props.id} is not a RichScalarVal`);
+  return val as RichScalarVal;
+});
 const tooltip = computed(() => {
-  return `Id: <b>${props.value.id}</b>, size: <b>${props.value.size} B</b>`;
+  return `Id: <b>${pythonValue.value.id}</b>, size: <b>${pythonValue.value.size} B</b>`;
 });
 </script>
 
@@ -16,7 +24,7 @@ const tooltip = computed(() => {
   <TooltipContributor :tooltip="tooltip">
     <div class="scalar">
       <code class="string">
-        {{ value.value }}
+        {{ pythonValue.value }}
       </code>
     </div>
   </TooltipContributor>
