@@ -7,6 +7,7 @@ import { valueState } from "../../../store";
 import { assert } from "../../../../../utils";
 import { isList, isTuple } from "../../../utils/types";
 import { PythonId } from "process-def/debugpy";
+import { RichValue } from "../../../type/type";
 
 const props = defineProps<{
   id: PythonId;
@@ -14,7 +15,7 @@ const props = defineProps<{
   visibleElementCount: number;
 }>();
 
-const visibleElements = ref<any[]>([]);
+const visibleElements = ref<RichValue[]>([]);
 const pythonValue = computed(() => {
   let val = valueState.value.getValueOrThrow(props.id);
   assert(

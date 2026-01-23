@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import { processResolver } from "../../../../store";
 import AttributeName from "./attribute-name.vue";
 import MemorySlot from "../../memory-slot.vue";
@@ -13,20 +13,23 @@ const props = defineProps<{
   id: PythonId;
 }>();
 
-const attributes = ref<any[]>([]);
-const isLoaded = ref(false);
 const pythonValue = computed(() => {
-  let val = valueState.value.getValueOrThrow(props.id);
+  const val = valueState.value.getValueOrThrow(props.id);
   assert(isObject(val), `Value with id ${props.id} is not a LazyObjectVal`);
   return val as LazyObjectVal;
 });
+const isResolved = computed(() => pythonValue.value.isResolved());
+const attributes = computed(() => {
+  return pythonValue.value.getFetchedAttributes();
+});
 
 async function loadData() {
+  if (isResolved.value) return;
+
   const resolver = processResolver.value;
   if (!resolver) return;
 
-  attributes.value = await pythonValue.value.getAttributes(resolver.debugpy);
-  isLoaded.value = true;
+  await pythonValue.value.getAttributes(resolver.debugpy);
 }
 
 function onClick() {
@@ -36,8 +39,8 @@ function onClick() {
 
 <template>
   <div class="object">
-    <div v-if="isLoaded" class="resolved-object">
-      <table v-if="attributes.length > 0">
+    <div v-if="isResolved" class="resolved-object">
+      <table v-if="attributes && attributes.length > 0">
         <tr>
           <th colspan="2">Attributes</th>
         </tr>
@@ -46,11 +49,11 @@ function onClick() {
             <AttributeName :attribute="attr" />
           </td>
           <td v-if="attr.value">
-            <MemorySlot :id="attr.id" />
+            <MemorySlot :id="attr.value.id" />
           </td>
         </tr>
       </table>
-      <div v-else class="empty-object">{}</div>
+      <div v-else class="empty-object"></div>
     </div>
 
     <div v-else @click="onClick" class="not-resolved">...</div>

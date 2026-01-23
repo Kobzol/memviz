@@ -2,7 +2,6 @@
 import { computed, ref } from "vue";
 import { processResolver } from "../../../store";
 import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
-import { LazyStrVal } from "../../type/lazy-value";
 import { assert } from "../../../../utils";
 import { valueState } from "../../store";
 import { isStr } from "../../utils/types";
@@ -12,48 +11,73 @@ const props = defineProps<{
   id: PythonId;
 }>();
 
+const batchSize = 100;
+const visibleLimit = ref(batchSize);
+
 const pythonValue = computed(() => {
   const val = valueState.value.getValueOrThrow(props.id);
   assert(isStr(val), `Value with id ${props.id} is not a LazyStrVal`);
-  return val as LazyStrVal;
+  return val;
 });
-const resolvedContent = ref<string>("");
-const isLoaded = ref(false);
+
+const resolvedContent = computed(() => {
+  const val = pythonValue.value;
+  if (val.length === 0) return "";
+
+  const elements = val.getFetchedElements(0, visibleLimit.value);
+
+  let result = "";
+  for (const char of elements) {
+    if (char === null) break;
+    result += char;
+  }
+  return result;
+});
 
 const resolver = computed(() => processResolver.value);
 
-async function loadData() {
+async function loadMoreData() {
   if (!resolver.value) return;
+  const val = pythonValue.value;
 
-  if (pythonValue.value.length === 0) {
-    resolvedContent.value = "";
-    isLoaded.value = true;
-    return;
+  visibleLimit.value += batchSize;
+
+  const currentLen = resolvedContent.value.length;
+  const count = visibleLimit.value - currentLen;
+
+  if (count > 0 && currentLen < val.length) {
+    await val.getElements(resolver.value.debugpy, currentLen, count);
   }
-  const resolvedChars = await pythonValue.value.getElements(
-    resolver.value.debugpy,
-    0,
-    pythonValue.value.length,
-  );
-  resolvedContent.value = resolvedChars.join("");
-  isLoaded.value = true;
 }
+
+const escapedContent = computed(() => {
+  return resolvedContent.value
+    .replace(/\\/g, "\\\\")
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "\\r")
+    .replace(/\t/g, "\\t")
+    .replace(/"/g, '\\"')
+    .replace(/'/g, "\\'");
+});
 
 const tooltip = computed(() => {
   return `Id: <b>${props.id}</b>, size: <b>${pythonValue.value.size} B</b>`;
 });
 
-function onClick() {
-  loadData();
-}
+const isLoaded = computed(() => {
+  return resolvedContent.value.length >= pythonValue.value.length;
+});
 </script>
 
 <template>
-  <TooltipContributor :tooltip="tooltip">
+  <TooltipContributor :tooltip="tooltip" :key="id">
     <div class="str">
-      <code v-if="isLoaded" class="string"> "{{ resolvedContent }}" </code>
-
-      <code v-else class="not-resolved" @click="onClick"> ... </code>
+      <code class="string"
+        ><span v-if="isLoaded">"</span>{{ escapedContent
+        }}<span v-if="!isLoaded" class="not-resolved" @click="loadMoreData"
+          >...</span
+        ><span v-else>"</span></code
+      >
     </div>
   </TooltipContributor>
 </template>
@@ -67,11 +91,15 @@ function onClick() {
 
   .string {
     white-space: pre-wrap;
-  }
+    word-break: break-all;
 
-  .not-resolved {
-    &:hover {
+    .not-resolved {
       cursor: pointer;
+      font-weight: bold;
+
+      &:hover {
+        opacity: 0.8;
+      }
     }
   }
 }

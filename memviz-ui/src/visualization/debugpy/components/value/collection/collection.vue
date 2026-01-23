@@ -8,21 +8,14 @@ import {
 import { LazyFlatCollectionVal, LazyFrozenSetVal, LazyListVal, LazySetVal, LazyTupleVal } from "../../../type/lazy-value";
 import { valueState } from "../../../store";
 import { assert } from "../../../../../utils";
-import { isFlatCollection, isTuple } from "../../../utils/types";
+import { isFlatCollection } from "../../../utils/types";
 
 const props = defineProps<{
   id: string;
 }>();
 
 const currentIndex = ref(0);
-const isLoaded = ref(false);
 const visibleElementCount = 5;
-
-const totalElementCount = computed(() => pythonValue.value.element_count);
-const canGoToPrevious = computed(() => currentIndex.value > 0);
-const canGoToNext = computed(
-  () => currentIndex.value + visibleElementCount < totalElementCount.value
-);
 const pythonValue = computed(() => {
   let val = valueState.value.getValueOrThrow(props.id);
   assert(
@@ -31,6 +24,17 @@ const pythonValue = computed(() => {
   );
   return val as LazyFlatCollectionVal;
 });
+const isFirstViewResolved = computed(() => {
+  return pythonValue.value.getFetchedElements(0, visibleElementCount).every(el => el !== null);
+});
+const isShown = ref(isFirstViewResolved.value);
+
+const totalElementCount = computed(() => pythonValue.value.element_count);
+const canGoToPrevious = computed(() => currentIndex.value > 0);
+const canGoToNext = computed(
+  () => currentIndex.value + visibleElementCount < totalElementCount.value
+);
+
 
 const goToPrevious = () => {
   if (canGoToPrevious.value) currentIndex.value--;
@@ -50,7 +54,7 @@ const handleIndexInput = (event: Event) => {
 };
 
 function onClick() {
-  isLoaded.value = true;
+  isShown.value = true;
 }
 
 function isSequenceCollection(
@@ -68,7 +72,7 @@ function isSetCollection(
 
 <template>
   <div v-if="pythonValue.element_count > 0" class="collection-wrapper">
-    <div v-if="isLoaded" class="collection-frame">
+    <div v-if="isShown" class="collection-frame">
       <div class="control-bar top">
         <div class="control-wrapper">
           <button

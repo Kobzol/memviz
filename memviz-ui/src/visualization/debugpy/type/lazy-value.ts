@@ -17,10 +17,10 @@ abstract class LazyCollectionVal<TValue> extends RichValue {
   protected abstract getItemCount(): number;
   protected abstract hasItem(index: ItemIndex): boolean;
   protected abstract setItem(index: ItemIndex, value: TValue): void;
-  protected abstract getFetchedElements(
+  public abstract getFetchedElements(
     index: ItemIndex,
     count: number,
-  ): TValue[];
+  ): (TValue | null)[];
 
   private async fetchElements(resolver: DebugpyResolver, indices: ItemIndex[]) {
     try {
@@ -133,7 +133,15 @@ abstract class LazyCollectionVal<TValue> extends RichValue {
     }
     await Promise.all(promisesToAwait);
 
-    return this.getFetchedElements(startIdx, endIdx - startIdx);
+    const fetchedElements = this.getFetchedElements(
+      startIdx,
+      endIdx - startIdx,
+    );
+    assert(
+      fetchedElements.every((el) => el !== null),
+      `Not all requested elements were fetched for indices [${startIdx}, ${endIdx})`,
+    );
+    return fetchedElements;
   }
 }
 
@@ -165,10 +173,15 @@ export class LazyStrVal extends LazyCollectionVal<string> {
   protected setItem(index: ItemIndex, value: string): void {
     this.content[index] = value;
   }
-  protected getFetchedElements(index: ItemIndex, count: number): string[] {
-    const result: string[] = [];
+
+  public getFetchedElements(
+    index: ItemIndex,
+    count: number,
+  ): (string | null)[] {
+    const result: (string | null)[] = [];
     for (let i = index; i < index + count; i++) {
-      result.push(this.content[i]);
+      if (i in this.content) result.push(this.content[i]);
+      else result.push(null);
     }
     return result;
   }
@@ -200,10 +213,14 @@ export abstract class LazyFlatCollectionVal extends LazyCollectionVal<RichValue>
   protected setItem(index: ItemIndex, value: RichValue): void {
     this.elements[index] = value;
   }
-  protected getFetchedElements(index: ItemIndex, count: number): RichValue[] {
-    const result: RichValue[] = [];
+  public getFetchedElements(
+    index: ItemIndex,
+    count: number,
+  ): (RichValue | null)[] {
+    const result: (RichValue | null)[] = [];
     for (let i = index; i < index + count; i++) {
-      result.push(this.elements[i]);
+      if (i in this.elements) result.push(this.elements[i]);
+      else result.push(null);
     }
     return result;
   }
@@ -252,13 +269,14 @@ export class LazyDictVal extends LazyCollectionVal<RichKeyValuePair> {
   protected setItem(index: ItemIndex, value: KeyValuePair): void {
     this.pairs[index] = value;
   }
-  protected getFetchedElements(
+  public getFetchedElements(
     index: ItemIndex,
     count: number,
-  ): RichKeyValuePair[] {
-    const result: RichKeyValuePair[] = [];
+  ): (RichKeyValuePair | null)[] {
+    const result: (RichKeyValuePair | null)[] = [];
     for (let i = index; i < index + count; i++) {
-      result.push(this.pairs[i]);
+      if (i in this.pairs) result.push(this.pairs[i]);
+      else result.push(null);
     }
     return result;
   }
@@ -274,6 +292,10 @@ export class LazyObjectVal extends RichValue {
     private attributes: RichAttribute[] | null = null,
   ) {
     super(id);
+  }
+
+  public isResolved(): boolean {
+    return this.attributes !== null;
   }
 
   private async fetchAttributes(resolver: DebugpyResolver) {
@@ -295,5 +317,9 @@ export class LazyObjectVal extends RichValue {
       await this.fetchAttributes(resolver);
     }
     return this.attributes!;
+  }
+
+  public getFetchedAttributes(): RichAttribute[] | null {
+    return this.attributes;
   }
 }

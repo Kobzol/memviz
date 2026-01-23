@@ -161,7 +161,11 @@ export class VsCodeResolver implements ProcessResolverCore {
       res.object.attributes !== null,
       `Object ${id} received null attributes`,
     );
-    return res.object.attributes;
+    return res.object.attributes.map((attr) => ({
+      name: attr.name,
+      value: attr.value ? rawToRichValues([attr.value])[0] : null,
+      is_descriptor: attr.is_descriptor,
+    }));
   }
 
   async readMemory(address: AddressStr, size: number): Promise<ArrayBuffer> {
