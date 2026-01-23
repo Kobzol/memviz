@@ -171,18 +171,6 @@ class FunctionVal(BaseVal):
 
 
 @dataclasses.dataclass()
-class ObjectVal(BaseVal, ABC):
-    kind: str
-    size: int
-    type_name: str
-
-
-@dataclasses.dataclass()
-class DeferredObjectVal(ObjectVal):
-    kind: str = dataclasses.field(init=False, default="deferred_object")
-
-
-@dataclasses.dataclass()
 class Attribute:
     name: str
     value: Optional[BaseVal] = None
@@ -190,9 +178,11 @@ class Attribute:
 
 
 @dataclasses.dataclass()
-class ResolvedObjectVal(ObjectVal):
+class ObjectVal(BaseVal, ABC):
     kind: str = dataclasses.field(init=False, default="object")
-    attributes: List[Attribute] = dataclasses.field(default_factory=list)
+    size: int
+    type_name: str
+    attributes: Optional[List[Attribute]] = None
 
 
 @dataclasses.dataclass()
@@ -285,7 +275,7 @@ def make_value(val: Any) -> BaseVal:
             signature=signature,
         )
     else:
-        return DeferredObjectVal(
+        return ObjectVal(
             id=val_id,
             size=size,
             type_name=type(val).__name__,
@@ -359,9 +349,7 @@ def get_variables(frame_index: FrameIndex, debugged_file_path: str) -> Variables
             elements = get_collection_elements(
                 collection_id=value_repr.id,
                 element_indices=list(
-                    range(
-                        min(SEQUENCE_LOAD_ITEM_COUNT, value_repr.element_count)
-                    )
+                    range(min(SEQUENCE_LOAD_ITEM_COUNT, value_repr.element_count))
                 ),
             )
             value_repr.elements = {i: elem for i, elem in enumerate(elements)}
@@ -381,7 +369,7 @@ def get_variables(frame_index: FrameIndex, debugged_file_path: str) -> Variables
                 ),
             )
             value_repr.content = {i: ch for i, ch in enumerate(content)}
-        elif isinstance(value_repr, DeferredObjectVal):
+        elif isinstance(value_repr, ObjectVal):
             value_repr = get_object(
                 object_id=value_repr.id,
             )
@@ -461,7 +449,7 @@ def get_string_contents(
     return "".join(content_chars)
 
 
-def get_object(object_id: PythonId) -> ResolvedObjectVal:
+def get_object(object_id: PythonId) -> ObjectVal:
     obj = IdMap.get(object_id)
 
     attributes = []
@@ -500,7 +488,7 @@ def get_object(object_id: PythonId) -> ResolvedObjectVal:
 
     attributes.sort(key=lambda a: a.name.startswith("_"))
 
-    return ResolvedObjectVal(
+    return ObjectVal(
         id=object_id,
         size=sys.getsizeof(obj),
         type_name=type(obj).__name__,
