@@ -14,6 +14,7 @@ FrameIndex = int
 
 RETURN_VALUES_DICT_NAME = "__pydevd_ret_val_dict"
 SEQUENCE_LOAD_ITEM_COUNT = 15
+STR_LOAD_CHAR_COUNT = 100
 
 
 class IdMap:
@@ -204,6 +205,12 @@ class Variables:
     values: List[BaseVal]
 
 
+def get_str_default_load_content(val: str) -> Dict[int, str]:
+    count = min(len(val), STR_LOAD_CHAR_COUNT)
+    default_load_part = val[:count]
+    return {i: ch for i, ch in enumerate(default_load_part)}
+
+
 def make_value(val: Any) -> BaseVal:
     val_id = str(id(val))
     size = sys.getsizeof(val)
@@ -231,12 +238,11 @@ def make_value(val: Any) -> BaseVal:
             imaginary_value=str(val.imag),
         )
     elif isinstance(val, str):
-        length = len(val)
         return DeferredStrVal(
             id=val_id,
             size=size,
-            length=length,
-            content=dict(enumerate(val)),
+            length=len(val),
+            content=get_str_default_load_content(val),
         )
     elif isinstance(val, dict):
         return DeferredDictVal(id=val_id, size=size, pair_count=len(val))
@@ -361,14 +367,6 @@ def get_variables(frame_index: FrameIndex, debugged_file_path: str) -> Variables
                 ),
             )
             value_repr.pairs = {i: pair for i, pair in enumerate(pairs)}
-        elif isinstance(value_repr, DeferredStrVal) and value_repr.length > 0:
-            content = get_string_contents(
-                str_id=value_repr.id,
-                char_indices=list(
-                    range(min(SEQUENCE_LOAD_ITEM_COUNT, value_repr.length))
-                ),
-            )
-            value_repr.content = {i: ch for i, ch in enumerate(content)}
         elif isinstance(value_repr, ObjectVal):
             value_repr = get_object(
                 object_id=value_repr.id,
