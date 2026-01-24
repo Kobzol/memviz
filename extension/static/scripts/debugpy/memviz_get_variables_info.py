@@ -110,31 +110,31 @@ class DeferredStrVal(BaseVal):
 
 
 @dataclasses.dataclass()
-class CollectionVal(BaseVal, ABC):
+class FlatCollectionVal(BaseVal, ABC):
     element_count: int
     elements: Dict[int, BaseVal] = dataclasses.field(default_factory=dict, kw_only=True)
 
 
 @dataclasses.dataclass()
-class DeferredListVal(CollectionVal):
+class DeferredListVal(FlatCollectionVal):
     size: int
     kind: str = dataclasses.field(init=False, default="list")
 
 
 @dataclasses.dataclass()
-class DeferredTupleVal(CollectionVal):
+class DeferredTupleVal(FlatCollectionVal):
     size: int
     kind: str = dataclasses.field(init=False, default="tuple")
 
 
 @dataclasses.dataclass()
-class DeferredSetVal(CollectionVal):
+class DeferredSetVal(FlatCollectionVal):
     size: int
     kind: str = dataclasses.field(init=False, default="set")
 
 
 @dataclasses.dataclass()
-class DeferredFrozenSetVal(CollectionVal):
+class DeferredFrozenSetVal(FlatCollectionVal):
     size: int
     kind: str = dataclasses.field(init=False, default="frozenset")
 
@@ -351,8 +351,8 @@ def get_variables(frame_index: FrameIndex, debugged_file_path: str) -> Variables
             IdMap.register(value_repr.id, value)
 
         # load one level of nested values
-        if isinstance(value_repr, CollectionVal) and value_repr.element_count > 0:
-            elements = get_collection_elements(
+        if isinstance(value_repr, FlatCollectionVal) and value_repr.element_count > 0:
+            elements = get_flat_collection_elements(
                 collection_id=value_repr.id,
                 element_indices=list(
                     range(min(SEQUENCE_LOAD_ITEM_COUNT, value_repr.element_count))
@@ -386,7 +386,7 @@ def get_variables(frame_index: FrameIndex, debugged_file_path: str) -> Variables
     return Variables(places=places, values=list(values.values()))
 
 
-def get_collection_elements(
+def get_flat_collection_elements(
     collection_id: PythonId,
     element_indices: List[int],
 ) -> List[BaseVal]:

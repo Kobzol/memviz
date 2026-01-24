@@ -61,27 +61,27 @@ export interface DeferredStrVal extends Value {
   content: { [key: number]: string };
 }
 
-export interface CollectionVal extends Value {
+export interface FlatCollectionVal extends Value {
   element_count: number;
   elements: { [key: number]: Value };
 }
 
-export interface DeferredListVal extends CollectionVal {
+export interface DeferredListVal extends FlatCollectionVal {
   kind: ValueKind.LIST;
   size: number;
 }
 
-export interface DeferredTupleVal extends CollectionVal {
+export interface DeferredTupleVal extends FlatCollectionVal {
   kind: ValueKind.TUPLE;
   size: number;
 }
 
-export interface DeferredSetVal extends CollectionVal {
+export interface DeferredSetVal extends FlatCollectionVal {
   kind: ValueKind.SET;
   size: number;
 }
 
-export interface DeferredFrozenSetVal extends CollectionVal {
+export interface DeferredFrozenSetVal extends FlatCollectionVal {
   kind: ValueKind.FROZENSET;
   size: number;
 }

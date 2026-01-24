@@ -41,13 +41,13 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
     );
   }
 
-  async getCollectionElements(
+  async getFlatCollectionElements(
     frameId: FrameId,
     id: AddressStr,
     elementIndices: number[],
   ): Promise<Value[]> {
     const result = await this.pythonEvaluate<Value[]>(
-      `get_collection_elements("${id}", [${elementIndices.join(",")}])`,
+      `get_flat_collection_elements("${id}", [${elementIndices.join(",")}])`,
       frameId,
     );
     return result;

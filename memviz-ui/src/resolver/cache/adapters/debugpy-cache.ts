@@ -14,11 +14,11 @@ export class CachingDebugpyResolver extends DebugpyResolver {
     return await super.createVariablesRepresentation(frameIndex);
   }
 
-  async getCollectionElements(
+  async getFlatCollectionElements(
     id: AddressStr,
     elementIndices: number[],
   ): Promise<RichValue[]> {
-    return await super.getCollectionElements(id, elementIndices);
+    return await super.getFlatCollectionElements(id, elementIndices);
   }
 
   async getStringContents(

@@ -4,10 +4,10 @@ import type { Place as GDBPlace } from "process-def/gdb";
 import type { WebviewApi } from "vscode-webview";
 import type {
   ExtensionToMemvizResponse,
-  GetCollectionElementsReq,
-  GetCollectionElementsRes,
   GetDictEntriesReq,
   GetDictEntriesRes,
+  GetFlatCollectionElementsReq,
+  GetFlatCollectionElementsRes,
   GetObjectReq,
   GetObjectRes,
   GetPlacesReq,
@@ -27,6 +27,7 @@ import type {
   TakeAllocEventsReq,
   TakeAllocEventsRes,
 } from "../messages";
+import { assert } from "../utils";
 import type {
   RichKeyValuePair,
   RichVariables as RichPythonVariables,
@@ -35,7 +36,6 @@ import type {
 import { rawToRichValues } from "../visualization/debugpy/type/value-mapper";
 import { deserializePlaces } from "../visualization/gdb/type";
 import type { ProcessResolverCore } from "./core";
-import { assert } from "../utils";
 
 type ExtractData<T extends { data: unknown }> = T["data"];
 
@@ -107,15 +107,15 @@ export class VsCodeResolver implements ProcessResolverCore {
     };
   }
 
-  async getCollectionElements(
+  async getFlatCollectionElements(
     id: AddressStr,
     elementIndices: number[],
   ): Promise<RichValue[]> {
     const res = await this.sendRequest<
-      GetCollectionElementsReq,
-      GetCollectionElementsRes
+      GetFlatCollectionElementsReq,
+      GetFlatCollectionElementsRes
     >({
-      kind: "get-collection-elements",
+      kind: "get-flat-collection-elements",
       id,
       elementIndices,
     });

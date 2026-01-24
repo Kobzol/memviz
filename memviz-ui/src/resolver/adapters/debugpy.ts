@@ -15,11 +15,11 @@ export class DebugpyResolver {
   ): Promise<RichVariables> {
     return this.resolver.createVariablesRepresentation(frameIndex);
   }
-  getCollectionElements(
+  getFlatCollectionElements(
     id: AddressStr,
     elementIndices: number[],
   ): Promise<Value[]> {
-    return this.resolver.getCollectionElements(id, elementIndices);
+    return this.resolver.getFlatCollectionElements(id, elementIndices);
   }
   getStringContents(id: AddressStr, charIndices: number[]): Promise<string> {
     return this.resolver.getStringContents(id, charIndices);

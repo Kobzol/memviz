@@ -200,7 +200,7 @@ export abstract class LazyFlatCollectionVal extends LazyCollectionVal<RichValue>
     resolver: DebugpyResolver,
     indices: ItemIndex[],
   ): Promise<Map<ItemIndex, RichValue>> {
-    const res = await resolver.getCollectionElements(this.id, indices);
+    const res = await resolver.getFlatCollectionElements(this.id, indices);
     return new Map(indices.map((idx, i) => [idx, res[i]]));
   }
 

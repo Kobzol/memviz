@@ -72,11 +72,11 @@ export class EagerResolver implements ProcessResolverCore {
     };
   }
 
-  async getCollectionElements(
+  async getFlatCollectionElements(
     id: AddressStr,
     elementIndices: number[],
   ): Promise<RichValue[]> {
-    console.error("EagerResolver.getCollectionElements not implemented");
+    console.error("EagerResolver.getFlatCollectionElements not implemented");
     return [];
   }
 

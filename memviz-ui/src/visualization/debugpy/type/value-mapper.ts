@@ -1,11 +1,11 @@
 import {
-  type CollectionVal,
   type DeferredDictVal,
   type DeferredFrozenSetVal,
   type DeferredListVal,
   type DeferredSetVal,
   type DeferredStrVal,
   type DeferredTupleVal,
+  type FlatCollectionVal,
   type ObjectVal,
   type Value,
   ValueKind,
@@ -27,7 +27,7 @@ function isRawStrVal(v: Value): v is DeferredStrVal {
   return v.kind === ValueKind.STR;
 }
 
-function isRawFlatCollectionVal(v: Value): v is CollectionVal {
+function isRawFlatCollectionVal(v: Value): v is FlatCollectionVal {
   return (
     v.kind === ValueKind.LIST ||
     v.kind === ValueKind.TUPLE ||

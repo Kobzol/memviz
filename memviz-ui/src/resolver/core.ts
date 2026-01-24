@@ -13,7 +13,7 @@ export interface ProcessResolverCore {
   readMemory(address: AddressStr, size: number): Promise<ArrayBuffer>;
   takeAllocEvents(): Promise<MemoryAllocEvent[]>;
   createVariablesRepresentation(frameIndex: FrameIndex): Promise<RichVariables>;
-  getCollectionElements(
+  getFlatCollectionElements(
     id: AddressStr,
     elementIndices: number[],
   ): Promise<RichValue[]>;

@@ -9,7 +9,7 @@ export type {
   IntVal,
   FloatVal,
   ComplexVal,
-  CollectionVal,
+  FlatCollectionVal,
   DeferredStrVal,
   DeferredListVal,
   DeferredTupleVal,

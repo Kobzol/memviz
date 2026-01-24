@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted } from "vue";
-import { processResolver } from "../../../store";
+import { processResolver } from "../../../../store";
 import { PythonId } from "process-def/debugpy";
-import MemorySlot from "../memory-slot.vue";
-import { valueState } from "../../store";
-import { LazyDictVal } from "../../type/lazy-value";
-import { isDict } from "../../utils/types";
-import { assert } from "../../../../utils";
-import { RichKeyValuePair } from "../../type/type";
+import MemorySlot from "../../memory-slot.vue";
+import { valueState } from "../../../store";
+import { LazyDictVal } from "../../../type/lazy-value";
+import { isDict } from "../../../utils/types";
+import { assert } from "../../../../../utils";
+import { RichKeyValuePair } from "../../../type/type";
 
 const props = defineProps<{
   id: PythonId;

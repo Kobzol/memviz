@@ -3,8 +3,8 @@ import None from "./none.vue";
 import Scalar from "./scalar.vue";
 import Complex from "./complex.vue";
 import Str from "./str.vue";
-import Collection from "./collection/collection.vue";
-import Dict from "./dict.vue";
+import FlatCollection from "./collection/flat-collection.vue";
+import Dict from "./collection/dict.vue";
 import Range from "./range.vue";
 import FunctionComponent from "./function.vue";
 import ObjectComponent from "./object/object.vue";
@@ -63,7 +63,7 @@ function getValueTypeTitle(value: RichValue): string {
     <Scalar v-else-if="isScalar(pythonValue)" :id="props.id" />
     <Complex v-else-if="isComplex(pythonValue)" :id="props.id" />
     <Str v-else-if="isStr(pythonValue)" :id="props.id" />
-    <Collection v-else-if="isFlatCollection(pythonValue)" :id="props.id" />
+    <FlatCollection v-else-if="isFlatCollection(pythonValue)" :id="props.id" />
     <Dict v-else-if="isDict(pythonValue)" :id="props.id" />
     <Range v-else-if="isRange(pythonValue)" :id="props.id" />
     <FunctionComponent v-else-if="isFunction(pythonValue)" :id="props.id" />
