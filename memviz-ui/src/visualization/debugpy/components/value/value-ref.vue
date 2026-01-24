@@ -14,29 +14,39 @@ import { PythonId } from "process-def/debugpy";
 const props = defineProps<{
   id: PythonId;
 }>();
-
+const currentArrowTargetId = shallowRef<PythonId | null>(null);
 function tryRemoveArrow() {
-  if (arrow.value !== null) {
-    debugpyComponentMap.value.tryRemoveArrow(props.id, arrow.value.id);
+  if (arrow.value !== null && currentArrowTargetId.value !== null) {
+    debugpyComponentMap.value.tryRemoveArrow(
+      currentArrowTargetId.value,
+      arrow.value.id,
+    );
     arrow.value = null;
+    currentArrowTargetId.value = null;
   }
 }
 
 function tryAddArrow() {
+  if (!props.id) return;
+
   if (elementRef.value === null) {
     tryRemoveArrow();
     return;
   }
+
+  if (arrow.value !== null) {
+    tryRemoveArrow();
+  }
+
   const target = debugpyComponentMap.value.getComponent(props.id);
   if (target === null) {
     tryRemoveArrow();
     return;
   }
-  if (arrow.value !== null) {
-    tryRemoveArrow();
-  }
+
   const source = elementRef.value!;
   arrow.value = debugpyComponentMap.value.createArrow(source, props.id);
+  currentArrowTargetId.value = props.id;
 }
 
 function highlightArrows() {
@@ -53,6 +63,15 @@ const arrow: ShallowRef<LeaderLineWithId | null> = shallowRef(null);
 watch(debugpyComponentMap, () => {
   tryAddArrow();
 });
+watch(
+  () => props.id,
+  (newId, oldId) => {
+    if (newId !== oldId) {
+      tryRemoveArrow();
+      tryAddArrow();
+    }
+  },
+);
 onMounted(() => {
   tryAddArrow();
 });

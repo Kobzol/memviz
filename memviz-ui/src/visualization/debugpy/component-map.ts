@@ -130,6 +130,16 @@ class ArrowMap {
       }
     });
   }
+
+  public repositionAll() {
+    withDisabledPanZoom(() => {
+      for (const [_, arrows] of this.arrows) {
+        for (const { arrow } of arrows) {
+          arrow.position();
+        }
+      }
+    });
+  }
 }
 
 export class ComponentMap {
@@ -193,5 +203,8 @@ export class ComponentMap {
 
   public unhighlightValue(id: PythonId) {
     this.arrows.unhighlight(id);
+  }
+  public repositionArrows() {
+    this.arrows.repositionAll();
   }
 }
