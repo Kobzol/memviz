@@ -8,13 +8,14 @@ import { LazyDictVal } from "../../../type/lazy-value";
 import { isDict } from "../../../utils/types";
 import { assert } from "../../../../../utils";
 import { RichKeyValuePair } from "../../../type/type";
+import { SEQUENCE_ITEM_DISPLAY_COUNT } from "../../../value-display-settings";
 
 const props = defineProps<{
   id: PythonId;
 }>();
 
 const currentIndex = ref(0);
-const visibleElementCount = 5;
+const visibleElementCount = SEQUENCE_ITEM_DISPLAY_COUNT;
 const visiblePairs = ref<RichKeyValuePair[]>([]);
 
 const pythonValue = computed(() => {

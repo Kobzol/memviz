@@ -1,6 +1,10 @@
 import { type KeyValuePair, ValueKind } from "process-def/debugpy";
 import type { DebugpyResolver } from "../../../resolver/adapters/debugpy";
 import { assert } from "../../../utils";
+import {
+  SEQUENCE_BATCH_SIZE,
+  SEQUENCE_PRELOAD_BUFFER_SIZE,
+} from "../value-display-settings";
 import { type RichAttribute, type RichKeyValuePair, RichValue } from "./type";
 
 type ItemIndex = number;
@@ -55,8 +59,8 @@ abstract class LazyCollectionVal<TValue> extends RichValue {
       `Requested indices are out of bounds for element_count ${itemCount}: [${startIdx}, ${endIdx})`,
     );
 
-    const extraFetchSize = 10;
-    const threshold = 5;
+    const extraFetchSize = SEQUENCE_BATCH_SIZE;
+    const threshold = SEQUENCE_PRELOAD_BUFFER_SIZE;
 
     let isBufferBelowAvailable = true;
     let isBufferAboveAvailable = true;

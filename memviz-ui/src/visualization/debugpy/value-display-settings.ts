@@ -23,3 +23,8 @@ export const valueDisplaySettings: Map<string, DisplayMode> = new Map([
   [ValueKind.MODULE, DisplayMode.INLINE],
   [ValueKind.TYPE, DisplayMode.INLINE],
 ]);
+
+export const SEQUENCE_ITEM_DISPLAY_COUNT = 5;
+export const SEQUENCE_PRELOAD_BUFFER_SIZE = 5;
+export const SEQUENCE_BATCH_SIZE = 10;
+export const STRING_BATCH_SIZE = 100;

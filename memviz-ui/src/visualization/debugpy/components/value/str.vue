@@ -6,12 +6,13 @@ import { assert } from "../../../../utils";
 import { valueState } from "../../store";
 import { isStr } from "../../utils/types";
 import { PythonId } from "process-def/debugpy";
+import { STRING_BATCH_SIZE } from "../../value-display-settings";
 
 const props = defineProps<{
   id: PythonId;
 }>();
 
-const batchSize = 100;
+const batchSize = STRING_BATCH_SIZE;
 const visibleLimit = ref(batchSize);
 
 const pythonValue = computed(() => {

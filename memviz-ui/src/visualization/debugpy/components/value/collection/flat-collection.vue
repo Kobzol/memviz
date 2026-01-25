@@ -9,13 +9,14 @@ import { LazyFlatCollectionVal, LazyFrozenSetVal, LazyListVal, LazySetVal, LazyT
 import { valueState } from "../../../store";
 import { assert } from "../../../../../utils";
 import { isFlatCollection } from "../../../utils/types";
+import { SEQUENCE_ITEM_DISPLAY_COUNT } from "../../../value-display-settings";
 
 const props = defineProps<{
   id: string;
 }>();
 
 const currentIndex = ref(0);
-const visibleElementCount = 5;
+const visibleElementCount = SEQUENCE_ITEM_DISPLAY_COUNT;
 const pythonValue = computed(() => {
   let val = valueState.value.getValueOrThrow(props.id);
   assert(
