@@ -101,39 +101,41 @@ class ComplexVal(BaseVal):
     imaginary_value: str
 
 
-@dataclasses.dataclass()
+@dataclasses.dataclass(kw_only=True)
 class DeferredStrVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="str")
     size: int
     length: int
-    content: Dict[int, str] = dataclasses.field(default_factory=dict)
+    content: Optional[str] = None
+    content_offset: int = 0
 
 
-@dataclasses.dataclass()
+@dataclasses.dataclass(kw_only=True)
 class FlatCollectionVal(BaseVal, ABC):
     element_count: int
-    elements: Dict[int, BaseVal] = dataclasses.field(default_factory=dict, kw_only=True)
+    elements: Optional[List[BaseVal]] = None
+    element_offset: int = 0
 
 
-@dataclasses.dataclass()
+@dataclasses.dataclass(kw_only=True)
 class DeferredListVal(FlatCollectionVal):
     size: int
     kind: str = dataclasses.field(init=False, default="list")
 
 
-@dataclasses.dataclass()
+@dataclasses.dataclass(kw_only=True)
 class DeferredTupleVal(FlatCollectionVal):
     size: int
     kind: str = dataclasses.field(init=False, default="tuple")
 
 
-@dataclasses.dataclass()
+@dataclasses.dataclass(kw_only=True)
 class DeferredSetVal(FlatCollectionVal):
     size: int
     kind: str = dataclasses.field(init=False, default="set")
 
 
-@dataclasses.dataclass()
+@dataclasses.dataclass(kw_only=True)
 class DeferredFrozenSetVal(FlatCollectionVal):
     size: int
     kind: str = dataclasses.field(init=False, default="frozenset")
@@ -145,12 +147,13 @@ class KeyValuePair:
     value: BaseVal
 
 
-@dataclasses.dataclass()
+@dataclasses.dataclass(kw_only=True)
 class DeferredDictVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="dict")
     size: int
     pair_count: int
-    pairs: Dict[int, KeyValuePair] = dataclasses.field(default_factory=dict)
+    pairs: Optional[List[KeyValuePair]] = None
+    pair_offset: int = 0
 
 
 @dataclasses.dataclass()
@@ -178,7 +181,7 @@ class Attribute:
     is_descriptor: bool = False
 
 
-@dataclasses.dataclass()
+@dataclasses.dataclass(kw_only=True)
 class ObjectVal(BaseVal, ABC):
     kind: str = dataclasses.field(init=False, default="object")
     size: int
@@ -205,10 +208,9 @@ class Variables:
     values: List[BaseVal]
 
 
-def get_str_default_load_content(val: str) -> Dict[int, str]:
+def get_str_default_load_content(val: str) -> str:
     count = min(len(val), STR_LOAD_CHAR_COUNT)
-    default_load_part = val[:count]
-    return {i: ch for i, ch in enumerate(default_load_part)}
+    return val[:count]
 
 
 def make_value(val: Any) -> BaseVal:
@@ -316,6 +318,27 @@ def check_type(value: Any, expected_types: Tuple[str, ...]) -> None:
         )
 
 
+def validate_slicing_params(
+    value: Any,
+    start_index: int,
+    count: int,
+) -> int:
+    collection_length = len(value)
+    if not (
+        (0 <= start_index < collection_length)
+        or (start_index == collection_length and count == 0)
+    ):
+        raise ValueError(
+            f"Start_index {start_index} out of range [0, {collection_length}] for {value}."
+        )
+    if start_index + count > collection_length:
+        raise ValueError(
+            f"Count {count} out of range. Collection {value} has length {collection_length}, "
+            f"so maximum allowed count is {collection_length - start_index} for start_index {start_index}."
+        )
+    return collection_length
+
+
 def get_argument_names(frame: inspect.FrameInfo) -> List[str]:
     argvalues = inspect.getargvalues(frame.frame)
     arg_names = list(argvalues.args)
@@ -354,19 +377,17 @@ def get_variables(frame_index: FrameIndex, debugged_file_path: str) -> Variables
         if isinstance(value_repr, FlatCollectionVal) and value_repr.element_count > 0:
             elements = get_flat_collection_elements(
                 collection_id=value_repr.id,
-                element_indices=list(
-                    range(min(SEQUENCE_LOAD_ITEM_COUNT, value_repr.element_count))
-                ),
+                start_index=0,
+                element_count=min(value_repr.element_count, SEQUENCE_LOAD_ITEM_COUNT),
             )
-            value_repr.elements = {i: elem for i, elem in enumerate(elements)}
+            value_repr.elements = elements
         elif isinstance(value_repr, DeferredDictVal) and value_repr.pair_count > 0:
             pairs = get_dict_entries(
                 dict_id=value_repr.id,
-                pair_indices=list(
-                    range(min(SEQUENCE_LOAD_ITEM_COUNT, value_repr.pair_count))
-                ),
+                start_index=0,
+                pair_count=min(value_repr.pair_count, SEQUENCE_LOAD_ITEM_COUNT),
             )
-            value_repr.pairs = {i: pair for i, pair in enumerate(pairs)}
+            value_repr.pairs = pairs
         elif isinstance(value_repr, ObjectVal):
             value_repr = get_object(
                 object_id=value_repr.id,
@@ -388,20 +409,18 @@ def get_variables(frame_index: FrameIndex, debugged_file_path: str) -> Variables
 
 def get_flat_collection_elements(
     collection_id: PythonId,
-    element_indices: List[int],
+    start_index: int,
+    element_count: int,
 ) -> List[BaseVal]:
     value = IdMap.get(collection_id)
 
     allowed_types = ("list", "tuple", "set", "frozenset")
     check_type(value, allowed_types)
-    # validate_slicing_params(value, start_index, element_count)
+    validate_slicing_params(value, start_index, element_count)
 
     elements = []
-    for idx in element_indices:
-        if idx < 0 or idx >= len(value):
-            elements.append(None)
-            continue
-        element = list(value)[idx]
+    for element in itertools.islice(value, start_index, start_index + element_count):
+
         value_repr = make_value(element)
         elements.append(value_repr)
         IdMap.register(value_repr.id, element)
@@ -410,18 +429,18 @@ def get_flat_collection_elements(
 
 def get_dict_entries(
     dict_id: PythonId,
-    pair_indices: List[int],
+    start_index: int,
+    pair_count: int,
 ) -> List[KeyValuePair]:
     value = IdMap.get(dict_id)
     check_type(value, ("dict",))
+    validate_slicing_params(value, start_index, pair_count)
 
     entries = []
-    for idx in pair_indices:
-        if idx < 0 or idx >= len(value):
-            entries.append(None)
-            continue
-        key = list(value.keys())[idx]
-        val = value[key]
+    for key, val in itertools.islice(
+        value.items(), start_index, start_index + pair_count
+    ):
+
         key_repr = make_value(key)
         value_repr = make_value(val)
         entries.append(KeyValuePair(key_repr, value_repr))
@@ -432,19 +451,16 @@ def get_dict_entries(
 
 def get_string_contents(
     str_id: PythonId,
-    char_indices: List[int],
+    start_index: int,
+    length: int,
 ) -> str:
 
     value = IdMap.get(str_id)
 
     check_type(value, ("str",))
-    content_chars = []
-    for idx in char_indices:
-        if idx < 0 or idx >= len(value):
-            content_chars.append("")
-            continue
-        content_chars.append(value[idx])
-    return "".join(content_chars)
+    validate_slicing_params(value, start_index, length)
+
+    return value[start_index : start_index + length]
 
 
 def get_object(object_id: PythonId) -> ObjectVal:

@@ -1,151 +1,278 @@
-import { type KeyValuePair, ValueKind } from "process-def/debugpy";
+import { ValueKind } from "process-def/debugpy";
 import type { DebugpyResolver } from "../../../resolver/adapters/debugpy";
 import { assert } from "../../../utils";
 import {
-  SEQUENCE_BATCH_SIZE,
-  SEQUENCE_PRELOAD_BUFFER_SIZE,
+  COLLECTION_BLOCK_SIZE,
+  COLLECTION_PREFETCH_BLOCK_COUNT,
 } from "../value-display-settings";
 import { type RichAttribute, type RichKeyValuePair, RichValue } from "./type";
 
 type ItemIndex = number;
+type BlockIndex = number;
 
 abstract class LazyCollectionVal<TValue> extends RichValue {
-  private pendingRequests: Map<ItemIndex, Promise<Map<ItemIndex, TValue>>> =
-    new Map();
+  private pendingRequests: Map<BlockIndex, Promise<TValue>> = new Map();
+  private blocks: Map<BlockIndex, TValue> = new Map();
+
+  protected getBlockIndex(itemIndex: ItemIndex): BlockIndex {
+    return Math.floor(itemIndex / COLLECTION_BLOCK_SIZE);
+  }
+
+  protected getStartItemIndexForBlock(blockIndex: BlockIndex): ItemIndex {
+    return blockIndex * COLLECTION_BLOCK_SIZE;
+  }
+
+  protected getEndItemIndexForBlock(blockIndex: BlockIndex): ItemIndex {
+    return Math.min(
+      this.getItemCount(),
+      (blockIndex + 1) * COLLECTION_BLOCK_SIZE,
+    );
+  }
 
   protected abstract makeRequest(
     resolver: DebugpyResolver,
-    indices: ItemIndex[],
-  ): Promise<Map<ItemIndex, TValue>>;
+    start: ItemIndex,
+    count: number,
+  ): Promise<TValue>;
 
   protected abstract getItemCount(): number;
-  protected abstract hasItem(index: ItemIndex): boolean;
-  protected abstract setItem(index: ItemIndex, value: TValue): void;
-  public abstract getFetchedElements(
-    index: ItemIndex,
-    count: number,
-  ): (TValue | null)[];
 
-  private async fetchElements(resolver: DebugpyResolver, indices: ItemIndex[]) {
-    try {
-      const fetchPromise = this.makeRequest(resolver, indices);
-      for (const i of indices) {
-        this.pendingRequests.set(i, fetchPromise);
+  protected abstract slice(data: TValue, start: number, end: number): TValue;
+  protected abstract joinParts(parts: TValue[]): TValue;
+  protected abstract getLength(data: TValue): number;
+  protected abstract getEmptyValue(): TValue;
+
+  public areItemsFetched(start: ItemIndex, count: number): boolean {
+    const startBlockIdx = this.getBlockIndex(start);
+    const endBlockIdx = this.getBlockIndex(start + count - 1);
+
+    for (let blockIdx = startBlockIdx; blockIdx <= endBlockIdx; blockIdx++) {
+      if (!this.blocks.get(blockIdx)) {
+        return false;
       }
+    }
+    return true;
+  }
+
+  protected assignValuesToBlocks(values: TValue, startIdx: ItemIndex) {
+    const startBlockIdx = this.getBlockIndex(startIdx);
+    const endItemIdx = startIdx + this.getLength(values) - 1;
+    const endBlockIdx = this.getBlockIndex(endItemIdx);
+
+    for (let blockIdx = startBlockIdx; blockIdx <= endBlockIdx; blockIdx++) {
+      const blockStartItemIdx = this.getStartItemIndexForBlock(blockIdx);
+      const blockEndItemIdx = Math.min(
+        this.getEndItemIndexForBlock(blockIdx),
+        this.getItemCount() - 1,
+      );
+
+      // do not assign values into incomplete blocks
+      if (blockStartItemIdx < startIdx) continue;
+      if (blockEndItemIdx > endItemIdx) continue;
+
+      this.blocks.set(
+        blockIdx,
+        this.slice(
+          values,
+          blockStartItemIdx - startIdx,
+          blockEndItemIdx - startIdx + 1,
+        ),
+      );
+    }
+  }
+  private async fetchItems(
+    resolver: DebugpyResolver,
+    startIdx: ItemIndex,
+    count: number,
+  ) {
+    const startBlockIdx = this.getBlockIndex(startIdx);
+    const endBlockIdx = this.getBlockIndex(startIdx + count - 1);
+
+    const fetchPromise = this.makeRequest(resolver, startIdx, count);
+
+    try {
+      // mark all involved blocks as pending
+      for (let blockIdx = startBlockIdx; blockIdx <= endBlockIdx; blockIdx++) {
+        this.pendingRequests.set(blockIdx, fetchPromise);
+      }
+
       const valueMap = await fetchPromise;
 
-      for (const [idx, value] of valueMap.entries()) {
-        if (!this.hasItem(idx)) {
-          this.setItem(idx, value);
-        }
-      }
+      this.assignValuesToBlocks(valueMap, startIdx);
+    } catch (e) {
+      console.error(
+        `Failed to fetch items for ${this.id}, start=${startIdx}, count=${count}:`,
+        e,
+      );
+      throw e;
     } finally {
-      for (const i of indices) {
-        this.pendingRequests.delete(i);
+      // clear pending marks
+      for (let blockIdx = startBlockIdx; blockIdx <= endBlockIdx; blockIdx++) {
+        this.pendingRequests.delete(blockIdx);
       }
     }
   }
 
+  private getFetchedItems(start: ItemIndex, count: number): TValue {
+    const emptyValue = this.getEmptyValue();
+    const end = start + count;
+
+    const startBlockIdx = this.getBlockIndex(start);
+    const endBlockIdx = this.getBlockIndex(end - 1);
+
+    const resultParts: TValue[] = [];
+    for (let blockIdx = startBlockIdx; blockIdx <= endBlockIdx; blockIdx++) {
+      const block = this.blocks.get(blockIdx);
+
+      const pageStartGlobal = blockIdx * COLLECTION_BLOCK_SIZE;
+
+      const sliceStart = Math.max(0, start - pageStartGlobal);
+      const sliceEnd = Math.min(COLLECTION_BLOCK_SIZE, end - pageStartGlobal);
+
+      if (!block) {
+        console.error(
+          `Block ${blockIdx} is not fetched yet for LazyCollectionVal ${this.id}`,
+        );
+        return emptyValue;
+      }
+
+      const chunk = this.slice(block, sliceStart, sliceEnd);
+      resultParts.push(chunk);
+    }
+    return this.joinParts(resultParts);
+  }
+
+  private isBlockLoadedOrPending(blockIdx: BlockIndex): boolean {
+    return (
+      this.blocks.get(blockIdx) !== undefined ||
+      this.pendingRequests.get(blockIdx) !== undefined
+    );
+  }
   public async getElements(
     resolver: DebugpyResolver,
     startIdx: ItemIndex,
     count: number,
-  ): Promise<TValue[]> {
+  ): Promise<TValue> {
     const itemCount = this.getItemCount();
-    const endIdx = Math.min(itemCount, startIdx + count);
+    const safeStartIdx = Math.max(0, startIdx);
+    const safeEndIdx = Math.min(itemCount, startIdx + count) - 1;
+    const safeCount = safeEndIdx - safeStartIdx + 1;
 
-    assert(
-      startIdx >= 0 && endIdx <= itemCount,
-      `Requested indices are out of bounds for element_count ${itemCount}: [${startIdx}, ${endIdx})`,
-    );
+    if (safeCount <= 0) return this.getEmptyValue();
 
-    const extraFetchSize = SEQUENCE_BATCH_SIZE;
-    const threshold = SEQUENCE_PRELOAD_BUFFER_SIZE;
+    const criticalStartBlockIdx = this.getBlockIndex(safeStartIdx);
+    const criticalEndBlockIdx = this.getBlockIndex(safeEndIdx);
 
-    let isBufferBelowAvailable = true;
-    let isBufferAboveAvailable = true;
-    let areAllElementsAvailable = true;
+    const maxBlockIndex = this.getBlockIndex(itemCount - 1);
 
-    const promisesToAwait: Promise<any>[] = [];
-    const indicesToFetch: ItemIndex[] = [];
+    const bufferBelowStartBlockIdx = criticalStartBlockIdx - 1;
+    const bufferAboveEndBlockIdx = criticalEndBlockIdx + 1;
 
-    // check buffer below
-    for (let i = Math.max(0, startIdx - threshold); i < startIdx; i++) {
-      const pendingPromise = this.pendingRequests.get(i);
-      if (!this.hasItem(i) && !pendingPromise) {
-        indicesToFetch.push(i);
-        isBufferBelowAvailable = false;
-      }
+    let minFetchBlockIdx = Number.POSITIVE_INFINITY;
+    let maxFetchBlockIdx = Number.NEGATIVE_INFINITY;
+
+    function expandFetchRange(blockIdx: BlockIndex) {
+      minFetchBlockIdx = Math.min(minFetchBlockIdx, blockIdx);
+      maxFetchBlockIdx = Math.max(maxFetchBlockIdx, blockIdx);
     }
 
-    if (!isBufferBelowAvailable) {
-      // expand fetch to include full buffer below
-      for (
-        let i = Math.max(0, startIdx - extraFetchSize);
-        i < Math.max(0, startIdx - threshold);
-        i++
-      ) {
-        const pendingPromise = this.pendingRequests.get(i);
-        if (!this.hasItem(i) && !pendingPromise) {
-          indicesToFetch.push(i);
+    let needsFetch = false;
+
+    // check buffer below
+    if (
+      bufferBelowStartBlockIdx >= 0 &&
+      !this.isBlockLoadedOrPending(bufferBelowStartBlockIdx)
+    ) {
+      needsFetch = true;
+      expandFetchRange(bufferBelowStartBlockIdx);
+      // expand extra blocks down
+      for (let i = COLLECTION_PREFETCH_BLOCK_COUNT; i >= 0; i--) {
+        const blockIdx = criticalStartBlockIdx - i;
+        if (blockIdx >= 0 && !this.isBlockLoadedOrPending(blockIdx)) {
+          expandFetchRange(blockIdx);
+          break;
         }
       }
     }
 
     // check buffer above
-    for (
-      let i = endIdx;
-      i < Math.min(this.getItemCount(), endIdx + threshold);
-      i++
+    if (
+      bufferAboveEndBlockIdx <= maxBlockIndex &&
+      !this.isBlockLoadedOrPending(bufferAboveEndBlockIdx)
     ) {
-      const pendingPromise = this.pendingRequests.get(i);
-      if (!this.hasItem(i) && !pendingPromise) {
-        indicesToFetch.push(i);
-        isBufferAboveAvailable = false;
-      }
-    }
-
-    if (!isBufferAboveAvailable) {
-      // expand fetch to include full buffer above
-      for (
-        let i = Math.min(this.getItemCount(), endIdx + threshold);
-        i < Math.min(this.getItemCount(), endIdx + extraFetchSize);
-        i++
-      ) {
-        const pendingPromise = this.pendingRequests.get(i);
-        if (!this.hasItem(i) && !pendingPromise) {
-          indicesToFetch.push(i);
+      needsFetch = true;
+      expandFetchRange(bufferAboveEndBlockIdx);
+      // expand extra blocks up
+      for (let i = COLLECTION_PREFETCH_BLOCK_COUNT; i >= 0; i--) {
+        const blockIdx = criticalEndBlockIdx + i;
+        if (
+          blockIdx <= maxBlockIndex &&
+          !this.isBlockLoadedOrPending(blockIdx)
+        ) {
+          expandFetchRange(blockIdx);
+          break;
         }
       }
     }
 
-    // check requested range
-    for (let i = startIdx; i < endIdx; i++) {
-      const pendingPromise = this.pendingRequests.get(i);
-      if (!this.hasItem(i)) {
-        if (pendingPromise) {
-          promisesToAwait.push(pendingPromise.then(() => {}));
-        } else {
-          indicesToFetch.push(i);
-          areAllElementsAvailable = false;
+    // check critical part
+    let isCriticalPartFetched = true;
+    for (let i = criticalStartBlockIdx; i <= criticalEndBlockIdx; i++) {
+      if (this.pendingRequests.get(i) !== undefined) {
+        try {
+          await this.pendingRequests.get(i);
+        } catch (e) {
+          console.error(
+            `Failed to fetch items for ${this.id} in critical range, block ${i}:`,
+            e,
+          );
+          return this.getEmptyValue();
         }
+        continue;
+      }
+      if (this.blocks.get(i) === undefined) {
+        isCriticalPartFetched = false;
+        needsFetch = true;
+        expandFetchRange(i);
       }
     }
-    const currentPromise = this.fetchElements(resolver, indicesToFetch);
-    if (!areAllElementsAvailable) {
-      promisesToAwait.push(currentPromise);
-    }
-    await Promise.all(promisesToAwait);
 
-    const fetchedElements = this.getFetchedElements(
-      startIdx,
-      endIdx - startIdx,
-    );
+    if (needsFetch && minFetchBlockIdx <= maxFetchBlockIdx) {
+      const fetchStartIdx = this.getStartItemIndexForBlock(minFetchBlockIdx);
+      const fetchEndIdx = this.getEndItemIndexForBlock(maxFetchBlockIdx);
+      const fetchCount = fetchEndIdx - fetchStartIdx;
+
+      const fetchPromise = this.fetchItems(resolver, fetchStartIdx, fetchCount);
+
+      if (!isCriticalPartFetched) {
+        try {
+          // await if critical part was missing
+          await fetchPromise;
+        } catch (e) {
+          console.error(
+            `Failed to fetch items for ${this.id}, start=${fetchStartIdx}, count=${fetchCount}:`,
+            e,
+          );
+          return this.getEmptyValue();
+        }
+      } else {
+        fetchPromise.catch((e) =>
+          console.error(
+            `Background fetch failed for ${this.id}, start=${fetchStartIdx}, count=${fetchCount}:`,
+            e,
+          ),
+        );
+      }
+    }
+
+    // return requested items
+    const fetchedItems = this.getFetchedItems(safeStartIdx, safeCount);
+
     assert(
-      fetchedElements.every((el) => el !== null),
-      `Not all requested elements were fetched for indices [${startIdx}, ${endIdx})`,
+      this.getLength(fetchedItems) === safeCount,
+      `Not all requested items were fetched for indices [${safeStartIdx}, ${safeEndIdx})`,
     );
-    return fetchedElements;
+    return fetchedItems;
   }
 }
 
@@ -156,77 +283,85 @@ export class LazyStrVal extends LazyCollectionVal<string> {
     id: string,
     public readonly size: number,
     public readonly length: number,
-    private readonly content: { [key: number]: string },
+    content: string | null = null,
+    content_offset = 0,
   ) {
     super(id);
+    if (content !== null) {
+      this.assignValuesToBlocks(content, content_offset);
+    }
   }
 
   protected async makeRequest(
     resolver: DebugpyResolver,
-    indices: ItemIndex[],
-  ): Promise<Map<ItemIndex, string>> {
-    const res = await resolver.getStringContents(this.id, indices);
-    return new Map(indices.map((idx, i) => [idx, res[i]]));
+    start: ItemIndex,
+    count: number,
+  ): Promise<string> {
+    return await resolver.getStringContents(this.id, start, count);
   }
+
+  protected slice(data: string, start: number, end: number): string {
+    return data.slice(start, end);
+  }
+
+  protected joinParts(parts: string[]): string {
+    return parts.join("");
+  }
+
+  protected getLength(data: string): number {
+    return data.length;
+  }
+
+  protected getEmptyValue(): string {
+    return "";
+  }
+
   protected getItemCount(): number {
     return this.length;
   }
-  protected hasItem(index: ItemIndex): boolean {
-    return index in this.content;
-  }
-  protected setItem(index: ItemIndex, value: string): void {
-    this.content[index] = value;
-  }
-
-  public getFetchedElements(
-    index: ItemIndex,
-    count: number,
-  ): (string | null)[] {
-    const result: (string | null)[] = [];
-    for (let i = index; i < index + count; i++) {
-      if (i in this.content) result.push(this.content[i]);
-      else result.push(null);
-    }
-    return result;
-  }
 }
 
-export abstract class LazyFlatCollectionVal extends LazyCollectionVal<RichValue> {
+export abstract class LazyFlatCollectionVal extends LazyCollectionVal<
+  RichValue[]
+> {
   constructor(
     id: string,
     public readonly element_count: number,
-    private readonly elements: { [key: number]: RichValue },
+    elements: RichValue[] | null = null,
+    element_offset = 0,
   ) {
     super(id);
+    if (elements !== null) {
+      this.assignValuesToBlocks(elements, element_offset);
+    }
   }
 
   protected async makeRequest(
     resolver: DebugpyResolver,
-    indices: ItemIndex[],
-  ): Promise<Map<ItemIndex, RichValue>> {
-    const res = await resolver.getFlatCollectionElements(this.id, indices);
-    return new Map(indices.map((idx, i) => [idx, res[i]]));
+    start: ItemIndex,
+    count: number,
+  ): Promise<RichValue[]> {
+    return await resolver.getFlatCollectionElements(this.id, start, count);
+  }
+
+  protected slice(data: RichValue[], start: number, end: number): RichValue[] {
+    return data.slice(start, end);
+  }
+
+  protected joinParts(parts: RichValue[][]): RichValue[] {
+    return parts.flat();
+  }
+
+  protected getLength(data: RichValue[]): number {
+    return data.length;
+  }
+
+  protected getEmptyValue(): RichValue[] {
+    return [];
   }
 
   protected getItemCount(): number {
     return this.element_count;
-  }
-  protected hasItem(index: ItemIndex): boolean {
-    return index in this.elements;
-  }
-  protected setItem(index: ItemIndex, value: RichValue): void {
-    this.elements[index] = value;
-  }
-  public getFetchedElements(
-    index: ItemIndex,
-    count: number,
-  ): (RichValue | null)[] {
-    const result: (RichValue | null)[] = [];
-    for (let i = index; i < index + count; i++) {
-      if (i in this.elements) result.push(this.elements[i]);
-      else result.push(null);
-    }
-    return result;
   }
 }
 
@@ -246,43 +381,51 @@ export class LazyFrozenSetVal extends LazyFlatCollectionVal {
   readonly kind = ValueKind.FROZENSET;
 }
 
-export class LazyDictVal extends LazyCollectionVal<RichKeyValuePair> {
+export class LazyDictVal extends LazyCollectionVal<RichKeyValuePair[]> {
   readonly kind = ValueKind.DICT;
 
   constructor(
     id: string,
     public readonly pair_count: number,
-    private readonly pairs: { [key: number]: RichKeyValuePair },
+    pairs: RichKeyValuePair[] | null = null,
+    pair_offset = 0,
   ) {
     super(id);
+    if (pairs !== null) {
+      this.assignValuesToBlocks(pairs, pair_offset);
+    }
   }
 
   protected async makeRequest(
     resolver: DebugpyResolver,
-    indices: ItemIndex[],
-  ): Promise<Map<ItemIndex, KeyValuePair>> {
-    const res = await resolver.getDictEntries(this.id, indices);
-    return new Map(indices.map((idx, i) => [idx, res[i]]));
+    start: ItemIndex,
+    count: number,
+  ): Promise<RichKeyValuePair[]> {
+    return await resolver.getDictEntries(this.id, start, count);
   }
+
+  protected slice(
+    data: RichKeyValuePair[],
+    start: number,
+    end: number,
+  ): RichKeyValuePair[] {
+    return data.slice(start, end);
+  }
+
+  protected joinParts(parts: RichKeyValuePair[][]): RichKeyValuePair[] {
+    return parts.flat();
+  }
+
+  protected getLength(data: RichKeyValuePair[]): number {
+    return data.length;
+  }
+
+  protected getEmptyValue(): RichKeyValuePair[] {
+    return [];
+  }
+
   protected getItemCount(): number {
     return this.pair_count;
-  }
-  protected hasItem(index: ItemIndex): boolean {
-    return index in this.pairs;
-  }
-  protected setItem(index: ItemIndex, value: KeyValuePair): void {
-    this.pairs[index] = value;
-  }
-  public getFetchedElements(
-    index: ItemIndex,
-    count: number,
-  ): (RichKeyValuePair | null)[] {
-    const result: (RichKeyValuePair | null)[] = [];
-    for (let i = index; i < index + count; i++) {
-      if (i in this.pairs) result.push(this.pairs[i]);
-      else result.push(null);
-    }
-    return result;
   }
 }
 

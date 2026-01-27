@@ -44,10 +44,11 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
   async getFlatCollectionElements(
     frameId: FrameId,
     id: AddressStr,
-    elementIndices: number[],
+    startIndex: number,
+    count: number,
   ): Promise<Value[]> {
     const result = await this.pythonEvaluate<Value[]>(
-      `get_flat_collection_elements("${id}", [${elementIndices.join(",")}])`,
+      `get_flat_collection_elements("${id}", ${startIndex}, ${count})`,
       frameId,
     );
     return result;
@@ -56,10 +57,11 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
   async getDictEntries(
     frameId: FrameId,
     id: AddressStr,
-    pairIndices: number[],
+    startIndex: number,
+    count: number,
   ): Promise<KeyValuePair[]> {
     const result = await this.pythonEvaluate<KeyValuePair[]>(
-      `get_dict_entries("${id}", ${JSON.stringify(pairIndices)})`,
+      `get_dict_entries("${id}", ${startIndex}, ${count})`,
       frameId,
     );
     return result;
@@ -68,10 +70,11 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
   async getStringContents(
     frameId: FrameId,
     id: AddressStr,
-    charIndices: number[],
+    startIndex: number,
+    count: number,
   ): Promise<string> {
     const result = await this.pythonEvaluate<string>(
-      `get_string_contents("${id}", ${JSON.stringify(charIndices)})`,
+      `get_string_contents("${id}", ${startIndex}, ${count})`,
       frameId,
     );
     return result;

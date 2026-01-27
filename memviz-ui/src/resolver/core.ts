@@ -15,12 +15,18 @@ export interface ProcessResolverCore {
   createVariablesRepresentation(frameIndex: FrameIndex): Promise<RichVariables>;
   getFlatCollectionElements(
     id: AddressStr,
-    elementIndices: number[],
+    startIndex: number,
+    count: number,
   ): Promise<RichValue[]>;
-  getStringContents(id: AddressStr, charIndices: number[]): Promise<string>;
+  getStringContents(
+    id: AddressStr,
+    startIndex: number,
+    count: number,
+  ): Promise<string>;
   getDictEntries(
     id: AddressStr,
-    pairIndices: number[],
+    startIndex: number,
+    count: number,
   ): Promise<RichKeyValuePair[]>;
   getObject(id: AddressStr): Promise<Attribute[]>;
 }

@@ -74,7 +74,8 @@ export class EagerResolver implements ProcessResolverCore {
 
   async getFlatCollectionElements(
     id: AddressStr,
-    elementIndices: number[],
+    startIndex: number,
+    count: number,
   ): Promise<RichValue[]> {
     console.error("EagerResolver.getFlatCollectionElements not implemented");
     return [];
@@ -82,7 +83,8 @@ export class EagerResolver implements ProcessResolverCore {
 
   async getStringContents(
     id: AddressStr,
-    charIndices: number[],
+    startIndex: number,
+    count: number,
   ): Promise<string> {
     console.error("EagerResolver.getStringContents not implemented");
     return "";
@@ -90,7 +92,8 @@ export class EagerResolver implements ProcessResolverCore {
 
   async getDictEntries(
     id: AddressStr,
-    pairIndices: number[],
+    startIndex: number,
+    count: number,
   ): Promise<RichKeyValuePair[]> {
     console.error("EagerResolver.getDictEntries not implemented");
     return [];

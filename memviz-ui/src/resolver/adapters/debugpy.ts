@@ -17,18 +17,24 @@ export class DebugpyResolver {
   }
   getFlatCollectionElements(
     id: AddressStr,
-    elementIndices: number[],
+    startIndex: number,
+    count: number,
   ): Promise<Value[]> {
-    return this.resolver.getFlatCollectionElements(id, elementIndices);
+    return this.resolver.getFlatCollectionElements(id, startIndex, count);
   }
-  getStringContents(id: AddressStr, charIndices: number[]): Promise<string> {
-    return this.resolver.getStringContents(id, charIndices);
+  getStringContents(
+    id: AddressStr,
+    startIndex: number,
+    count: number,
+  ): Promise<string> {
+    return this.resolver.getStringContents(id, startIndex, count);
   }
   getDictEntries(
     id: AddressStr,
-    pairIndices: number[],
+    startIndex: number,
+    count: number,
   ): Promise<KeyValuePair[]> {
-    return this.resolver.getDictEntries(id, pairIndices);
+    return this.resolver.getDictEntries(id, startIndex, count);
   }
   getObject(id: AddressStr): Promise<RichAttribute[]> {
     return this.resolver.getObject(id);

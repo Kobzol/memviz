@@ -24,7 +24,7 @@ export const valueDisplaySettings: Map<string, DisplayMode> = new Map([
   [ValueKind.TYPE, DisplayMode.INLINE],
 ]);
 
-export const SEQUENCE_ITEM_DISPLAY_COUNT = 5;
-export const SEQUENCE_PRELOAD_BUFFER_SIZE = 5;
-export const SEQUENCE_BATCH_SIZE = 10;
+export const COLLECTION_ITEM_DISPLAY_COUNT = 5;
+export const COLLECTION_PREFETCH_BLOCK_COUNT = 2;
+export const COLLECTION_BLOCK_SIZE = 20;
 export const STRING_BATCH_SIZE = 100;

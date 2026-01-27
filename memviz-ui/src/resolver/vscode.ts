@@ -109,7 +109,8 @@ export class VsCodeResolver implements ProcessResolverCore {
 
   async getFlatCollectionElements(
     id: AddressStr,
-    elementIndices: number[],
+    startIndex: number,
+    count: number,
   ): Promise<RichValue[]> {
     const res = await this.sendRequest<
       GetFlatCollectionElementsReq,
@@ -117,14 +118,16 @@ export class VsCodeResolver implements ProcessResolverCore {
     >({
       kind: "get-flat-collection-elements",
       id,
-      elementIndices,
+      startIndex,
+      count,
     });
     return rawToRichValues(res.elements);
   }
 
   async getStringContents(
     id: AddressStr,
-    charIndices: number[],
+    startIndex: number,
+    count: number,
   ): Promise<string> {
     const res = await this.sendRequest<
       GetStringContentsReq,
@@ -132,19 +135,22 @@ export class VsCodeResolver implements ProcessResolverCore {
     >({
       kind: "get-string-contents",
       id,
-      charIndices,
+      startIndex,
+      count,
     });
     return res.contents;
   }
 
   async getDictEntries(
     id: AddressStr,
-    pairIndices: number[],
+    startIndex: number,
+    count: number,
   ): Promise<RichKeyValuePair[]> {
     const res = await this.sendRequest<GetDictEntriesReq, GetDictEntriesRes>({
       kind: "get-dict-entries",
       id,
-      pairIndices,
+      startIndex,
+      count,
     });
     return res.entries.map((entry) => ({
       key: rawToRichValues([entry.key])[0],

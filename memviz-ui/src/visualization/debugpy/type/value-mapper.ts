@@ -21,7 +21,7 @@ import {
   LazyStrVal,
   LazyTupleVal,
 } from "./lazy-value";
-import type { RichAttribute, RichValue } from "./type";
+import type { RichAttribute, RichKeyValuePair, RichValue } from "./type";
 
 function isRawStrVal(v: Value): v is DeferredStrVal {
   return v.kind === ValueKind.STR;
@@ -69,53 +69,49 @@ export function rawToRichValues(rawValues: Value[]): RichValue[] {
     }
 
     if (isRawStrVal(val)) {
-      const strVal = val as DeferredStrVal;
       const richVal = new LazyStrVal(
-        strVal.id,
-        strVal.size,
-        strVal.length,
-        strVal.content,
+        val.id,
+        val.size,
+        val.length,
+        val.content,
+        val.content_offset,
       );
       valueState.value.addValue(richVal);
       return richVal;
     }
 
     if (isRawFlatCollectionVal(val)) {
-      const richElements = rawToRichValues(
-        Object.values((val as any).elements),
-      );
-      const richElementMap: { [key: number]: RichValue } = {};
-      richElements.forEach((element, index) => {
-        richElementMap[index] = element;
-      });
+      const richElements = val.elements
+        ? rawToRichValues(Object.values(val.elements))
+        : null;
       let richFlatCollectionVal: RichValue;
       if (isRawList(val)) {
-        const listVal = val as DeferredListVal;
         richFlatCollectionVal = new LazyListVal(
-          listVal.id,
-          listVal.element_count,
-          richElementMap,
+          val.id,
+          val.element_count,
+          richElements,
+          val.element_offset,
         );
       } else if (isRawTuple(val)) {
-        const tupleVal = val as DeferredTupleVal;
         richFlatCollectionVal = new LazyTupleVal(
-          tupleVal.id,
-          tupleVal.element_count,
-          richElementMap,
+          val.id,
+          val.element_count,
+          richElements,
+          val.element_offset,
         );
       } else if (isRawSet(val)) {
-        const setVal = val as DeferredSetVal;
         richFlatCollectionVal = new LazySetVal(
-          setVal.id,
-          setVal.element_count,
-          richElementMap,
+          val.id,
+          val.element_count,
+          richElements,
+          val.element_offset,
         );
       } else if (isRawFrozenSet(val)) {
-        const frozenSetVal = val as DeferredFrozenSetVal;
         richFlatCollectionVal = new LazyFrozenSetVal(
-          frozenSetVal.id,
-          frozenSetVal.element_count,
-          richElementMap,
+          val.id,
+          val.element_count,
+          richElements,
+          val.element_offset,
         );
       } else {
         console.error(`Unhandled collection type: ${val.kind}`);
@@ -145,21 +141,17 @@ export function rawToRichValues(rawValues: Value[]): RichValue[] {
       return richObjectVal;
     }
     if (isRawDictVal(val)) {
-      const dictVal = val as DeferredDictVal;
-      const richPairs: { [key: number]: { key: RichValue; value: RichValue } } =
-        {};
-      for (const [idxStr, pair] of Object.entries(dictVal.pairs)) {
-        const idx = Number(idxStr);
-        richPairs[idx] = {
-          key: rawToRichValues([pair.key])[0],
-          value: rawToRichValues([pair.value])[0],
-        };
+      const richPairs: RichKeyValuePair[] = [];
+      if (val.pairs !== null) {
+        for (const [idxStr, pair] of Object.entries(val.pairs)) {
+          const idx = Number(idxStr);
+          richPairs[idx] = {
+            key: rawToRichValues([pair.key])[0],
+            value: rawToRichValues([pair.value])[0],
+          };
+        }
       }
-      const richDictVal = new LazyDictVal(
-        dictVal.id,
-        dictVal.pair_count,
-        richPairs,
-      );
+      const richDictVal = new LazyDictVal(val.id, val.pair_count, richPairs);
       valueState.value.addValue(richDictVal);
       return richDictVal;
     }

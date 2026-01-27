@@ -16,23 +16,26 @@ export class CachingDebugpyResolver extends DebugpyResolver {
 
   async getFlatCollectionElements(
     id: AddressStr,
-    elementIndices: number[],
+    startIndex: number,
+    count: number,
   ): Promise<RichValue[]> {
-    return await super.getFlatCollectionElements(id, elementIndices);
+    return await super.getFlatCollectionElements(id, startIndex, count);
   }
 
   async getStringContents(
     id: AddressStr,
-    charIndices: number[],
+    startIndex: number,
+    count: number,
   ): Promise<string> {
-    return await super.getStringContents(id, charIndices);
+    return await super.getStringContents(id, startIndex, count);
   }
 
   async getDictEntries(
     id: AddressStr,
-    pairIndices: number[],
+    startIndex: number,
+    count: number,
   ): Promise<RichKeyValuePair[]> {
-    return await super.getDictEntries(id, pairIndices);
+    return await super.getDictEntries(id, startIndex, count);
   }
 
   async getObject(id: AddressStr): Promise<Attribute[]> {

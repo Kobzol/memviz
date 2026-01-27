@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { processResolver } from "../../../store";
 import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 import { assert } from "../../../../utils";
@@ -13,7 +13,6 @@ const props = defineProps<{
 }>();
 
 const batchSize = STRING_BATCH_SIZE;
-const visibleLimit = ref(batchSize);
 
 const pythonValue = computed(() => {
   const val = valueState.value.getValueOrThrow(props.id);
@@ -21,51 +20,91 @@ const pythonValue = computed(() => {
   return val;
 });
 
-const resolvedContent = computed(() => {
+const resolvedContent = ref("");
+const visibleLimit = ref(0);
+const isFetching = ref(false);
+
+watch(
+  () => props.id,
+  () => {
+    resolvedContent.value = "";
+    isFetching.value = false;
+
+    visibleLimit.value = Math.min(batchSize, pythonValue.value.length);
+  },
+  { immediate: true },
+);
+
+async function fetchMissingContent() {
   const val = pythonValue.value;
-  if (val.length === 0) return "";
+  if (!val || isFetching.value) return;
 
-  const elements = val.getFetchedElements(0, visibleLimit.value);
+  const targetLimit = visibleLimit.value;
+  const currentLength = resolvedContent.value.length;
 
-  let result = "";
-  for (const char of elements) {
-    if (char === null) break;
-    result += char;
+  if (currentLength >= targetLimit) return;
+
+  const currentId = props.id;
+  isFetching.value = true;
+
+  try {
+    const count = targetLimit - currentLength;
+    const resStr = await val.getElements(
+      processResolver.value.debugpy,
+      currentLength,
+      count,
+    );
+
+    if (props.id !== currentId) return;
+
+    resolvedContent.value += resStr;
+  } catch (e) {
+    console.error("Failed to fetch string elements", e);
+  } finally {
+    if (props.id === currentId) {
+      isFetching.value = false;
+    }
   }
-  return result;
-});
+}
 
-const resolver = computed(() => processResolver.value);
+watch(
+  visibleLimit,
+  () => {
+    fetchMissingContent();
+  },
+  { immediate: true },
+);
 
 async function loadMoreData() {
-  if (!resolver.value) return;
   const val = pythonValue.value;
+  const currentLimit = visibleLimit.value;
 
-  visibleLimit.value += batchSize;
+  if (resolvedContent.value.length < currentLimit) {
+    await fetchMissingContent();
+    return;
+  }
 
-  const currentLen = resolvedContent.value.length;
-  const count = visibleLimit.value - currentLen;
+  const nextLimit = currentLimit + batchSize;
+  const finalLimit = Math.min(nextLimit, val.length);
 
-  if (count > 0 && currentLen < val.length) {
-    await val.getElements(resolver.value.debugpy, currentLen, count);
+  if (finalLimit > currentLimit) {
+    visibleLimit.value = finalLimit;
   }
 }
 
 const escapedContent = computed(() => {
-  return resolvedContent.value
-    .replace(/\\/g, "\\\\")
-    .replace(/\n/g, "\\n")
-    .replace(/\r/g, "\\r")
-    .replace(/\t/g, "\\t")
-    .replace(/"/g, '\\"')
-    .replace(/'/g, "\\'");
+  if (!resolvedContent.value) return "";
+  // escape special characters for display
+  return JSON.stringify(resolvedContent.value).slice(1, -1);
 });
 
 const tooltip = computed(() => {
+  if (!pythonValue.value) return "";
   return `Id: <b>${props.id}</b>, size: <b>${pythonValue.value.size} B</b>`;
 });
 
 const isLoaded = computed(() => {
+  if (!pythonValue.value) return false;
   return resolvedContent.value.length >= pythonValue.value.length;
 });
 </script>
@@ -74,10 +113,10 @@ const isLoaded = computed(() => {
   <TooltipContributor :tooltip="tooltip" :key="id">
     <div class="str">
       <code class="string"
-        ><span v-if="isLoaded">"</span>{{ escapedContent
+        >"{{ escapedContent
         }}<span v-if="!isLoaded" class="not-resolved" @click="loadMoreData"
           >...</span
-        ><span v-else>"</span></code
+        >"</code
       >
     </div>
   </TooltipContributor>

@@ -1,5 +1,4 @@
-import type { AddressStr } from "..";
-import type { Value } from "./value";
+import type { PythonId, Value } from "./value";
 
 export type {
   PythonId,
@@ -35,7 +34,7 @@ export enum PlaceKind {
 
 export interface Place {
   name: string;
-  id: AddressStr;
+  id: PythonId;
   kind: PlaceKind;
 }
 

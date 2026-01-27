@@ -58,12 +58,14 @@ export interface DeferredStrVal extends Value {
   kind: ValueKind.STR;
   size: number;
   length: number;
-  content: { [key: number]: string };
+  content: string | null;
+  content_offset: number;
 }
 
 export interface FlatCollectionVal extends Value {
   element_count: number;
-  elements: { [key: number]: Value };
+  elements: Value[] | null;
+  element_offset: number;
 }
 
 export interface DeferredListVal extends FlatCollectionVal {
@@ -95,7 +97,8 @@ export interface DeferredDictVal extends Value {
   kind: ValueKind.DICT;
   size: number;
   pair_count: number;
-  pairs: { [key: number]: KeyValuePair };
+  pairs: KeyValuePair[] | null;
+  pair_offset: number;
 }
 
 export interface RangeVal extends Value {
