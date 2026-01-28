@@ -2,6 +2,7 @@ import { ValueKind } from "process-def/debugpy";
 import type { DebugpyResolver } from "../../../resolver/adapters/debugpy";
 import { assert } from "../../../utils";
 import {
+  CACHE_CAPACITY_BLOCKS,
   COLLECTION_BLOCK_SIZE,
   COLLECTION_PREFETCH_BLOCK_COUNT,
 } from "../value-display-settings";
@@ -10,9 +11,38 @@ import { type RichAttribute, type RichKeyValuePair, RichValue } from "./type";
 type ItemIndex = number;
 type BlockIndex = number;
 
+class Cache<TValue> {
+  private map: Map<number, TValue> = new Map();
+
+  constructor(private readonly capacity: number) {}
+
+  public get(key: number): TValue | undefined {
+    const val = this.map.get(key);
+    if (val !== undefined) {
+      // refresh insertion order to match recent access
+      this.map.delete(key);
+      this.map.set(key, val);
+    }
+    return val;
+  }
+
+  public set(key: number, value: TValue): void {
+    if (this.map.has(key)) {
+      this.map.delete(key);
+    } else if (this.map.size >= this.capacity) {
+      // if at capacity, remove oldest entry
+      const oldestKey = this.map.keys().next().value;
+      if (oldestKey !== undefined) {
+        this.map.delete(oldestKey);
+      }
+    }
+    this.map.set(key, value);
+  }
+}
+
 abstract class LazyCollectionVal<TValue> extends RichValue {
   private pendingRequests: Map<BlockIndex, Promise<TValue>> = new Map();
-  private blocks: Map<BlockIndex, TValue> = new Map();
+  private blocks: Cache<TValue> = new Cache<TValue>(CACHE_CAPACITY_BLOCKS);
 
   protected getBlockIndex(itemIndex: ItemIndex): BlockIndex {
     return Math.floor(itemIndex / COLLECTION_BLOCK_SIZE);
