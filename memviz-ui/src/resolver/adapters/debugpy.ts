@@ -1,9 +1,9 @@
 import type { AddressStr, FrameIndex } from "process-def";
 
-import type { KeyValuePair, Value } from "process-def/debugpy";
-
 import type {
   RichAttribute,
+  RichKeyValuePair,
+  RichValue,
   RichVariables,
 } from "../../visualization/debugpy/type/type";
 import type { ProcessResolverCore } from "../core";
@@ -19,7 +19,7 @@ export class DebugpyResolver {
     id: AddressStr,
     startIndex: number,
     count: number,
-  ): Promise<Value[]> {
+  ): Promise<RichValue[]> {
     return this.resolver.getFlatCollectionElements(id, startIndex, count);
   }
   getStringContents(
@@ -33,7 +33,7 @@ export class DebugpyResolver {
     id: AddressStr,
     startIndex: number,
     count: number,
-  ): Promise<KeyValuePair[]> {
+  ): Promise<RichKeyValuePair[]> {
     return this.resolver.getDictEntries(id, startIndex, count);
   }
   getObject(id: AddressStr): Promise<RichAttribute[]> {

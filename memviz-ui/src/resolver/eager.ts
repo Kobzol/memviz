@@ -5,7 +5,6 @@ import type {
   ProcessState,
   StackFrame,
 } from "process-def";
-import type { Attribute } from "process-def/debugpy";
 import type {
   Place,
   TyArray,
@@ -19,9 +18,10 @@ import { MemoryMap } from "../memory-map";
 import type { MemoryAllocEvent } from "../messages";
 import { assert, addressToStr, strToAddress } from "../utils";
 import type {
+  RichAttribute,
   RichKeyValuePair,
+  RichVariables as RichPythonVariables,
   RichValue,
-  RichVariables,
 } from "../visualization/debugpy/type/type";
 import type { HeapAllocation } from "../visualization/gdb/allocation-tracker";
 import type { TyChar } from "../visualization/gdb/utils/types";
@@ -62,7 +62,7 @@ export class EagerResolver implements ProcessResolverCore {
 
   async createVariablesRepresentation(
     frameIndex: FrameIndex,
-  ): Promise<RichVariables> {
+  ): Promise<RichPythonVariables> {
     console.error(
       "EagerResolver.createVariablesRepresentation not implemented",
     );
@@ -99,7 +99,7 @@ export class EagerResolver implements ProcessResolverCore {
     return [];
   }
 
-  async getObject(id: AddressStr): Promise<Attribute[]> {
+  async getObject(id: AddressStr): Promise<RichAttribute[]> {
     console.error("EagerResolver.getObject not implemented");
     return [];
   }

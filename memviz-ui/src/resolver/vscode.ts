@@ -1,5 +1,4 @@
 import type { AddressStr, FrameIndex, StackTrace, ThreadId } from "process-def";
-import type { Attribute } from "process-def/debugpy";
 import type { Place as GDBPlace } from "process-def/gdb";
 import type { WebviewApi } from "vscode-webview";
 import type {
@@ -29,6 +28,7 @@ import type {
 } from "../messages";
 import { assert } from "../utils";
 import type {
+  RichAttribute,
   RichKeyValuePair,
   RichVariables as RichPythonVariables,
   RichValue,
@@ -158,7 +158,7 @@ export class VsCodeResolver implements ProcessResolverCore {
     }));
   }
 
-  async getObject(id: AddressStr): Promise<Attribute[]> {
+  async getObject(id: AddressStr): Promise<RichAttribute[]> {
     const res = await this.sendRequest<GetObjectReq, GetObjectRes>({
       kind: "get-object",
       id,
