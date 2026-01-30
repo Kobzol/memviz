@@ -1,50 +1,87 @@
 <script setup lang="ts">
-import { DeferredListVal, DeferredTupleVal } from "process-def/debugpy";
-import ValueComponent from "../value.vue";
+import { ref, watch, onMounted, computed } from "vue";
+import MemorySlot from "../../memory-slot.vue";
+import { LazyListVal, LazyTupleVal } from "../../../type/lazy-value";
+import { processResolver } from "../../../../store";
+import { valueState } from "../../../store";
+import { assert } from "../../../../../utils";
+import { isList, isTuple } from "../../../utils/types";
+import { PythonId } from "process-def/debugpy";
+import { RichValue } from "../../../type/type";
 
 const props = defineProps<{
-  value: DeferredListVal | DeferredTupleVal;
+  id: PythonId;
+  startIndex: number;
+  visibleElementCount: number;
 }>();
+
+const visibleElements = ref<RichValue[]>([]);
+const pythonValue = computed(() => {
+  let val = valueState.value.getValueOrThrow(props.id);
+  assert(
+    isList(val) || isTuple(val),
+    `Value with id ${props.id} is not a LazyListVal or LazyTupleVal`,
+  );
+  return val as LazyListVal | LazyTupleVal;
+});
+
+async function fetchElements() {
+  const resolver = processResolver.value;
+  if (!resolver) return;
+
+  const count = Math.min(
+    props.visibleElementCount,
+    pythonValue.value.element_count - props.startIndex,
+  );
+  visibleElements.value = await pythonValue.value.getElements(
+    resolver.debugpy,
+    props.startIndex,
+    count,
+  );
+}
+
+watch(() => props.startIndex, fetchElements);
+
+onMounted(fetchElements);
 </script>
 
 <template>
-  <div class="sequence">
-    <table class="elements">
-      <tr v-for="(el, index) in value.elements" :key="index">
-        <td class="index">{{ index }}</td>
-        <td class="value">
-          <ValueComponent :value="el" />
-        </td>
-      </tr>
-    </table>
-  </div>
+  <table class="elements-table">
+    <tr v-for="(el, index) in visibleElements" :key="index">
+      <td class="index">{{ index + startIndex }}</td>
+      <td class="value">
+        <MemorySlot :id="el.id" />
+      </td>
+    </tr>
+  </table>
 </template>
 
 <style scoped lang="scss">
+.elements-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: none;
+}
+
 td {
   border: 1px solid #858585;
-}
-.sequence {
-  display: flex;
-  justify-content: start;
-  flex-direction: column;
-}
-.elements {
-  border-collapse: collapse;
-  border: 3px solid black;
-
-  margin: 5px 5px 0 0;
-
-  .index {
-    background-color: #dae4ef;
-    line-height: 1;
-    text-align: center;
-    font-size: 1.2em;
-    width: 15%;
+  &:first-child {
+    border-left: none;
+  }
+  &:last-child {
+    border-right: none;
   }
 }
 
+.index {
+  background-color: #dae4ef;
+  line-height: 1;
+  text-align: center;
+  font-size: 1.2em;
+  width: 15%;
+}
+
 .value {
-  margin-left: 5px;
+  padding-left: 5px;
 }
 </style>

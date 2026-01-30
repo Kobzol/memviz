@@ -8,9 +8,9 @@ import type {
 } from "process-def";
 import type {
   KeyValuePair,
+  ObjectVal,
   Value as PythonValue,
   Variables as PythonVariables,
-  ResolvedObjectVal,
 } from "process-def/debugpy";
 import type { InternedPlaceList } from "./visualization/gdb/type";
 
@@ -50,8 +50,8 @@ export interface GetPythonVariablesRepresentationRes extends Response {
   };
 }
 
-export interface GetCollectionElementsRes extends Response {
-  kind: "get-collection-elements";
+export interface GetFlatCollectionElementsRes extends Response {
+  kind: "get-flat-collection-elements";
   data: {
     elements: PythonValue[];
   };
@@ -74,7 +74,7 @@ export interface GetStringContentsRes extends Response {
 export interface GetObjectRes extends Response {
   kind: "get-object";
   data: {
-    object: ResolvedObjectVal;
+    object: ObjectVal;
   };
 }
 
@@ -119,7 +119,7 @@ export type ExtensionToMemvizGDBResponse =
 
 export type ExtensionToMemvizDebugpyResponse =
   | GetPythonVariablesRepresentationRes
-  | GetCollectionElementsRes
+  | GetFlatCollectionElementsRes
   | GetDictEntriesRes
   | GetStringContentsRes
   | GetObjectRes;
@@ -156,25 +156,25 @@ export interface GetPythonVariablesRepresentationReq extends Request {
   frameIndex: FrameIndex;
 }
 
-export interface GetCollectionElementsReq extends Request {
-  kind: "get-collection-elements";
+export interface GetFlatCollectionElementsReq extends Request {
+  kind: "get-flat-collection-elements";
   id: AddressStr;
   startIndex: number;
-  elementCount: number;
+  count: number;
 }
 
 export interface GetDictEntriesReq extends Request {
   kind: "get-dict-entries";
   id: AddressStr;
   startIndex: number;
-  pairCount: number;
+  count: number;
 }
 
 export interface GetStringContentsReq extends Request {
   kind: "get-string-contents";
   id: AddressStr;
   startIndex: number;
-  length: number;
+  count: number;
 }
 
 export interface GetObjectReq extends Request {
@@ -196,7 +196,7 @@ export type MemvizToExtensionMsg =
   | GetStackTraceReq
   | GetPlacesReq
   | GetPythonVariablesRepresentationReq
-  | GetCollectionElementsReq
+  | GetFlatCollectionElementsReq
   | GetDictEntriesReq
   | GetStringContentsReq
   | GetObjectReq

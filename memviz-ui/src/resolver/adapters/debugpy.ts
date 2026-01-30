@@ -1,39 +1,42 @@
 import type { AddressStr, FrameIndex } from "process-def";
+
 import type {
-  KeyValuePair,
-  ResolvedObjectVal,
-  Value,
-  Variables,
-} from "process-def/debugpy";
+  RichAttribute,
+  RichKeyValuePair,
+  RichValue,
+  RichVariables,
+} from "../../visualization/debugpy/type/type";
 import type { ProcessResolverCore } from "../core";
 
 export class DebugpyResolver {
   constructor(protected resolver: ProcessResolverCore) {}
-  createVariablesRepresentation(frameIndex: FrameIndex): Promise<Variables> {
+  async createVariablesRepresentation(
+    frameIndex: FrameIndex,
+  ): Promise<RichVariables> {
     return this.resolver.createVariablesRepresentation(frameIndex);
   }
-  getCollectionElements(
+  getFlatCollectionElements(
     id: AddressStr,
     startIndex: number,
-    elementCount: number,
-  ): Promise<Value[]> {
-    return this.resolver.getCollectionElements(id, startIndex, elementCount);
+    count: number,
+  ): Promise<RichValue[]> {
+    return this.resolver.getFlatCollectionElements(id, startIndex, count);
   }
   getStringContents(
     id: AddressStr,
     startIndex: number,
-    length: number,
+    count: number,
   ): Promise<string> {
-    return this.resolver.getStringContents(id, startIndex, length);
+    return this.resolver.getStringContents(id, startIndex, count);
   }
   getDictEntries(
     id: AddressStr,
     startIndex: number,
-    pairCount: number,
-  ): Promise<KeyValuePair[]> {
-    return this.resolver.getDictEntries(id, startIndex, pairCount);
+    count: number,
+  ): Promise<RichKeyValuePair[]> {
+    return this.resolver.getDictEntries(id, startIndex, count);
   }
-  getObject(id: AddressStr): Promise<ResolvedObjectVal> {
+  getObject(id: AddressStr): Promise<RichAttribute[]> {
     return this.resolver.getObject(id);
   }
 }

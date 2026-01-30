@@ -1,44 +1,36 @@
 <script setup lang="ts">
-import { type Ref, computed, ref, watch } from "vue";
-import ValueComponent from "./../value.vue";
+import { computed } from "vue";
 import { processResolver } from "../../../../store";
-import { ResolvedObjectVal, ObjectVal } from "process-def/debugpy";
 import AttributeName from "./attribute-name.vue";
+import MemorySlot from "../../memory-slot.vue";
+import { LazyObjectVal } from "../../../type/lazy-value";
+import { assert } from "../../../../../utils";
+import { valueState } from "../../../store";
+import { isObject } from "../../../utils/types";
+import { PythonId } from "process-def/debugpy";
 
 const props = defineProps<{
-  value: ObjectVal;
+  id: PythonId;
 }>();
 
+const pythonValue = computed(() => {
+  const val = valueState.value.getValueOrThrow(props.id);
+  assert(isObject(val), `Value with id ${props.id} is not a LazyObjectVal`);
+  return val as LazyObjectVal;
+});
+const isResolved = computed(() => pythonValue.value.isResolved());
+const attributes = computed(() => {
+  return pythonValue.value.getFetchedAttributes();
+});
+
 async function loadData() {
-  if (isResolvedObject(props.value)) {
-    // already loaded
-    return;
-  }
-  resolver.value.debugpy.getObject(props.value.id).then((loadedObject) => {
-    object.value = loadedObject;
-  });
+  if (isResolved.value) return;
+
+  const resolver = processResolver.value;
+  if (!resolver) return;
+
+  await pythonValue.value.getAttributes(resolver.debugpy);
 }
-
-function isResolvedObject(value: ObjectVal): value is ResolvedObjectVal {
-  return value.kind === "object";
-}
-
-function checkIfAlreadyResolved() {
-  if (isResolvedObject(props.value)) {
-    object.value = props.value;
-  }
-}
-
-const resolver = computed(() => processResolver.value);
-const object: Ref<ResolvedObjectVal | null> = ref(null);
-
-watch(
-  () => props.value,
-  () => {
-    checkIfAlreadyResolved();
-  },
-  { immediate: true }
-);
 
 function onClick() {
   loadData();
@@ -47,21 +39,23 @@ function onClick() {
 
 <template>
   <div class="object">
-    <div v-if="isResolvedObject(value)" class="resolved-object">
-      <table v-if="value.attributes.length > 0">
+    <div v-if="isResolved" class="resolved-object">
+      <table v-if="attributes && attributes.length > 0">
         <tr>
           <th colspan="2">Attributes</th>
         </tr>
-        <tr v-for="attr in value.attributes" :key="attr.name">
+        <tr v-for="attr in attributes" :key="attr.name">
           <td v-bind:colspan="attr.value ? 1 : 2">
             <AttributeName :attribute="attr" />
           </td>
           <td v-if="attr.value">
-            <ValueComponent :value="attr.value" />
+            <MemorySlot :id="attr.value.id" />
           </td>
         </tr>
       </table>
+      <div v-else class="empty-object"></div>
     </div>
+
     <div v-else @click="onClick" class="not-resolved">...</div>
   </div>
 </template>
@@ -81,10 +75,15 @@ function onClick() {
   flex-direction: column;
 }
 
+.empty-object {
+  color: #666;
+  font-style: italic;
+  padding: 2px 5px;
+}
+
 table {
   border-collapse: collapse;
   border: 3px solid black;
-
   margin: 5px 5px 0 0;
 
   th {

@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { Place, Value } from "process-def/debugpy";
+import { Place } from "process-def/debugpy";
 import { computed, ref, watch } from "vue";
 import type { Ref } from "vue";
 import { processResolver } from "../../../store";
 import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
-import { Path } from "../../../gdb/pointers/path";
-import { AddressStr, StackFrame } from "process-def";
+import { StackFrame } from "process-def";
 import NamedPlace from "./named-place.vue";
 import { formatLocation } from "../../../utils/formatting";
 
@@ -21,21 +20,17 @@ async function maybeLoadPlaces() {
   if (expanded.value && places.value === null) {
     const variables =
       await resolver.value.debugpy.createVariablesRepresentation(
-        props.frame.index
+        props.frame.index,
       );
 
     places.value = variables.places;
-    values.value = new Map<AddressStr, Value>(
-      variables.values.map((val) => [val.id, val])
-    );
   }
 }
 
 const resolver = computed(() => processResolver.value);
 const places: Ref<Place[] | null> = ref(null);
-const values: Ref<Map<AddressStr, Value>> = ref(new Map());
 const location = computed(() =>
-  formatLocation(props.frame.file, props.frame.line)
+  formatLocation(props.frame.file, props.frame.line),
 );
 const tooltip = computed(() => {
   return `Stack frame of function <b>${props.frame.name}</b> located at <b>${location.value}</b>`;
@@ -49,7 +44,7 @@ watch(
     if (newFrame.index != oldFrame.index || newFrame.name != oldFrame.name) {
       expanded.value = isTopFrame.value;
     }
-  }
+  },
 );
 
 watch(
@@ -57,7 +52,7 @@ watch(
   () => {
     places.value = null;
     maybeLoadPlaces();
-  }
+  },
 );
 
 watch(
@@ -65,7 +60,7 @@ watch(
   () => {
     maybeLoadPlaces();
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // https://www.color-hex.com/color-palette/24003
@@ -91,7 +86,7 @@ watch(
           v-for="place in places"
           :key="place.name"
           :place="place"
-          :value="values.get(place.id) ?? null"
+          :id="place.id"
         />
       </div>
     </div>

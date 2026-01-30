@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import TooltipContributor from "../../../../components/tooltip/tooltip-contributor.vue";
-import { Attribute } from "process-def/debugpy";
+import { RichAttribute } from "../../../type/type";
 
 const props = defineProps<{
-  attribute: Attribute;
+  attribute: RichAttribute;
 }>();
 
 const tooltip = computed(() => {

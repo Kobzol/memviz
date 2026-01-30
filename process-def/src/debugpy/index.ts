@@ -1,30 +1,30 @@
-import type { AddressStr } from "..";
-import type { Value } from "./value";
+import type { PythonId, Value } from "./value";
 
 export type {
+  PythonId,
   Value,
   NoneVal,
   BoolVal,
   IntVal,
   FloatVal,
   ComplexVal,
-  CollectionVal,
+  FlatCollectionVal,
   DeferredStrVal,
   DeferredListVal,
   DeferredTupleVal,
   DeferredSetVal,
   DeferredFrozenSetVal,
   DeferredDictVal,
-  DeferredObjectVal,
   RangeVal,
   FunctionVal,
   KeyValuePair,
   ObjectVal,
-  ResolvedObjectVal,
   ModuleVal,
   TypeVal,
   Attribute,
 } from "./value";
+
+export { ValueKind } from "./value";
 
 export enum PlaceKind {
   Variable = "v",
@@ -34,7 +34,7 @@ export enum PlaceKind {
 
 export interface Place {
   name: string;
-  id: AddressStr;
+  id: PythonId;
   kind: PlaceKind;
 }
 

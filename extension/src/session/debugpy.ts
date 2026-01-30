@@ -6,7 +6,7 @@ import {
 } from "process-def";
 import type {
   KeyValuePair,
-  ResolvedObjectVal,
+  ObjectVal,
   Value,
   Variables,
 } from "process-def/debugpy";
@@ -41,14 +41,14 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
     );
   }
 
-  async getCollectionElements(
+  async getFlatCollectionElements(
     frameId: FrameId,
     id: AddressStr,
     startIndex: number,
-    elementCount: number,
+    count: number,
   ): Promise<Value[]> {
     const result = await this.pythonEvaluate<Value[]>(
-      `get_collection_elements("${id}", ${startIndex}, ${elementCount})`,
+      `get_flat_collection_elements("${id}", ${startIndex}, ${count})`,
       frameId,
     );
     return result;
@@ -58,10 +58,10 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
     frameId: FrameId,
     id: AddressStr,
     startIndex: number,
-    pairCount: number,
+    count: number,
   ): Promise<KeyValuePair[]> {
     const result = await this.pythonEvaluate<KeyValuePair[]>(
-      `get_dict_entries("${id}", ${startIndex}, ${pairCount})`,
+      `get_dict_entries("${id}", ${startIndex}, ${count})`,
       frameId,
     );
     return result;
@@ -71,20 +71,17 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
     frameId: FrameId,
     id: AddressStr,
     startIndex: number,
-    length: number,
+    count: number,
   ): Promise<string> {
     const result = await this.pythonEvaluate<string>(
-      `get_string_contents("${id}", ${startIndex}, ${length})`,
+      `get_string_contents("${id}", ${startIndex}, ${count})`,
       frameId,
     );
     return result;
   }
 
-  async getObject(
-    frameId: FrameId,
-    id: AddressStr,
-  ): Promise<ResolvedObjectVal> {
-    const result = await this.pythonEvaluate<ResolvedObjectVal>(
+  async getObject(frameId: FrameId, id: AddressStr): Promise<ObjectVal> {
+    const result = await this.pythonEvaluate<ObjectVal>(
       `get_object("${id}")`,
       frameId,
     );

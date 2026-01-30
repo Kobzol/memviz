@@ -13,6 +13,8 @@ FrameIndex = int
 
 
 RETURN_VALUES_DICT_NAME = "__pydevd_ret_val_dict"
+SEQUENCE_LOAD_ITEM_COUNT = 15
+STR_LOAD_CHAR_COUNT = 100
 
 
 class IdMap:
@@ -99,40 +101,42 @@ class ComplexVal(BaseVal):
     imaginary_value: str
 
 
-@dataclasses.dataclass()
+@dataclasses.dataclass(kw_only=True)
 class DeferredStrVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="str")
     size: int
     length: int
-    content: Dict[int, str] = dataclasses.field(default_factory=dict)
+    content: Optional[str] = None
+    content_offset: int = 0
 
 
-@dataclasses.dataclass()
-class CollectionVal(BaseVal, ABC):
+@dataclasses.dataclass(kw_only=True)
+class FlatCollectionVal(BaseVal, ABC):
     element_count: int
-    elements: Dict[int, BaseVal] = dataclasses.field(default_factory=dict, kw_only=True)
+    elements: Optional[List[BaseVal]] = None
+    element_offset: int = 0
 
 
-@dataclasses.dataclass()
-class DeferredListVal(CollectionVal):
+@dataclasses.dataclass(kw_only=True)
+class DeferredListVal(FlatCollectionVal):
     size: int
     kind: str = dataclasses.field(init=False, default="list")
 
 
-@dataclasses.dataclass()
-class DeferredTupleVal(CollectionVal):
+@dataclasses.dataclass(kw_only=True)
+class DeferredTupleVal(FlatCollectionVal):
     size: int
     kind: str = dataclasses.field(init=False, default="tuple")
 
 
-@dataclasses.dataclass()
-class DeferredSetVal(CollectionVal):
+@dataclasses.dataclass(kw_only=True)
+class DeferredSetVal(FlatCollectionVal):
     size: int
     kind: str = dataclasses.field(init=False, default="set")
 
 
-@dataclasses.dataclass()
-class DeferredFrozenSetVal(CollectionVal):
+@dataclasses.dataclass(kw_only=True)
+class DeferredFrozenSetVal(FlatCollectionVal):
     size: int
     kind: str = dataclasses.field(init=False, default="frozenset")
 
@@ -143,12 +147,13 @@ class KeyValuePair:
     value: BaseVal
 
 
-@dataclasses.dataclass()
+@dataclasses.dataclass(kw_only=True)
 class DeferredDictVal(BaseVal):
     kind: str = dataclasses.field(init=False, default="dict")
     size: int
     pair_count: int
-    pairs: Dict[int, KeyValuePair] = dataclasses.field(default_factory=dict)
+    pairs: Optional[List[KeyValuePair]] = None
+    pair_offset: int = 0
 
 
 @dataclasses.dataclass()
@@ -170,28 +175,18 @@ class FunctionVal(BaseVal):
 
 
 @dataclasses.dataclass()
-class ObjectVal(BaseVal, ABC):
-    kind: str
-    size: int
-    type_name: str
-
-
-@dataclasses.dataclass()
-class DeferredObjectVal(ObjectVal):
-    kind: str = dataclasses.field(init=False, default="deferred_object")
-
-
-@dataclasses.dataclass()
 class Attribute:
     name: str
     value: Optional[BaseVal] = None
     is_descriptor: bool = False
 
 
-@dataclasses.dataclass()
-class ResolvedObjectVal(ObjectVal):
+@dataclasses.dataclass(kw_only=True)
+class ObjectVal(BaseVal, ABC):
     kind: str = dataclasses.field(init=False, default="object")
-    attributes: List[Attribute] = dataclasses.field(default_factory=list)
+    size: int
+    type_name: str
+    attributes: Optional[List[Attribute]] = None
 
 
 @dataclasses.dataclass()
@@ -211,6 +206,11 @@ class TypeVal(BaseVal):
 class Variables:
     places: List[Place]
     values: List[BaseVal]
+
+
+def get_str_default_load_content(val: str) -> str:
+    count = min(len(val), STR_LOAD_CHAR_COUNT)
+    return val[:count]
 
 
 def make_value(val: Any) -> BaseVal:
@@ -240,12 +240,11 @@ def make_value(val: Any) -> BaseVal:
             imaginary_value=str(val.imag),
         )
     elif isinstance(val, str):
-        length = len(val)
         return DeferredStrVal(
             id=val_id,
             size=size,
-            length=length,
-            content=dict(enumerate(val)),
+            length=len(val),
+            content=get_str_default_load_content(val),
         )
     elif isinstance(val, dict):
         return DeferredDictVal(id=val_id, size=size, pair_count=len(val))
@@ -284,7 +283,7 @@ def make_value(val: Any) -> BaseVal:
             signature=signature,
         )
     else:
-        return DeferredObjectVal(
+        return ObjectVal(
             id=val_id,
             size=size,
             type_name=type(val).__name__,
@@ -375,21 +374,21 @@ def get_variables(frame_index: FrameIndex, debugged_file_path: str) -> Variables
             IdMap.register(value_repr.id, value)
 
         # load one level of nested values
-        if isinstance(value_repr, CollectionVal) and value_repr.element_count > 0:
-            elements = get_collection_elements(
+        if isinstance(value_repr, FlatCollectionVal) and value_repr.element_count > 0:
+            elements = get_flat_collection_elements(
                 collection_id=value_repr.id,
                 start_index=0,
-                element_count=value_repr.element_count,
+                element_count=min(value_repr.element_count, SEQUENCE_LOAD_ITEM_COUNT),
             )
-            value_repr.elements = {i: elem for i, elem in enumerate(elements)}
+            value_repr.elements = elements
         elif isinstance(value_repr, DeferredDictVal) and value_repr.pair_count > 0:
             pairs = get_dict_entries(
                 dict_id=value_repr.id,
                 start_index=0,
-                pair_count=value_repr.pair_count,
+                pair_count=min(value_repr.pair_count, SEQUENCE_LOAD_ITEM_COUNT),
             )
-            value_repr.pairs = {i: pair for i, pair in enumerate(pairs)}
-        elif isinstance(value_repr, DeferredObjectVal):
+            value_repr.pairs = pairs
+        elif isinstance(value_repr, ObjectVal):
             value_repr = get_object(
                 object_id=value_repr.id,
             )
@@ -408,7 +407,7 @@ def get_variables(frame_index: FrameIndex, debugged_file_path: str) -> Variables
     return Variables(places=places, values=list(values.values()))
 
 
-def get_collection_elements(
+def get_flat_collection_elements(
     collection_id: PythonId,
     start_index: int,
     element_count: int,
@@ -421,6 +420,7 @@ def get_collection_elements(
 
     elements = []
     for element in itertools.islice(value, start_index, start_index + element_count):
+
         value_repr = make_value(element)
         elements.append(value_repr)
         IdMap.register(value_repr.id, element)
@@ -440,6 +440,7 @@ def get_dict_entries(
     for key, val in itertools.islice(
         value.items(), start_index, start_index + pair_count
     ):
+
         key_repr = make_value(key)
         value_repr = make_value(val)
         entries.append(KeyValuePair(key_repr, value_repr))
@@ -462,7 +463,7 @@ def get_string_contents(
     return value[start_index : start_index + length]
 
 
-def get_object(object_id: PythonId) -> ResolvedObjectVal:
+def get_object(object_id: PythonId) -> ObjectVal:
     obj = IdMap.get(object_id)
 
     attributes = []
@@ -501,7 +502,7 @@ def get_object(object_id: PythonId) -> ResolvedObjectVal:
 
     attributes.sort(key=lambda a: a.name.startswith("_"))
 
-    return ResolvedObjectVal(
+    return ObjectVal(
         id=object_id,
         size=sys.getsizeof(obj),
         type_name=type(obj).__name__,

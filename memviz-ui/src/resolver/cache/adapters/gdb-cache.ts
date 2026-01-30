@@ -13,7 +13,7 @@ export class CachingGDBResolver extends GDBResolver {
     let cached = this.placeMap.get(frameIndex);
 
     if (cached === undefined) {
-      cached = await this.resolver.getPlaces(frameIndex);
+      cached = await super.getPlaces(frameIndex);
       this.placeMap.set(frameIndex, cached);
     }
     return cached;
@@ -27,12 +27,12 @@ export class CachingGDBResolver extends GDBResolver {
     if (memory !== null) {
       return memory;
     }
-    const result = await this.resolver.readMemory(address, size);
+    const result = await super.readMemory(address, size);
     this.map.set(strToAddress(address), result);
     return result;
   }
 
   override async takeAllocEvents(): Promise<MemoryAllocEvent[]> {
-    return await this.resolver.takeAllocEvents();
+    return await super.takeAllocEvents();
   }
 }

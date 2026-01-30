@@ -1,63 +1,123 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import { processResolver } from "../../../store";
-import { DeferredStrVal } from "process-def/debugpy";
 import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
+import { assert } from "../../../../utils";
+import { valueState } from "../../store";
+import { isStr } from "../../utils/types";
+import { PythonId } from "process-def/debugpy";
+import { STRING_BATCH_SIZE } from "../../value-display-settings";
 
 const props = defineProps<{
-  value: DeferredStrVal;
+  id: PythonId;
 }>();
 
-async function loadData() {
-  if (!props.value.length) {
-    return;
+const batchSize = STRING_BATCH_SIZE;
+
+const pythonValue = computed(() => {
+  const val = valueState.value.getValueOrThrow(props.id);
+  assert(isStr(val), `Value with id ${props.id} is not a LazyStrVal`);
+  return val;
+});
+
+const resolvedContent = ref("");
+const visibleLimit = ref(0);
+const isFetching = ref(false);
+
+watch(
+  () => props.id,
+  () => {
+    resolvedContent.value = "";
+    isFetching.value = false;
+
+    visibleLimit.value = Math.min(batchSize, pythonValue.value.length);
+  },
+  { immediate: true },
+);
+
+async function fetchMissingContent() {
+  const val = pythonValue.value;
+  if (!val || isFetching.value) return;
+
+  const targetLimit = visibleLimit.value;
+  const currentLength = resolvedContent.value.length;
+
+  if (currentLength >= targetLimit) return;
+
+  const currentId = props.id;
+  isFetching.value = true;
+
+  try {
+    const count = targetLimit - currentLength;
+    const resStr = await val.getElements(
+      processResolver.value.debugpy,
+      currentLength,
+      count,
+    );
+
+    if (props.id !== currentId) return;
+
+    resolvedContent.value += resStr;
+  } catch (e) {
+    console.error("Failed to fetch string elements", e);
+  } finally {
+    if (props.id === currentId) {
+      isFetching.value = false;
+    }
   }
-  if (hasResolvedContent()) {
-    return;
-  }
-  const start = 0;
-  const length = props.value.length;
-  resolver.value.debugpy
-    .getStringContents(props.value.id, start, length)
-    .then((resStr) => {
-      for (let i = 0; i < resStr.length; i++) {
-        props.value.content[start + i] = resStr[i];
-      }
-    });
 }
 
-const resolver = computed(() => processResolver.value);
+watch(
+  visibleLimit,
+  () => {
+    fetchMissingContent();
+  },
+  { immediate: true },
+);
 
-const stringContents = computed(() => {
-  if (!props.value.content) {
-    return "";
+async function loadMoreData() {
+  const val = pythonValue.value;
+  const currentLimit = visibleLimit.value;
+
+  if (resolvedContent.value.length < currentLimit) {
+    await fetchMissingContent();
+    return;
   }
-  const keys = Object.keys(props.value.content)
-    .map((k) => parseInt(k))
-    .sort((a, b) => a - b);
-  return keys.map((k) => props.value.content[k]).join("");
+
+  const nextLimit = currentLimit + batchSize;
+  const finalLimit = Math.min(nextLimit, val.length);
+
+  if (finalLimit > currentLimit) {
+    visibleLimit.value = finalLimit;
+  }
+}
+
+const escapedContent = computed(() => {
+  if (!resolvedContent.value) return "";
+  // escape special characters for display
+  return JSON.stringify(resolvedContent.value).slice(1, -1);
 });
 
 const tooltip = computed(() => {
-  return `Id: <b>${props.value.id}</b>, size: <b>${props.value.size} B</b>`;
+  if (!pythonValue.value) return "";
+  return `Id: <b>${props.id}</b>, size: <b>${pythonValue.value.size} B</b>`;
 });
 
-function onClick() {
-  loadData();
-}
-
-function hasResolvedContent() {
-  return Object.keys(props.value.content).length >= props.value.length;
-}
+const isLoaded = computed(() => {
+  if (!pythonValue.value) return false;
+  return resolvedContent.value.length >= pythonValue.value.length;
+});
 </script>
 
 <template>
-  <TooltipContributor :tooltip="tooltip">
+  <TooltipContributor :tooltip="tooltip" :key="id">
     <div class="str">
-      <code v-if="hasResolvedContent()" class="string">
-        {{ stringContents }}
-      </code>
-      <code v-else class="not-resolved" @click="onClick"> ... </code>
+      <code class="string"
+        >"{{ escapedContent
+        }}<span v-if="!isLoaded" class="not-resolved" @click="loadMoreData"
+          >...</span
+        >"</code
+      >
     </div>
   </TooltipContributor>
 </template>
@@ -69,9 +129,17 @@ function hasResolvedContent() {
   font-family: monospace;
   font-size: 1.2em;
 
-  .not-resolved {
-    &:hover {
+  .string {
+    white-space: pre-wrap;
+    word-break: break-all;
+
+    .not-resolved {
       cursor: pointer;
+      font-weight: bold;
+
+      &:hover {
+        opacity: 0.8;
+      }
     }
   }
 }

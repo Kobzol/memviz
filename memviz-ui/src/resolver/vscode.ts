@@ -1,18 +1,12 @@
 import type { AddressStr, FrameIndex, StackTrace, ThreadId } from "process-def";
-import type {
-  KeyValuePair,
-  Value as PythonValue,
-  Variables as PythonVariables,
-  ResolvedObjectVal,
-} from "process-def/debugpy";
 import type { Place as GDBPlace } from "process-def/gdb";
 import type { WebviewApi } from "vscode-webview";
 import type {
   ExtensionToMemvizResponse,
-  GetCollectionElementsReq,
-  GetCollectionElementsRes,
   GetDictEntriesReq,
   GetDictEntriesRes,
+  GetFlatCollectionElementsReq,
+  GetFlatCollectionElementsRes,
   GetObjectReq,
   GetObjectRes,
   GetPlacesReq,
@@ -32,6 +26,14 @@ import type {
   TakeAllocEventsReq,
   TakeAllocEventsRes,
 } from "../messages";
+import { assert } from "../utils";
+import type {
+  RichAttribute,
+  RichKeyValuePair,
+  RichVariables as RichPythonVariables,
+  RichValue,
+} from "../visualization/debugpy/type/type";
+import { rawToRichValues } from "../visualization/debugpy/type/value-mapper";
 import { deserializePlaces } from "../visualization/gdb/type";
 import type { ProcessResolverCore } from "./core";
 
@@ -90,7 +92,7 @@ export class VsCodeResolver implements ProcessResolverCore {
 
   async createVariablesRepresentation(
     frameIndex: FrameIndex,
-  ): Promise<PythonVariables> {
+  ): Promise<RichPythonVariables> {
     const res = await this.sendRequest<
       GetPythonVariablesRepresentationReq,
       GetPythonVariablesRepresentationRes
@@ -99,30 +101,33 @@ export class VsCodeResolver implements ProcessResolverCore {
       frameIndex,
     });
 
-    return res.variables;
+    return {
+      places: res.variables.places,
+      values: rawToRichValues(res.variables.values),
+    };
   }
 
-  async getCollectionElements(
+  async getFlatCollectionElements(
     id: AddressStr,
     startIndex: number,
-    elementCount: number,
-  ): Promise<PythonValue[]> {
+    count: number,
+  ): Promise<RichValue[]> {
     const res = await this.sendRequest<
-      GetCollectionElementsReq,
-      GetCollectionElementsRes
+      GetFlatCollectionElementsReq,
+      GetFlatCollectionElementsRes
     >({
-      kind: "get-collection-elements",
+      kind: "get-flat-collection-elements",
       id,
-      elementCount,
       startIndex,
+      count,
     });
-    return res.elements;
+    return rawToRichValues(res.elements);
   }
 
   async getStringContents(
     id: AddressStr,
     startIndex: number,
-    length: number,
+    count: number,
   ): Promise<string> {
     const res = await this.sendRequest<
       GetStringContentsReq,
@@ -131,7 +136,7 @@ export class VsCodeResolver implements ProcessResolverCore {
       kind: "get-string-contents",
       id,
       startIndex,
-      length,
+      count,
     });
     return res.contents;
   }
@@ -139,23 +144,34 @@ export class VsCodeResolver implements ProcessResolverCore {
   async getDictEntries(
     id: AddressStr,
     startIndex: number,
-    pairCount: number,
-  ): Promise<KeyValuePair[]> {
+    count: number,
+  ): Promise<RichKeyValuePair[]> {
     const res = await this.sendRequest<GetDictEntriesReq, GetDictEntriesRes>({
       kind: "get-dict-entries",
       id,
       startIndex,
-      pairCount,
+      count,
     });
-    return res.entries;
+    return res.entries.map((entry) => ({
+      key: rawToRichValues([entry.key])[0],
+      value: rawToRichValues([entry.value])[0],
+    }));
   }
 
-  async getObject(id: AddressStr): Promise<ResolvedObjectVal> {
+  async getObject(id: AddressStr): Promise<RichAttribute[]> {
     const res = await this.sendRequest<GetObjectReq, GetObjectRes>({
       kind: "get-object",
       id,
     });
-    return res.object;
+    assert(
+      res.object.attributes !== null,
+      `Object ${id} received null attributes`,
+    );
+    return res.object.attributes.map((attr) => ({
+      name: attr.name,
+      value: attr.value ? rawToRichValues([attr.value])[0] : null,
+      is_descriptor: attr.is_descriptor,
+    }));
   }
 
   async readMemory(address: AddressStr, size: number): Promise<ArrayBuffer> {

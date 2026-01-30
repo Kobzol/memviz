@@ -1,47 +1,37 @@
 <script setup lang="ts">
+import type { PythonId } from "process-def/debugpy";
 import {
   onBeforeUnmount,
   onMounted,
   onUpdated,
-  ShallowRef,
   shallowRef,
+  ShallowRef,
   watch,
 } from "vue";
-import { gdbComponentMap } from "../../store";
-import { assert } from "../../../utils";
-import { ComponentUnsubscribeFn } from "../../gdb/pointers/component-map";
-import { AddressRegion } from "../../gdb/pointers/region";
-import { Path } from "../../gdb/pointers/path";
+import ValueComponent from "../value/value.vue";
+import { debugpyComponentMap } from "../../../store";
+import { assert } from "../../../../utils";
+import { ComponentUnsubscribeFn } from "../../component-map";
 
 const props = defineProps<{
-  region: AddressRegion;
-  path: Path;
+  id: PythonId;
 }>();
 
-// Updates the HTML element of this PointerTarget in the component map,
-// at the specified address
 async function updateComponentInMap() {
   assert(elementRef.value !== null, "component has not been mounted yet");
 
   // This is required to wait for browser relayout, to make sure
   // that the element has the final layout before it is registered
   window.requestAnimationFrame(() => {
-    const address = props.region.address;
-    if (address === null) {
-      return;
-    }
-
     removeComponentFromMap();
 
     if (elementRef.value !== null) {
-      unsubscribeFn.value = gdbComponentMap.value.addComponent(
+      unsubscribeFn.value = debugpyComponentMap.value.addComponent(
         {
-          address,
+          id: props.id,
           element: elementRef.value,
-          size: props.region.size,
-          path: props.path,
         },
-        gdbComponentMap
+        debugpyComponentMap,
       );
     }
   });
@@ -54,6 +44,12 @@ function removeComponentFromMap() {
   }
 }
 
+function highlightArrows() {
+  debugpyComponentMap.value.highlightValue(props.id);
+}
+function unhighlightArrows() {
+  debugpyComponentMap.value.unhighlightValue(props.id);
+}
 const elementRef = shallowRef<HTMLElement | null>(null);
 const unsubscribeFn: ShallowRef<ComponentUnsubscribeFn | null> =
   shallowRef(null);
@@ -62,13 +58,30 @@ onMounted(() => updateComponentInMap());
 onUpdated(() => updateComponentInMap());
 onBeforeUnmount(() => removeComponentFromMap());
 watch(
-  () => props.region,
-  () => updateComponentInMap()
+  () => props.id,
+  () => updateComponentInMap(),
 );
 </script>
 
 <template>
-  <div :ref="(el: any) => elementRef = el">
-    <slot></slot>
+  <div
+    class="heap-block"
+    :ref="(el: any) => (elementRef = el)"
+    @mouseenter.stop="highlightArrows"
+    @mouseleave.stop="unhighlightArrows"
+  >
+    <ValueComponent :id="props.id" />
   </div>
 </template>
+
+<style scoped lang="scss">
+.heap-block {
+  flex: 3;
+  min-width: 0;
+  word-break: break-all;
+  background: #ffffff;
+  border-top: solid 1px #000000;
+  padding: 5px;
+  gap: 6px;
+}
+</style>

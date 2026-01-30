@@ -1,10 +1,10 @@
 import type { MemvizToExtensionMsg } from "memviz-ui";
 import type {
   ExtensionToMemvizDebugpyResponse,
-  GetCollectionElementsReq,
-  GetCollectionElementsRes,
   GetDictEntriesReq,
   GetDictEntriesRes,
+  GetFlatCollectionElementsReq,
+  GetFlatCollectionElementsRes,
   GetObjectReq,
   GetObjectRes,
   GetPythonVariablesRepresentationReq,
@@ -28,8 +28,8 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
     if (message.kind === "get-python-variables-representation") {
       return this.performGetVariablesRequest(message, session);
     }
-    if (message.kind === "get-collection-elements") {
-      return this.performGetCollectionElementsRequest(message, session);
+    if (message.kind === "get-flat-collection-elements") {
+      return this.performGetFlatCollectionElementsRequest(message, session);
     }
     if (message.kind === "get-dict-entries") {
       return this.performGetDictEntriesRequest(message, session);
@@ -97,20 +97,22 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
     };
   }
 
-  private performGetCollectionElementsRequest(
-    message: GetCollectionElementsReq,
+  private performGetFlatCollectionElementsRequest(
+    message: GetFlatCollectionElementsReq,
     session: DebugpyDebuggerSession,
-  ): () => Promise<Omit<GetCollectionElementsRes, "requestId" | "resolverId">> {
+  ): () => Promise<
+    Omit<GetFlatCollectionElementsRes, "requestId" | "resolverId">
+  > {
     return async () => {
       const frameId = await this.getCurrentFrameId(session);
-      const elements = await session.getCollectionElements(
+      const elements = await session.getFlatCollectionElements(
         frameId,
         message.id,
         message.startIndex,
-        message.elementCount,
+        message.count,
       );
       return {
-        kind: "get-collection-elements",
+        kind: "get-flat-collection-elements",
         data: {
           elements,
         },
@@ -128,7 +130,7 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
         frameId,
         message.id,
         message.startIndex,
-        message.pairCount,
+        message.count,
       );
       return {
         kind: "get-dict-entries",
@@ -149,7 +151,7 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
         frameId,
         message.id,
         message.startIndex,
-        message.length,
+        message.count,
       );
       return {
         kind: "get-string-contents",
