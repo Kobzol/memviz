@@ -1,6 +1,6 @@
 import type { Address } from "process-def";
 import BTree from "sorted-btree";
-import { assert, addressToStr, bufferToByteArray } from "./utils";
+import { assert, addressToStr, bufferToByteArray } from "../../utils";
 
 export class MemoryMap {
   private map: BTree<Address, ArrayBuffer> = new BTree();

@@ -14,17 +14,16 @@ import type {
   Type,
 } from "process-def/gdb";
 import { PlaceKind } from "process-def/gdb";
-import { MemoryMap } from "../memory-map";
 import type { MemoryAllocEvent } from "../messages";
 import { assert, addressToStr, strToAddress } from "../utils";
+import type { RichVariables as RichPythonVariables } from "../visualization/debugpy/type/type";
 import type {
   RichAttribute,
   RichKeyValuePair,
-  RichVariables as RichPythonVariables,
   RichValue,
 } from "../visualization/debugpy/type/type";
 import type { HeapAllocation } from "../visualization/gdb/allocation-tracker";
-import type { TyChar } from "../visualization/gdb/utils/types";
+import { MemoryMap } from "../visualization/gdb/memory-map";
 import type { ProcessResolverCore } from "./core";
 
 export interface FullProcessState extends ProcessState {
