@@ -510,6 +510,10 @@ def get_object(object_id: PythonId) -> ObjectVal:
     )
 
 
+def clear_id_map() -> None:
+    IdMap.clear()
+
+
 @dataclasses.dataclass(frozen=True)
 class Result:
     ok: bool

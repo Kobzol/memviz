@@ -33,6 +33,9 @@ export abstract class DebuggerSession<TEvaluator extends Evaluator> {
   ): Promise<void> {
     return Promise.resolve();
   }
+  public handleStoppedEvent(): Promise<void> {
+    return Promise.resolve();
+  }
 
   public getSessionType(): SessionType {
     switch (this.session.configuration.type) {

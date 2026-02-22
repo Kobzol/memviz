@@ -154,6 +154,7 @@ export class Reactor<
   }
 
   private async onThreadStopped() {
+    await this.session.handleStoppedEvent();
     const extensionToMemvizMsg =
       await this.webviewMessageHandler.getProcessStoppedMessage(this.session);
     this.sendMemvizEvent(extensionToMemvizMsg);
