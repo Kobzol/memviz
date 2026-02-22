@@ -9,7 +9,7 @@ import {
   watch,
 } from "vue";
 import ValueComponent from "../value/value.vue";
-import { debugpyComponentMap } from "../../../store";
+import { debugpyComponentMap } from "../../store";
 import { assert } from "../../../../utils";
 import { ComponentUnsubscribeFn } from "../../component-map";
 

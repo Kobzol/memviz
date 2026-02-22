@@ -7,6 +7,7 @@ import "tippy.js/dist/tippy.css";
 import type { MemoryAllocEvent } from "../messages";
 import type { ProcessResolver } from "../resolver/resolver";
 import { strToAddress } from "../utils";
+import { valueState } from "./debugpy/store";
 import { allocationState } from "./gdb/store";
 
 export class Memviz {
@@ -34,6 +35,7 @@ export class Memviz {
     sessionType: SessionType,
   ) {
     console.debug("Root state changed");
+    valueState.value.clear();
     appState.value = {
       processState,
       sessionType,
