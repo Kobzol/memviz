@@ -2,7 +2,7 @@
 import Heap from "./heap/heap.vue";
 import Frames from "./places/frames.vue";
 import { ref, onMounted, onBeforeUnmount } from "vue";
-import { debugpyComponentMap } from "../../store";
+import { debugpyComponentMap } from "../store";
 
 const rootRef = ref<HTMLElement | null>(null);
 let resizeObserver: ResizeObserver | null = null;

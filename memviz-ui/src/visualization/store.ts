@@ -2,10 +2,6 @@ import { type ProcessState, SessionType } from "process-def";
 import { type Ref, type ShallowRef, ref, shallowRef } from "vue";
 import { ProcessBuilder } from "../resolver/eager";
 import { ProcessResolver } from "../resolver/resolver";
-import { ComponentMap as DebugpyComponentMap } from "./debugpy/component-map";
-import { AllocationTracker } from "./gdb/allocation-tracker";
-import { ComponentMap as GDBComponentMap } from "./gdb/pointers/component-map";
-import { PointerMap } from "./gdb/pointers/pointer-map";
 
 interface AppState {
   processState: Readonly<ProcessState>;
@@ -24,10 +20,6 @@ export const processResolver: ShallowRef<ProcessResolver> = shallowRef(
   new ProcessResolver(innerResolver),
 );
 
-export const allocationState: ShallowRef<AllocationTracker> = shallowRef(
-  new AllocationTracker(),
-);
-
 export interface UIConfiguration {
   visualizePointers: boolean;
 }
@@ -35,16 +27,6 @@ export interface UIConfiguration {
 export const uiConfiguration: Ref<UIConfiguration> = ref({
   visualizePointers: true,
 });
-
-export const gdbComponentMap: ShallowRef<GDBComponentMap> = shallowRef(
-  new GDBComponentMap(),
-);
-
-export const debugpyComponentMap: ShallowRef<DebugpyComponentMap> = shallowRef(
-  new DebugpyComponentMap(),
-);
-
-export const pointerMap: ShallowRef<PointerMap> = shallowRef(new PointerMap());
 
 export interface TooltipEntry {
   text: string;

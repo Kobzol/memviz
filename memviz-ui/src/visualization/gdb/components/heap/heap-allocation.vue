@@ -4,7 +4,7 @@ import { HeapAllocation } from "../../allocation-tracker";
 import { AddressRegion } from "../../pointers/region";
 import { Path } from "../../pointers/path";
 import { formatAddress, formatSize } from "../../utils/formatting";
-import { pointerMap } from "../../../store";
+import { pointerMap } from "../../store";
 import { TyArray, Type } from "process-def/gdb";
 import { Value } from "../../utils/value";
 import PtrTarget from "../ptr-target.vue";

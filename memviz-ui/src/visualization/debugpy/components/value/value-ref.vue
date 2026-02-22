@@ -7,7 +7,7 @@ import {
   ShallowRef,
   watch,
 } from "vue";
-import { debugpyComponentMap } from "../../../store";
+import { debugpyComponentMap } from "../../store";
 import { LeaderLineWithId } from "../../component-map";
 import { PythonId } from "process-def/debugpy";
 

@@ -7,7 +7,7 @@ import {
   shallowRef,
   watch,
 } from "vue";
-import { gdbComponentMap } from "../../store";
+import { gdbComponentMap } from "../store";
 import { assert } from "../../../utils";
 import { ComponentUnsubscribeFn } from "../../gdb/pointers/component-map";
 import { AddressRegion } from "../../gdb/pointers/region";

@@ -2,11 +2,12 @@ import createPanZoom from "panzoom";
 import type { ProcessState, SessionType } from "process-def";
 import { createApp, triggerRef } from "vue";
 import App from "./app.vue";
-import { allocationState, appState, processResolver } from "./store";
+import { appState, processResolver } from "./store";
 import "tippy.js/dist/tippy.css";
 import type { MemoryAllocEvent } from "../messages";
 import type { ProcessResolver } from "../resolver/resolver";
 import { strToAddress } from "../utils";
+import { allocationState } from "./gdb/store";
 
 export class Memviz {
   constructor(root: HTMLElement) {
