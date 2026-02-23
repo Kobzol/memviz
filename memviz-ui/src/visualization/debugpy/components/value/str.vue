@@ -21,13 +21,19 @@ const pythonValue = computed(() => {
 });
 
 const resolvedContent = ref("");
+const resolvedContentLength = ref(0);
 const visibleLimit = ref(0);
 const isFetching = ref(false);
+
+function getLength(text: string): number {
+  return Array.from(text).length;
+}
 
 watch(
   () => props.id,
   () => {
     resolvedContent.value = "";
+    resolvedContentLength.value = 0;
     isFetching.value = false;
 
     visibleLimit.value = Math.min(batchSize, pythonValue.value.length);
@@ -40,7 +46,7 @@ async function fetchMissingContent() {
   if (!val || isFetching.value) return;
 
   const targetLimit = visibleLimit.value;
-  const currentLength = resolvedContent.value.length;
+  const currentLength = resolvedContentLength.value;
 
   if (currentLength >= targetLimit) return;
 
@@ -58,6 +64,7 @@ async function fetchMissingContent() {
     if (props.id !== currentId) return;
 
     resolvedContent.value += resStr;
+    resolvedContentLength.value += getLength(resStr);
   } catch (e) {
     console.error("Failed to fetch string elements", e);
   } finally {
@@ -79,7 +86,7 @@ async function loadMoreData() {
   const val = pythonValue.value;
   const currentLimit = visibleLimit.value;
 
-  if (resolvedContent.value.length < currentLimit) {
+  if (resolvedContentLength.value < currentLimit) {
     await fetchMissingContent();
     return;
   }
@@ -105,7 +112,7 @@ const tooltip = computed(() => {
 
 const isLoaded = computed(() => {
   if (!pythonValue.value) return false;
-  return resolvedContent.value.length >= pythonValue.value.length;
+  return resolvedContentLength.value >= pythonValue.value.length;
 });
 </script>
 

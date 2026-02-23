@@ -331,7 +331,7 @@ export class LazyStrVal extends LazyCollectionVal<string> {
   }
 
   protected slice(data: string, start: number, end: number): string {
-    return data.slice(start, end);
+    return Array.from(data).slice(start, end).join("");
   }
 
   protected joinParts(parts: string[]): string {
@@ -339,7 +339,7 @@ export class LazyStrVal extends LazyCollectionVal<string> {
   }
 
   protected getLength(data: string): number {
-    return data.length;
+    return Array.from(data).length;
   }
 
   protected getEmptyValue(): string {
