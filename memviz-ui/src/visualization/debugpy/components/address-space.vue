@@ -7,19 +7,26 @@ import { debugpyComponentMap } from "../store";
 const rootRef = ref<HTMLElement | null>(null);
 let resizeObserver: ResizeObserver | null = null;
 let mutationObserver: MutationObserver | null = null;
-let repositionDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingFrame: number | null = null;
 
 const scheduleArrowsUpdate = () => {
-  if (repositionDebounceTimer) return;
+  if (pendingFrame !== null) return;
 
-  repositionDebounceTimer = setTimeout(() => {
+  pendingFrame = requestAnimationFrame(() => {
     debugpyComponentMap.value.repositionArrows();
-    repositionDebounceTimer = null;
-  }, 15);
+    pendingFrame = null;
+  });
+};
+
+const onWindowResize = () => {
+  scheduleArrowsUpdate();
 };
 
 onMounted(() => {
   if (!rootRef.value) return;
+
+  window.addEventListener("resize", onWindowResize);
+  window.visualViewport?.addEventListener("resize", onWindowResize);
 
   resizeObserver = new ResizeObserver(() => {
     scheduleArrowsUpdate();
@@ -33,10 +40,15 @@ onMounted(() => {
     childList: true,
     subtree: true,
   });
+
+  scheduleArrowsUpdate();
 });
 
 onBeforeUnmount(() => {
-  if (repositionDebounceTimer) clearTimeout(repositionDebounceTimer);
+  window.removeEventListener("resize", onWindowResize);
+  window.visualViewport?.removeEventListener("resize", onWindowResize);
+
+  if (pendingFrame !== null) cancelAnimationFrame(pendingFrame);
   resizeObserver?.disconnect();
   mutationObserver?.disconnect();
 });
