@@ -88,7 +88,7 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
     return result;
   }
 
-  async handleStoppedEvent(): Promise<void> {
-    await this.pythonEvaluate<void>("clear_id_map()");
+  async handleStoppedEvent(frameId: FrameId): Promise<void> {
+    await this.pythonEvaluate<void>("clear_id_map()", frameId);
   }
 }

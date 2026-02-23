@@ -86,7 +86,7 @@ export class Reactor<
         await this.handleInitialBreakpointEvent(frameId);
 
         if (hasUserBreakpoint) {
-          await this.onThreadStopped();
+          await this.onThreadStopped(frameId);
         } else {
           await this.session.continue(threadId);
         }
@@ -99,7 +99,8 @@ export class Reactor<
           reason === "breakpoint" ||
           reason === "pause"
         ) {
-          await this.onThreadStopped();
+          const [_, frameId] = await this.session.getCurrentThreadAndFrameId();
+          await this.onThreadStopped(frameId);
         }
       }
     }
@@ -153,8 +154,8 @@ export class Reactor<
     this.panel.dispose();
   }
 
-  private async onThreadStopped() {
-    await this.session.handleStoppedEvent();
+  private async onThreadStopped(frameId?: FrameId) {
+    await this.session.handleStoppedEvent(frameId);
     const extensionToMemvizMsg =
       await this.webviewMessageHandler.getProcessStoppedMessage(this.session);
     this.sendMemvizEvent(extensionToMemvizMsg);
