@@ -13,7 +13,7 @@ export interface RichNoneVal extends RichValue {
 export interface RichBoolVal extends RichValue {
   readonly kind: ValueKind.BOOL;
   readonly size: number;
-  readonly value: boolean;
+  readonly value: string;
 }
 
 export interface RichIntVal extends RichValue {
