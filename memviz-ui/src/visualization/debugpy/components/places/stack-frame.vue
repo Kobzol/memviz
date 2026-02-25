@@ -16,14 +16,35 @@ function toggleExpanded() {
   expanded.value = !expanded.value;
 }
 
-async function maybeLoadPlaces() {
-  if (expanded.value && places.value === null) {
-    const variables =
-      await resolver.value.debugpy.createVariablesRepresentation(
-        props.frame.index,
-      );
+let requestId = 0;
+let isLoadingPlaces = false;
 
+async function maybeLoadPlaces() {
+  if (!expanded.value || places.value !== null || isLoadingPlaces) {
+    return;
+  }
+
+  const currentRequestId = ++requestId;
+  isLoadingPlaces = true;
+
+  try {
+    const frame = {
+      id: props.frame.id,
+      index: props.frame.index,
+      name: props.frame.name,
+      line: props.frame.line,
+    };
+    const variables =
+      await resolver.value.debugpy.createVariablesRepresentation(frame);
+
+    if (currentRequestId !== requestId) {
+      return;
+    }
     places.value = variables.places;
+  } finally {
+    if (currentRequestId === requestId) {
+      isLoadingPlaces = false;
+    }
   }
 }
 
@@ -48,8 +69,10 @@ watch(
 );
 
 watch(
-  () => [props.frame, resolver],
+  () => [props.frame, resolver.value],
   () => {
+    requestId++;
+    isLoadingPlaces = false;
     places.value = null;
     maybeLoadPlaces();
   },
