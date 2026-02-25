@@ -1,4 +1,10 @@
-import type { AddressStr, FrameIndex, StackTrace, ThreadId } from "process-def";
+import type {
+  AddressStr,
+  FrameIndex,
+  StackTrace,
+  StoppedPlace,
+  ThreadId,
+} from "process-def";
 import type { Place as GDBPlace } from "process-def/gdb";
 import type { WebviewApi } from "vscode-webview";
 import type {
@@ -91,14 +97,14 @@ export class VsCodeResolver implements ProcessResolverCore {
   }
 
   async createVariablesRepresentation(
-    frameIndex: FrameIndex,
+    frame: StoppedPlace,
   ): Promise<RichPythonVariables> {
     const res = await this.sendRequest<
       GetPythonVariablesRepresentationReq,
       GetPythonVariablesRepresentationRes
     >({
       kind: "get-python-variables-representation",
-      frameIndex,
+      frame,
     });
 
     return {

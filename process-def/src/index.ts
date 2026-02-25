@@ -27,6 +27,16 @@ export interface StackFrame {
   file: string | null;
 }
 
+export interface FrameLocation {
+  name: string;
+  line: number;
+}
+
+export interface StoppedPlace {
+  id: FrameId;
+  place: FrameLocation;
+}
+
 export type AddressStr = string;
 export type Address = bigint;
 

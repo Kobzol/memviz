@@ -1,7 +1,7 @@
 import {
   type AddressStr,
   type FrameId,
-  type FrameIndex,
+  type FrameLocation,
   SessionType,
 } from "process-def";
 import type {
@@ -33,10 +33,12 @@ export class DebugpyDebuggerSession extends DebuggerSession<DebugpyEvaluator> {
 
   async createVariablesRepresentation(
     frameId: FrameId,
-    frameIndex: FrameIndex,
+    stoppedPlace: FrameLocation,
+    placeOccurrence: number,
   ): Promise<Variables> {
+    const frameName = JSON.stringify(stoppedPlace.name);
     return await this.pythonEvaluate<Variables>(
-      `get_variables(${frameIndex}, __file__)`,
+      `get_variables(__file__, ${frameName}, ${stoppedPlace.line}, ${placeOccurrence})`,
       frameId,
     );
   }

@@ -9,7 +9,6 @@ from weakref import WeakValueDictionary
 
 
 PythonId = str
-FrameIndex = int
 
 
 RETURN_VALUES_DICT_NAME = "__pydevd_ret_val_dict"
@@ -290,24 +289,27 @@ def make_value(val: Any) -> BaseVal:
         )
 
 
-def get_frame_by_index(
-    frame_index: FrameIndex, debugged_file_path: str
+def get_frame_by_place(
+    debugged_file_path: str,
+    frame_name: str,
+    frame_line: int,
+    place_occurrence: int,
 ) -> inspect.FrameInfo:
-    # get topmost debugged frame info
     stack = inspect.stack()
-    topmost_debugged_frame = None
+    occurence_counter = 0
     for frame in stack:
-        if frame.filename == debugged_file_path:
-            topmost_debugged_frame = frame
-            break
-    if topmost_debugged_frame is None:
-        raise Exception(f"Could not find frame for file {debugged_file_path}")
+        if (
+            frame.filename == debugged_file_path
+            and frame.function == frame_name
+            and frame.lineno == frame_line
+        ):
+            if occurence_counter == place_occurrence:
+                return frame
+            occurence_counter += 1
 
-    # get the frame at frame_index relative to topmost_debugged_frame
-    target_index = stack.index(topmost_debugged_frame) + frame_index
-    if target_index < 0 or target_index >= len(stack):
-        raise Exception(f"Frame index {frame_index} out of range.")
-    return stack[target_index]
+    raise ValueError(
+        f"Could not find place occurrence {place_occurrence} for function '{frame_name}' at line {frame_line} in file {debugged_file_path}"
+    )
 
 
 def check_type(value: Any, expected_types: Tuple[str, ...]) -> None:
@@ -349,8 +351,18 @@ def get_argument_names(frame: inspect.FrameInfo) -> List[str]:
     return arg_names
 
 
-def get_variables(frame_index: FrameIndex, debugged_file_path: str) -> Variables:
-    frame_info = get_frame_by_index(frame_index, debugged_file_path)
+def get_variables(
+    debugged_file_path: str,
+    frame_name: str,
+    frame_line: int,
+    place_occurrence: int,
+) -> Variables:
+    frame_info = get_frame_by_place(
+        debugged_file_path,
+        frame_name,
+        frame_line,
+        place_occurrence,
+    )
     arg_names = get_argument_names(frame_info)
     frame = frame_info.frame
 

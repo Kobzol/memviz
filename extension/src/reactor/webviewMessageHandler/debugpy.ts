@@ -76,6 +76,11 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
     return frameId;
   }
 
+  private async getCurrentStackTrace(session: DebugpyDebuggerSession) {
+    const response = await session.getThreads();
+    return await session.getStackTrace(response.threads[0].id, true);
+  }
+
   private performGetVariablesRequest(
     message: GetPythonVariablesRepresentationReq,
     session: DebugpyDebuggerSession,
@@ -83,10 +88,35 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
     Omit<GetPythonVariablesRepresentationRes, "requestId" | "resolverId">
   > {
     return async () => {
-      const frameId = await this.getCurrentFrameId(session);
+      const frameId = message.frame.id;
+      const stoppedPlace = message.frame.place;
+      const stackTrace = await this.getCurrentStackTrace(session);
+      const selectedFrame = stackTrace.find((frame) => frame.id === frameId);
+
+      if (!selectedFrame) {
+        throw new Error(
+          `Could not find stack frame for frame id ${frameId} while resolving debugpy variables`,
+        );
+      }
+
+      const matchingPlaces = stackTrace.filter(
+        (frame) =>
+          frame.name === stoppedPlace.name && frame.line === stoppedPlace.line,
+      );
+      const placeOccurrence = matchingPlaces.findIndex(
+        (frame) => frame.id === frameId,
+      );
+
+      if (placeOccurrence < 0) {
+        throw new Error(
+          `Could not find frame with id ${frameId} for ${stoppedPlace.name}:${stoppedPlace.line}`,
+        );
+      }
+
       const variables = await session.createVariablesRepresentation(
         frameId,
-        message.frameIndex,
+        stoppedPlace,
+        placeOccurrence,
       );
       return {
         kind: "get-python-variables-representation",

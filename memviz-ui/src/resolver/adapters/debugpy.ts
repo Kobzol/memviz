@@ -1,4 +1,4 @@
-import type { AddressStr, FrameIndex } from "process-def";
+import type { AddressStr, StoppedPlace } from "process-def";
 
 import type {
   RichAttribute,
@@ -11,9 +11,9 @@ import type { ProcessResolverCore } from "../core";
 export class DebugpyResolver {
   constructor(protected resolver: ProcessResolverCore) {}
   async createVariablesRepresentation(
-    frameIndex: FrameIndex,
+    frame: StoppedPlace,
   ): Promise<RichVariables> {
-    return this.resolver.createVariablesRepresentation(frameIndex);
+    return this.resolver.createVariablesRepresentation(frame);
   }
   getFlatCollectionElements(
     id: AddressStr,

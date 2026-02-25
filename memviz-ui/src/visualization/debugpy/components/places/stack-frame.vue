@@ -30,9 +30,10 @@ async function maybeLoadPlaces() {
   try {
     const frame = {
       id: props.frame.id,
-      index: props.frame.index,
-      name: props.frame.name,
-      line: props.frame.line,
+      place: {
+        name: props.frame.name,
+        line: props.frame.line,
+      },
     };
     const variables =
       await resolver.value.debugpy.createVariablesRepresentation(frame);
