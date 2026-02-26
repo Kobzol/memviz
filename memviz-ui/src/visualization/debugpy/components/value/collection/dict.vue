@@ -27,8 +27,8 @@ const pythonValue = computed(() => {
 const isFirstViewResolved = computed(() => {
   return pythonValue.value.areItemsFetched(0, visibleElementCount);
 });
-
-const isShown = ref(isFirstViewResolved.value);
+const hasLoaded = ref(isFirstViewResolved.value);
+const isOpen = ref(isFirstViewResolved.value);
 
 const totalElementCount = computed(() => pythonValue.value.pair_count);
 const canGoToPrevious = computed(() => currentIndex.value > 0);
@@ -70,22 +70,40 @@ async function loadData() {
 }
 
 async function onClick() {
-  isShown.value = true;
-  await loadData();
+  isOpen.value = true;
+  if (!hasLoaded.value) {
+    await loadData();
+    hasLoaded.value = true;
+  }
+}
+
+function closeView() {
+  isOpen.value = false;
 }
 
 watch(currentIndex, loadData);
 
+watch(
+  () => props.id,
+  () => {
+    currentIndex.value = 0;
+    visiblePairs.value = [];
+    hasLoaded.value = isFirstViewResolved.value;
+    isOpen.value = isFirstViewResolved.value;
+  },
+);
+
 onMounted(() => {
-  if (isShown.value) {
+  if (isOpen.value) {
     loadData();
+    hasLoaded.value = true;
   }
 });
 </script>
 
 <template>
   <div v-if="pythonValue.pair_count > 0" class="dict">
-    <div v-if="isShown" class="collection-frame">
+    <div v-if="hasLoaded && isOpen" class="collection-frame">
       <div class="control-bar top">
         <div class="control-wrapper">
           <button
@@ -103,6 +121,7 @@ onMounted(() => {
             :min="0"
             :max="totalElementCount - 1"
           />
+          <button class="close-btn" @click.stop="closeView">×</button>
         </div>
       </div>
 
@@ -135,7 +154,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <div v-else @click="onClick" class="not-resolved">
+    <div v-if="!isOpen" @click="onClick" class="not-resolved">
       <code> ... </code>
     </div>
   </div>
@@ -177,6 +196,18 @@ onMounted(() => {
   display: flex;
   align-items: stretch;
   width: 100%;
+}
+
+.close-btn {
+  border: none;
+  border-left: 1px solid #858585;
+  background: transparent;
+  cursor: pointer;
+  width: 28px;
+
+  &:hover {
+    background-color: #e2e2e2;
+  }
 }
 
 .nav-btn {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import { processResolver } from "../../../../store";
 import AttributeName from "./attribute-name.vue";
 import MemorySlot from "../../memory-slot.vue";
@@ -22,6 +22,7 @@ const isResolved = computed(() => pythonValue.value.isResolved());
 const attributes = computed(() => {
   return pythonValue.value.getFetchedAttributes();
 });
+const isOpen = ref(isResolved.value);
 
 async function loadData() {
   if (isResolved.value) return;
@@ -32,17 +33,36 @@ async function loadData() {
   await pythonValue.value.getAttributes(resolver.debugpy);
 }
 
-function onClick() {
-  loadData();
+async function onClick() {
+  if (!isResolved.value) {
+    await loadData();
+  }
+  isOpen.value = true;
 }
+
+function closeView() {
+  isOpen.value = false;
+}
+
+watch(
+  () => props.id,
+  () => {
+    isOpen.value = isResolved.value;
+  },
+);
 </script>
 
 <template>
   <div class="object">
-    <div v-if="isResolved" class="resolved-object">
+    <div v-if="isResolved && isOpen" class="resolved-object">
       <table v-if="attributes && attributes.length > 0">
         <tr>
-          <th colspan="2">Attributes</th>
+          <th colspan="2" class="header-cell">
+            <div class="header-content">
+              <span>Attributes</span>
+              <button class="close-btn" @click.stop="closeView">×</button>
+            </div>
+          </th>
         </tr>
         <tr v-for="attr in attributes" :key="attr.name">
           <td v-bind:colspan="attr.value ? 1 : 2">
@@ -85,6 +105,24 @@ table {
   border-collapse: collapse;
   border: 3px solid black;
   margin: 5px 5px 0 0;
+
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
+  .close-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 1.1em;
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
 
   th {
     background-color: #bca9e1;
