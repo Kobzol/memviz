@@ -6,13 +6,17 @@ import { assert } from "../../../../utils";
 import { valueState } from "../../store";
 import { isStr } from "../../utils/types";
 import { PythonId } from "process-def/debugpy";
-import { STRING_BATCH_SIZE } from "../../value-display-settings";
+import {
+  STRING_BATCH_SIZE_DEFAULT,
+  STRING_BATCH_SIZE_MAX,
+  STRING_BATCH_SIZE_MIN,
+} from "../../value-display-settings";
 
 const props = defineProps<{
   id: PythonId;
 }>();
 
-const batchSize = STRING_BATCH_SIZE;
+const batchSize = ref(STRING_BATCH_SIZE_DEFAULT);
 
 const pythonValue = computed(() => {
   const val = valueState.value.getValueOrThrow(props.id);
@@ -25,6 +29,13 @@ const resolvedContentLength = ref(0);
 const visibleLimit = ref(0);
 const isFetching = ref(false);
 
+function clampBatchSize(count: number): number {
+  return Math.max(
+    STRING_BATCH_SIZE_MIN,
+    Math.min(STRING_BATCH_SIZE_MAX, count),
+  );
+}
+
 function getLength(text: string): number {
   return Array.from(text).length;
 }
@@ -36,10 +47,18 @@ watch(
     resolvedContentLength.value = 0;
     isFetching.value = false;
 
-    visibleLimit.value = Math.min(batchSize, pythonValue.value.length);
+    visibleLimit.value = Math.min(batchSize.value, pythonValue.value.length);
   },
   { immediate: true },
 );
+
+function handleBatchSizeInput(event: Event) {
+  const target = event.target as HTMLInputElement;
+  let nextCount = parseInt(target.value, 10);
+  if (isNaN(nextCount)) return;
+  nextCount = clampBatchSize(nextCount);
+  batchSize.value = nextCount;
+}
 
 async function fetchMissingContent() {
   const val = pythonValue.value;
@@ -82,6 +101,11 @@ watch(
   { immediate: true },
 );
 
+watch(batchSize, () => {
+  const minVisible = Math.max(resolvedContentLength.value, batchSize.value);
+  visibleLimit.value = Math.min(minVisible, pythonValue.value.length);
+});
+
 async function loadMoreData() {
   const val = pythonValue.value;
   const currentLimit = visibleLimit.value;
@@ -91,7 +115,7 @@ async function loadMoreData() {
     return;
   }
 
-  const nextLimit = currentLimit + batchSize;
+  const nextLimit = currentLimit + batchSize.value;
   const finalLimit = Math.min(nextLimit, val.length);
 
   if (finalLimit > currentLimit) {
@@ -125,6 +149,22 @@ const isLoaded = computed(() => {
           >...</span
         >"</code
       >
+      <div class="counter-row">
+        <label class="field-group">
+          <span class="field-label">chunk</span>
+          <input
+            class="counter-input"
+            type="number"
+            :value="batchSize"
+            @input="handleBatchSizeInput"
+            :min="STRING_BATCH_SIZE_MIN"
+            :max="STRING_BATCH_SIZE_MAX"
+          />
+        </label>
+        <span class="counter-info"
+          >{{ resolvedContentLength }} / {{ pythonValue.length }}</span
+        >
+      </div>
     </div>
   </TooltipContributor>
 </template>
@@ -133,6 +173,7 @@ const isLoaded = computed(() => {
 .str {
   display: flex;
   justify-content: start;
+  flex-direction: column;
   font-family: monospace;
   font-size: 1.2em;
 
@@ -148,6 +189,34 @@ const isLoaded = computed(() => {
         opacity: 0.8;
       }
     }
+  }
+
+  .counter-row {
+    margin-top: 3px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75em;
+    color: #3f3f3f;
+  }
+
+  .field-group {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid #858585;
+    background: #f4f4f4;
+  }
+
+  .field-label {
+    padding: 0 6px;
+  }
+
+  .counter-input {
+    width: 60px;
+    border: none;
+    border-left: 1px solid #858585;
+    text-align: center;
+    background: white;
   }
 }
 </style>

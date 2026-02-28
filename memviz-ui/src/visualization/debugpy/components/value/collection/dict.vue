@@ -8,15 +8,26 @@ import { LazyDictVal } from "../../../type/lazy-value";
 import { isDict } from "../../../utils/types";
 import { assert } from "../../../../../utils";
 import { RichKeyValuePair } from "../../../type/type";
-import { COLLECTION_ITEM_DISPLAY_COUNT } from "../../../value-display-settings";
+import {
+  COLLECTION_ITEM_DISPLAY_COUNT_DEFAULT,
+  COLLECTION_ITEM_DISPLAY_COUNT_MAX,
+  COLLECTION_ITEM_DISPLAY_COUNT_MIN,
+} from "../../../value-display-settings";
 
 const props = defineProps<{
   id: PythonId;
 }>();
 
 const currentIndex = ref(0);
-const visibleElementCount = COLLECTION_ITEM_DISPLAY_COUNT;
+const visibleElementCount = ref(COLLECTION_ITEM_DISPLAY_COUNT_DEFAULT);
 const visiblePairs = ref<RichKeyValuePair[]>([]);
+
+function clampVisibleElementCount(count: number): number {
+  return Math.max(
+    COLLECTION_ITEM_DISPLAY_COUNT_MIN,
+    Math.min(COLLECTION_ITEM_DISPLAY_COUNT_MAX, count),
+  );
+}
 
 const pythonValue = computed(() => {
   const val = valueState.value.getValueOrThrow(props.id);
@@ -25,7 +36,7 @@ const pythonValue = computed(() => {
 });
 
 const isFirstViewResolved = computed(() => {
-  return pythonValue.value.areItemsFetched(0, visibleElementCount);
+  return pythonValue.value.areItemsFetched(0, visibleElementCount.value);
 });
 const hasLoaded = ref(isFirstViewResolved.value);
 const isOpen = ref(isFirstViewResolved.value);
@@ -33,7 +44,7 @@ const isOpen = ref(isFirstViewResolved.value);
 const totalElementCount = computed(() => pythonValue.value.pair_count);
 const canGoToPrevious = computed(() => currentIndex.value > 0);
 const canGoToNext = computed(
-  () => currentIndex.value + visibleElementCount < totalElementCount.value
+  () => currentIndex.value + visibleElementCount.value < totalElementCount.value
 );
 
 const goToPrevious = () => {
@@ -53,12 +64,20 @@ const handleIndexInput = (event: Event) => {
   currentIndex.value = newIndex;
 };
 
+const handleVisibleCountInput = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  let nextCount = parseInt(target.value, 10);
+  if (isNaN(nextCount)) return;
+  nextCount = clampVisibleElementCount(nextCount);
+  visibleElementCount.value = nextCount;
+};
+
 async function loadData() {
   const resolver = processResolver.value;
   if (!resolver) return;
 
   const count = Math.min(
-    visibleElementCount,
+    visibleElementCount.value,
     totalElementCount.value - currentIndex.value,
   );
 
@@ -81,7 +100,7 @@ function closeView() {
   isOpen.value = false;
 }
 
-watch(currentIndex, loadData);
+watch([currentIndex, visibleElementCount], loadData);
 
 watch(
   () => props.id,
@@ -113,14 +132,28 @@ onMounted(() => {
           >
             &#9650
           </button>
-          <input
-            class="index-input"
-            type="number"
-            :value="currentIndex"
-            @input="handleIndexInput"
-            :min="0"
-            :max="totalElementCount - 1"
-          />
+          <div class="field-group">
+            <span class="field-label">idx</span>
+            <input
+              class="index-input"
+              type="number"
+              :value="currentIndex"
+              @input="handleIndexInput"
+              :min="0"
+              :max="totalElementCount - 1"
+            />
+          </div>
+          <div class="field-group">
+            <span class="field-label">count</span>
+            <input
+              class="count-input"
+              type="number"
+              :value="visibleElementCount"
+              @input="handleVisibleCountInput"
+              :min="COLLECTION_ITEM_DISPLAY_COUNT_MIN"
+              :max="COLLECTION_ITEM_DISPLAY_COUNT_MAX"
+            />
+          </div>
           <button class="close-btn" @click.stop="closeView">×</button>
         </div>
       </div>
@@ -183,6 +216,7 @@ onMounted(() => {
 .control-bar {
   background: #f4f4f4;
   display: flex;
+  min-height: 20px;
 
   &.top {
     border-bottom: 1px solid #858585;
@@ -198,12 +232,32 @@ onMounted(() => {
   width: 100%;
 }
 
+.field-group {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border-left: 1px solid #858585;
+  background: white;
+  padding: 1px 4px;
+}
+
+.field-label {
+  font-size: 0.72em;
+  line-height: 1;
+  color: #3f3f3f;
+  text-align: center;
+  padding: 0;
+}
+
 .close-btn {
   border: none;
   border-left: 1px solid #858585;
   background: transparent;
   cursor: pointer;
-  width: 28px;
+  width: 22px;
+  padding: 0;
+  line-height: 1;
 
   &:hover {
     background-color: #e2e2e2;
@@ -215,9 +269,10 @@ onMounted(() => {
   border: none;
   background: transparent;
   cursor: pointer;
-  font-size: 1.1em;
+  font-size: 0.95em;
+  line-height: 1;
   width: 100%;
-  padding: 2px 0;
+  padding: 0;
 
   &:disabled {
     color: #ccc;
@@ -230,11 +285,21 @@ onMounted(() => {
 }
 
 .index-input {
-  width: 60px;
+  width: 52px;
+  height: 16px;
   border: none;
-  border-left: 1px solid #858585;
   text-align: center;
   background: white;
+  font-size: 0.85em;
+}
+
+.count-input {
+  width: 52px;
+  height: 16px;
+  border: none;
+  text-align: center;
+  background: white;
+  font-size: 0.85em;
 }
 
 .content-area {

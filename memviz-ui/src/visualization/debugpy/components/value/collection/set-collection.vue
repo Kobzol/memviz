@@ -41,7 +41,7 @@ async function fetchElements() {
   );
 }
 
-watch(() => props.startIndex, fetchElements);
+watch(() => [props.startIndex, props.visibleElementCount], fetchElements);
 
 onMounted(fetchElements);
 </script>
