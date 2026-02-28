@@ -15,14 +15,67 @@ export class Memviz {
     const app = createApp(App);
     app.mount(root);
 
+    const panzoomOwner = document.documentElement;
+    let isSyntheticPanMouseDown = false;
+
+    panzoomOwner.addEventListener(
+      "mousedown",
+      (event) => {
+        if (event.button !== 1) {
+          return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const target = event.target;
+        if (target instanceof EventTarget) {
+          isSyntheticPanMouseDown = true;
+          try {
+            const leftButtonMouseDown = new MouseEvent("mousedown", {
+              bubbles: true,
+              cancelable: true,
+              clientX: event.clientX,
+              clientY: event.clientY,
+              screenX: event.screenX,
+              screenY: event.screenY,
+              button: 0,
+              buttons: 1,
+              altKey: event.altKey,
+              ctrlKey: event.ctrlKey,
+              metaKey: event.metaKey,
+              shiftKey: event.shiftKey,
+              view: window,
+            });
+
+            target.dispatchEvent(leftButtonMouseDown);
+          } finally {
+            isSyntheticPanMouseDown = false;
+          }
+        }
+      },
+      { capture: true },
+    );
+
+    panzoomOwner.addEventListener(
+      "auxclick",
+      (event) => {
+        if (event.button !== 1) {
+          return;
+        }
+
+        event.preventDefault();
+      },
+      { capture: true },
+    );
+
     createPanZoom(document.body, {
       smoothScroll: false,
       onDoubleClick: (_e) => {
         return false; // tells the library to not preventDefault, and not stop propagation
       },
       beforeMouseDown: (e) => {
-        // Only allow panning with the middle mouse button
-        const shouldIgnore = e.button !== 1;
+        const shouldIgnore = e.button !== 0 || !isSyntheticPanMouseDown;
         return shouldIgnore;
       },
       zoomDoubleClickSpeed: 1,
