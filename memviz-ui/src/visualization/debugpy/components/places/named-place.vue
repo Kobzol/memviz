@@ -45,7 +45,11 @@ const pythonValue = computed<RichValue>(() => {
       >
     </div>
     <div class="place-value">
-      <MemorySlot :id="props.id" :context="DisplayMode.INLINE" />
+      <MemorySlot
+        :id="props.id"
+        :context="DisplayMode.INLINE"
+        :showDetachedHeapInfo="true"
+      />
     </div>
   </div>
 </template>
@@ -54,12 +58,17 @@ const pythonValue = computed<RichValue>(() => {
 .place {
   width: 100%;
   padding: 2px;
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 5px;
+  border-bottom: 0.5px solid #5f5f5f;
 
   display: flex;
   flex-direction: row;
 
   .place-name {
     flex: 1;
+    min-width: 0;
     display: flex;
     align-items: flex-start;
     word-break: break-all;

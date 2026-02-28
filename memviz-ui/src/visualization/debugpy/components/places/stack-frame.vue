@@ -153,7 +153,6 @@ watch(
 .inner {
   background: #ffffff;
   border-top: solid 1px #000000;
-  padding: 5px;
   display: flex;
   flex-direction: column;
   gap: 6px;

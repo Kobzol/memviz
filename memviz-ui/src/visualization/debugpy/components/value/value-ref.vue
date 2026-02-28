@@ -13,6 +13,8 @@ import { PythonId } from "process-def/debugpy";
 
 const props = defineProps<{
   id: PythonId;
+  showDetachedHeapInfo?: boolean;
+  text?: string;
 }>();
 const currentArrowTargetId = shallowRef<PythonId | null>(null);
 function tryRemoveArrow() {
@@ -84,18 +86,39 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div
-    class="value-ref"
-    :ref="(el: any) => (elementRef = el)"
-    @mouseenter.stop="highlightArrows"
-    @mouseleave.stop="unhighlightArrows"
-  ></div>
+  <div class="value-ref-wrapper">
+    <div
+      class="value-ref"
+      :ref="(el: any) => (elementRef = el)"
+      @mouseenter.stop="highlightArrows"
+      @mouseleave.stop="unhighlightArrows"
+    ></div>
+    <span v-if="showDetachedHeapInfo" class="heap-note">
+      value of type {{ text }} displayed on heap
+    </span>
+  </div>
 </template>
 
 <style scoped lang="scss">
+.value-ref-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
 .value-ref {
   display: flex;
   height: 100%;
   min-height: 1.5em;
+}
+
+.heap-note {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #5f5f5f;
+  font-size: 0.9em;
+  white-space: nowrap;
+  background: #ffffff;
 }
 </style>
