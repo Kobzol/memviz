@@ -78,7 +78,7 @@ watch(
 .heap-block {
   flex: 3;
   min-width: 0;
-  word-break: break-all;
+  word-wrap: break-word;
   background: #ffffff;
   border-top: solid 1px #000000;
   padding: 5px;

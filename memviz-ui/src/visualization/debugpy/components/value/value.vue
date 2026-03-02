@@ -55,21 +55,26 @@ function getValueTypeTitle(value: RichValue): string {
 </script>
 
 <template>
-  <div class="type-name">
-    {{ getValueTypeTitle(pythonValue) }}
-  </div>
-  <div>
-    <None v-if="isNone(pythonValue)" :id="props.id" />
-    <Scalar v-else-if="isScalar(pythonValue)" :id="props.id" />
-    <Complex v-else-if="isComplex(pythonValue)" :id="props.id" />
-    <Str v-else-if="isStr(pythonValue)" :id="props.id" />
-    <FlatCollection v-else-if="isFlatCollection(pythonValue)" :id="props.id" />
-    <Dict v-else-if="isDict(pythonValue)" :id="props.id" />
-    <Range v-else-if="isRange(pythonValue)" :id="props.id" />
-    <FunctionComponent v-else-if="isFunction(pythonValue)" :id="props.id" />
-    <ObjectComponent v-else-if="isObject(pythonValue)" :id="props.id" />
-    <ModuleComponent v-else-if="isModule(pythonValue)" :id="props.id" />
-    <TypeComponent v-else-if="isType(pythonValue)" :id="props.id" />
+  <div class="value">
+    <div class="type-name">
+      {{ getValueTypeTitle(pythonValue) }}
+    </div>
+    <div>
+      <None v-if="isNone(pythonValue)" :id="props.id" />
+      <Scalar v-else-if="isScalar(pythonValue)" :id="props.id" />
+      <Complex v-else-if="isComplex(pythonValue)" :id="props.id" />
+      <Str v-else-if="isStr(pythonValue)" :id="props.id" />
+      <FlatCollection
+        v-else-if="isFlatCollection(pythonValue)"
+        :id="props.id"
+      />
+      <Dict v-else-if="isDict(pythonValue)" :id="props.id" />
+      <Range v-else-if="isRange(pythonValue)" :id="props.id" />
+      <FunctionComponent v-else-if="isFunction(pythonValue)" :id="props.id" />
+      <ObjectComponent v-else-if="isObject(pythonValue)" :id="props.id" />
+      <ModuleComponent v-else-if="isModule(pythonValue)" :id="props.id" />
+      <TypeComponent v-else-if="isType(pythonValue)" :id="props.id" />
+    </div>
   </div>
 </template>
 
@@ -77,6 +82,9 @@ function getValueTypeTitle(value: RichValue): string {
 .type-name {
   font-size: 0.9em;
   color: #3f3f3f;
-  min-height: 0.9em;
+  margin-bottom: 5px;
+}
+.value {
+  padding: 5px;
 }
 </style>

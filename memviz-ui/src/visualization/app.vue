@@ -27,6 +27,9 @@ import AddressSpace from "./components/address-space.vue";
 <style lang="scss">
 @import "normalize.css";
 
+:root {
+  scrollbar-gutter: stable;
+}
 .ptr-target {
   border: 2px solid red;
 }

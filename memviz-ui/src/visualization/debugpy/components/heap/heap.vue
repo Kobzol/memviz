@@ -30,7 +30,6 @@ const values = computed(() => valueState.value.getValues());
   text-align: center;
   font-weight: bold;
   border-radius: 10px 10px 0 0;
-  border: 1px solid black;
   background-color: #8ccdff;
 }
 </style>

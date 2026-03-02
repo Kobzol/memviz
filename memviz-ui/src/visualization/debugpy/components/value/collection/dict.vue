@@ -125,60 +125,31 @@ onMounted(() => {
     <div v-if="hasLoaded && isOpen" class="collection-frame">
       <div class="control-bar top">
         <div class="control-wrapper">
-          <button
-            class="nav-btn"
-            @click="goToPrevious"
-            :disabled="!canGoToPrevious"
-          >
+          <button class="nav-btn" @click="goToPrevious" :disabled="!canGoToPrevious">
             &#9650
           </button>
-          <div class="field-group">
-            <span class="field-label">idx</span>
-            <input
-              class="index-input"
-              type="number"
-              :value="currentIndex"
-              @input="handleIndexInput"
-              :min="0"
-              :max="totalElementCount - 1"
-            />
-          </div>
-          <div class="field-group">
-            <span class="field-label">count</span>
-            <input
-              class="count-input"
-              type="number"
-              :value="visibleElementCount"
-              @input="handleVisibleCountInput"
-              :min="COLLECTION_ITEM_DISPLAY_COUNT_MIN"
-              :max="COLLECTION_ITEM_DISPLAY_COUNT_MAX"
-            />
-          </div>
+          <span class="field-label">idx:</span>
+          <input class="index-input" type="number" :value="currentIndex" @input="handleIndexInput" :min="0"
+            :max="totalElementCount - 1" />
+          <span class="field-label">count:</span>
+          <input class="count-input" type="number" :value="visibleElementCount" @input="handleVisibleCountInput"
+            :min="COLLECTION_ITEM_DISPLAY_COUNT_MIN" :max="COLLECTION_ITEM_DISPLAY_COUNT_MAX" />
           <button class="close-btn" @click.stop="closeView">×</button>
+
         </div>
       </div>
 
       <div class="content-area">
         <div class="pairs">
-          <table>
-            <tr v-for="(pair, index) in visiblePairs" :key="index">
-              <td class="key-cell">
-                <div class="key-container">
-                  <div class="key">
-                    <MemorySlot :id="pair.key.id" />
-                  </div>
-                  <div class="index">{{ index + currentIndex }}</div>
-                </div>
-              </td>
-              <td>
-                <div class="value">
-                  <MemorySlot :id="pair.value.id" />
-                </div>
-              </td>
-            </tr>
-          </table>
+          <div v-for="(pair, index) in visiblePairs" :key="index" class="pair-row" :style="`view-transition-name: pair-row-${index + currentIndex};`">
+            <div class="key-cell" :data-index="index + currentIndex">
+              <MemorySlot :id="pair.key.id" />
+            </div>
+
+            <MemorySlot :id="pair.value.id" />
+          </div>
         </div>
-      </div>
+      </div> 
 
       <div class="control-bar bottom">
         <button class="nav-btn" @click="goToNext" :disabled="!canGoToNext">
@@ -207,9 +178,8 @@ onMounted(() => {
 }
 
 .collection-frame {
-  border: 3px solid black;
-  margin: 5px 5px 0 0;
-  width: 100%;
+  border: 2px solid black;
+  margin-block-start: 5px;
   background: white;
 }
 
@@ -221,6 +191,7 @@ onMounted(() => {
   &.top {
     border-bottom: 1px solid #858585;
   }
+
   &.bottom {
     border-top: 1px solid #858585;
   }
@@ -228,26 +199,34 @@ onMounted(() => {
 
 .control-wrapper {
   display: flex;
-  align-items: stretch;
+
   width: 100%;
+
+  &>* {
+    align-content: center;
+  }
+
+  & * {
+    box-sizing: border-box;
+  }
+
+  & input {
+    padding-inline: 5px;
+    line-height: 1;
+    text-align: center;
+  }
 }
 
-.field-group {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  border-left: 1px solid #858585;
-  background: white;
-  padding: 1px 4px;
-}
+
 
 .field-label {
   font-size: 0.72em;
   line-height: 1;
   color: #3f3f3f;
-  text-align: center;
-  padding: 0;
+  background: white;
+  text-align: right;
+  padding-inline: 5px;
+  border-left: 1px solid #858585;
 }
 
 .close-btn {
@@ -255,9 +234,9 @@ onMounted(() => {
   border-left: 1px solid #858585;
   background: transparent;
   cursor: pointer;
-  width: 22px;
+  height: stretch;
+  aspect-ratio: 1/1;
   padding: 0;
-  line-height: 1;
 
   &:hover {
     background-color: #e2e2e2;
@@ -285,19 +264,13 @@ onMounted(() => {
 }
 
 .index-input {
-  width: 52px;
-  height: 16px;
   border: none;
-  text-align: center;
   background: white;
   font-size: 0.85em;
 }
 
 .count-input {
-  width: 52px;
-  height: 16px;
   border: none;
-  text-align: center;
   background: white;
   font-size: 0.85em;
 }
@@ -307,50 +280,54 @@ onMounted(() => {
 }
 
 .pairs {
-  display: flex;
-  justify-content: start;
-  flex-direction: column;
 
-  table {
-    border-collapse: collapse;
-    width: 100%;
-    border: none;
 
-    td {
-      border: 1px solid #858585;
-      
-      &:first-child { border-left: none; }
-      &:last-child { border-right: none; }
+  .pair-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+
+
+
+    &:not(:last-child) {
+      border-bottom: 1px solid #858585;
     }
-    tr:first-child td { border-top: none; }
-    tr:last-child td { border-bottom: none; }
+
+    &>div {
+      position: relative;
+      padding: 5px;
+
+      &:first-child::after {
+        content: "";
+        display: block;
+        position: absolute;
+        inset-block: 0;
+        width: 1px;
+        right: -0.5px;
+        background: #858585;
+      }
+
+
+
+    }
   }
 
-  .value {
-    padding-left: 5px;
-  }
+
 
   .key-cell {
     background-color: #dae4ef;
-    width: 50%;
-  }
+    position: relative;
 
-  .key-container {
+    &::after {
+      content: attr(data-index);
+      position: absolute;
+      top: 5px;
+      right: 5px;
+    }
+
     display: flex;
     flex-direction: row;
-    padding-left: 5px;
 
-    .key {
-      flex: 1;
-    }
-
-    .index {
-      flex: none;
-      font-size: 0.9em;
-      color: #3f3f3f;
-      text-align: right;
-      padding-right: 5px;
-    }
   }
+
 }
 </style>

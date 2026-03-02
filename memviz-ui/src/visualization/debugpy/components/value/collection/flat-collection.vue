@@ -118,7 +118,6 @@ function isSetCollection(
           >
             &#9650
           </button>
-          <div class="field-group">
             <span class="field-label">idx</span>
             <input
               class="index-input"
@@ -128,8 +127,6 @@ function isSetCollection(
               :min="0"
               :max="totalElementCount - 1"
             />
-          </div>
-          <div class="field-group">
             <span class="field-label">count</span>
             <input
               class="count-input"
@@ -139,7 +136,6 @@ function isSetCollection(
               :min="COLLECTION_ITEM_DISPLAY_COUNT_MIN"
               :max="COLLECTION_ITEM_DISPLAY_COUNT_MAX"
             />
-          </div>
           <button class="close-btn" @click.stop="closeView">×</button>
         </div>
       </div>
@@ -187,9 +183,8 @@ function isSetCollection(
 }
 
 .collection-frame {
-  border: 3px solid black;
-  margin: 5px 5px 0 0;
-  width: 100%;
+  border: 2px solid black;
+  margin-block-start: 5px;
   background: white;
 }
 
@@ -197,33 +192,44 @@ function isSetCollection(
   background: #f4f4f4;
   display: flex;
   min-height: 20px;
-  
-  &.top { border-bottom: 1px solid #858585; }
-  &.bottom { border-top: 1px solid #858585; }
+
+  &.top {
+    border-bottom: 1px solid #858585;
+  }
+
+  &.bottom {
+    border-top: 1px solid #858585;
+  }
 }
 
 .control-wrapper {
   display: flex;
-  align-items: stretch;
-  width: 100%;
-}
 
-.field-group {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  border-left: 1px solid #858585;
-  background: white;
-  padding: 1px 4px;
+  width: 100%;
+
+  &>* {
+    align-content: center;
+  }
+
+  & * {
+    box-sizing: border-box;
+  }
+
+  & input {
+    padding-inline: 5px;
+    line-height: 1;
+    text-align: center;
+  }
 }
 
 .field-label {
   font-size: 0.72em;
   line-height: 1;
   color: #3f3f3f;
-  text-align: center;
-  padding: 0;
+  background: white;
+  text-align: right;
+  padding-inline: 5px;
+  border-left: 1px solid #858585;
 }
 
 .close-btn {
@@ -231,9 +237,9 @@ function isSetCollection(
   border-left: 1px solid #858585;
   background: transparent;
   cursor: pointer;
-  width: 22px;
+  height: stretch;
+  aspect-ratio: 1/1;
   padding: 0;
-  line-height: 1;
 
   &:hover {
     background-color: #e2e2e2;
@@ -261,19 +267,13 @@ function isSetCollection(
 }
 
 .index-input {
-  width: 52px;
-  height: 16px;
   border: none;
-  text-align: center;
   background: white;
   font-size: 0.85em;
 }
 
 .count-input {
-  width: 52px;
-  height: 16px;
   border: none;
-  text-align: center;
   background: white;
   font-size: 0.85em;
 }

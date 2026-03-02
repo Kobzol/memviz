@@ -86,39 +86,37 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="value-ref-wrapper">
-    <div
-      class="value-ref"
-      :ref="(el: any) => (elementRef = el)"
-      @mouseenter.stop="highlightArrows"
-      @mouseleave.stop="unhighlightArrows"
-    ></div>
-    <span v-if="showDetachedHeapInfo" class="heap-note">
-      value of type {{ text }} displayed on heap
-    </span>
+  <div
+    class="value-ref-wrapper"
+    :ref="(el: any) => (elementRef = el)"
+    @mouseenter.stop="highlightArrows"
+    @mouseleave.stop="unhighlightArrows"
+  >
+    <div class="value-ref">
+      <span class="heap-note">
+        value of type {{ text }} displayed on heap
+      </span>
+    </div>
   </div>
 </template>
 
 <style scoped lang="scss">
 .value-ref-wrapper {
   position: relative;
-  width: 100%;
-  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  height: stretch;
+  align-content: center;
 }
 
 .value-ref {
   display: flex;
-  height: 100%;
-  min-height: 1.5em;
+  padding: 5px;
 }
 
 .heap-note {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
   color: #5f5f5f;
   font-size: 0.9em;
-  white-space: nowrap;
   background: #ffffff;
 }
 </style>

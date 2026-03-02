@@ -65,7 +65,7 @@ watch(
           </th>
         </tr>
         <tr v-for="attr in attributes" :key="attr.name">
-          <td v-bind:colspan="attr.value ? 1 : 2">
+          <td v-bind:colspan="attr.value ? 1 : 2" class="attribute-name">
             <AttributeName :attribute="attr" />
           </td>
           <td v-if="attr.value">
@@ -103,8 +103,8 @@ watch(
 
 table {
   border-collapse: collapse;
-  border: 3px solid black;
-  margin: 5px 5px 0 0;
+  border: 2px solid black;
+  margin-top: 5px;
 
   .header-content {
     display: flex;
@@ -133,7 +133,7 @@ table {
 
   td {
     border-bottom: 1px solid #3f3f3f;
-    padding: 2px 5px;
+    padding: 2px 10px;
   }
 }
 </style>

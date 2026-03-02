@@ -155,6 +155,5 @@ watch(
   border-top: solid 1px #000000;
   display: flex;
   flex-direction: column;
-  gap: 6px;
 }
 </style>

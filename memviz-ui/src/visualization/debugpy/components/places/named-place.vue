@@ -57,10 +57,8 @@ const pythonValue = computed<RichValue>(() => {
 <style scoped lang="scss">
 .place {
   width: 100%;
-  padding: 2px;
   box-sizing: border-box;
   min-width: 0;
-  padding: 5px;
   border-bottom: 0.5px solid #5f5f5f;
 
   display: flex;
@@ -72,15 +70,16 @@ const pythonValue = computed<RichValue>(() => {
     display: flex;
     align-items: flex-start;
     word-break: break-all;
+    padding-inline-start: 5px;
+    padding-block: 5px;
 
     code {
-      border: 3px solid #000000;
-      padding: 3px;
-      margin: 5px 5px 0 0;
+      padding: 0.25lh 0.35lh;
       font-size: 1.2em;
       background-color: #a4c5ea;
-      border-radius: 5px;
-
+      border-radius: 50px;
+      corner-shape: squircle;
+      text-box-trim: trim-both;
       &.ret {
         background-color: #9de19a;
       }
@@ -95,6 +94,8 @@ const pythonValue = computed<RichValue>(() => {
     flex: 3;
     min-width: 0;
     word-break: break-all;
+    display: grid;
+    align-items: center;
   }
 }
 </style>

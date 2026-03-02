@@ -180,6 +180,7 @@ const isLoaded = computed(() => {
   .string {
     white-space: pre-wrap;
     word-break: break-all;
+    padding-left: 0;
 
     .not-resolved {
       cursor: pointer;
@@ -195,6 +196,7 @@ const isLoaded = computed(() => {
     margin-top: 3px;
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
     font-size: 0.75em;
     color: #3f3f3f;
@@ -210,7 +212,9 @@ const isLoaded = computed(() => {
   .field-label {
     padding: 0 6px;
   }
-
+  .counter-info {
+    width: fit-content;
+  }
   .counter-input {
     width: 60px;
     border: none;

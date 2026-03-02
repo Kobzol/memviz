@@ -39,33 +39,19 @@ class ArrowMap {
         source.getBoundingClientRect().right <
         target.element.getBoundingClientRect().left;
 
-      const targetX = targetIsRight ? 0 : "100%";
-      const targetY = "50%";
       const targetEndSocket = targetIsRight ? "left" : "right";
 
-      arrow = new LeaderLine(
-        LeaderLine.pointAnchor(source, {
-          x: source.clientWidth + 10,
-          y: "50%",
-        }),
-        LeaderLine.pointAnchor(target.element, { x: targetX, y: targetY }),
-        {
-          path: "fluid",
-          startSocket: "right",
-          endSocket: targetEndSocket,
-          startPlug: "disc",
-          startPlugSize: 1.25,
-          startPlugOutline: true,
-          startPlugOutlineSize: 2,
-          startPlugOutlineColor: "black",
-          endPlug: "arrow2",
-          endPlugSize: 1.25,
-          endPlugColor: this.getColor(),
-          color: this.getColor(),
-          size: 4,
-          dropShadow: { dx: 1, dy: 1, blur: 2 },
-        },
-      );
+      arrow = new LeaderLine(source, target.element, {
+        path: "fluid",
+        startSocket: "right",
+        endSocket: targetEndSocket,
+        endPlug: "arrow2",
+        endPlugSize: 1.25,
+        endPlugColor: this.getColor(),
+        color: this.getColor(),
+        size: 4,
+        dropShadow: { dx: 1, dy: 1, blur: 2 },
+      });
     });
 
     if (!arrow) {
