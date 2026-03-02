@@ -132,6 +132,18 @@ export class ComponentMap {
   private components: Map<PythonId, ComponentWithId> = new Map();
   private arrows: ArrowMap = new ArrowMap();
 
+  // stack of currently hovered object IDs (with the most recently
+  // hovered ID at the end of the array)
+  // most recently hovered is the innermost value in case of nested
+  // hover (e.g. hovering an object in a list)
+  private hoveredObjectIds: PythonId[] = [];
+
+  private highlightCurrentValue() {
+    const currentId = this.hoveredObjectIds[this.hoveredObjectIds.length - 1];
+    if (!currentId) return;
+    this.arrows.highlight(currentId);
+  }
+
   addComponent(
     component: ComponentWithId,
     ref: ShallowRef<ComponentMap>,
@@ -184,11 +196,35 @@ export class ComponentMap {
   }
 
   public highlightValue(id: PythonId) {
-    this.arrows.highlight(id);
+    const previouslyHighlightedId =
+      this.hoveredObjectIds[this.hoveredObjectIds.length - 1];
+
+    if (previouslyHighlightedId === id) return;
+
+    if (previouslyHighlightedId) {
+      this.arrows.unhighlight(previouslyHighlightedId);
+    }
+
+    const currentObjectIdx = this.hoveredObjectIds.indexOf(id);
+    if (currentObjectIdx !== -1) {
+      this.hoveredObjectIds.splice(currentObjectIdx, 1);
+    }
+
+    this.hoveredObjectIds.push(id);
+    this.highlightCurrentValue();
   }
 
   public unhighlightValue(id: PythonId) {
-    this.arrows.unhighlight(id);
+    const currentObjectIdx = this.hoveredObjectIds.lastIndexOf(id);
+    if (currentObjectIdx === -1) return;
+
+    const currentId = this.hoveredObjectIds[this.hoveredObjectIds.length - 1];
+    if (currentId) {
+      this.arrows.unhighlight(currentId);
+    }
+
+    this.hoveredObjectIds.splice(currentObjectIdx, 1);
+    this.highlightCurrentValue();
   }
   public repositionArrows() {
     this.arrows.repositionAll();
