@@ -41,6 +41,9 @@ function getValueTypeTitle(value: RichValue): string {
   if (isNone(value)) {
     return "";
   }
+  if (isStr(value)) {
+    return `${value.kind}[${value.length}]`;
+  }
   if (isObject(value)) {
     return value.type_name;
   }

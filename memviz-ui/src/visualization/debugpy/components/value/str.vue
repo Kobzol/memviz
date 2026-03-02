@@ -149,7 +149,7 @@ const isLoaded = computed(() => {
           >...</span
         >"</code
       >
-      <div class="counter-row">
+      <div class="counter-row" v-if="!isLoaded">
         <label class="field-group">
           <span class="field-label">chunk</span>
           <input
