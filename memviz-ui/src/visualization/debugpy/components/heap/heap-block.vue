@@ -80,8 +80,11 @@ watch(
   min-width: 0;
   word-wrap: break-word;
   background: #ffffff;
-  border-top: solid 1px #000000;
   padding: 5px;
   gap: 6px;
+
+  box-sizing: border-box;
+  border: 0.5px solid #5f5f5f;
+  border-top: none;
 }
 </style>

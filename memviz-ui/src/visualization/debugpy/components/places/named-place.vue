@@ -55,7 +55,10 @@ const pythonValue = computed<RichValue>(() => {
   width: 100%;
   box-sizing: border-box;
   min-width: 0;
-  border-bottom: 0.5px solid #5f5f5f;
+
+  box-sizing: border-box;
+  border: 0.5px solid #5f5f5f;
+  border-top: none;
 
   display: flex;
   flex-direction: row;
