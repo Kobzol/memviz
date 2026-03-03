@@ -351,6 +351,10 @@ def get_argument_names(frame: inspect.FrameInfo) -> List[str]:
     return arg_names
 
 
+def is_from_builtins(obj: Any) -> bool:
+    return type(obj).__module__ == "builtins"
+
+
 def get_variables(
     debugged_file_path: str,
     frame_name: str,
@@ -401,9 +405,12 @@ def get_variables(
             )
             value_repr.pairs = pairs
         elif isinstance(value_repr, ObjectVal):
-            value_repr = get_object(
-                object_id=value_repr.id,
-            )
+            if is_from_builtins(value):
+                value_repr.attributes = []
+            else:
+                value_repr = get_object(
+                    object_id=value_repr.id,
+                )
 
         values[value_repr.id] = value_repr
 
@@ -480,39 +487,40 @@ def get_object(object_id: PythonId) -> ObjectVal:
 
     attributes = []
 
-    for attr_name in dir(obj):
-        if attr_name.startswith("__") and attr_name.endswith("__"):
-            # skip special attributes
-            continue
-        try:
-            # passive inspection to avoid resolving descriptors
-            static_attr_value = inspect.getattr_static(obj, attr_name)
-        except Exception:
-            continue
-
-        attr = Attribute(name=attr_name)
-
-        if (
-            inspect.isdatadescriptor(static_attr_value)
-            or inspect.isgetsetdescriptor(static_attr_value)
-            or inspect.ismemberdescriptor(static_attr_value)
-        ):
-            attr.is_descriptor = True
-
-        else:
-            # need to get the attribute value dynamically to check if it's a method
-            attr_value = getattr(obj, attr_name)
-            value_repr = make_value(attr_value)
-            if inspect.ismethod(attr_value):
+    if not is_from_builtins(obj):
+        for attr_name in dir(obj):
+            if attr_name.startswith("__") and attr_name.endswith("__"):
+                # skip special attributes
                 continue
+            try:
+                # passive inspection to avoid resolving descriptors
+                static_attr_value = inspect.getattr_static(obj, attr_name)
+            except Exception:
+                continue
+
+            attr = Attribute(name=attr_name)
+
+            if (
+                inspect.isdatadescriptor(static_attr_value)
+                or inspect.isgetsetdescriptor(static_attr_value)
+                or inspect.ismemberdescriptor(static_attr_value)
+            ):
+                attr.is_descriptor = True
+
             else:
-                attr.value = value_repr
+                # need to get the attribute value dynamically to check if it's a method
+                attr_value = getattr(obj, attr_name)
+                value_repr = make_value(attr_value)
+                if inspect.ismethod(attr_value):
+                    continue
+                else:
+                    attr.value = value_repr
 
-            IdMap.register(value_repr.id, attr_value)
+                IdMap.register(value_repr.id, attr_value)
 
-        attributes.append(attr)
+            attributes.append(attr)
 
-    attributes.sort(key=lambda a: a.name.startswith("_"))
+        attributes.sort(key=lambda a: a.name.startswith("_"))
 
     return ObjectVal(
         id=object_id,
