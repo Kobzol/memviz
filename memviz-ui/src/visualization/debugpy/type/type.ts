@@ -10,6 +10,11 @@ function escapeHtml(value: string): string {
 export abstract class RichValue {
   abstract readonly kind: string;
   constructor(public readonly id: PythonId) {}
+
+  public getFetchedChildIds(): PythonId[] {
+    return [];
+  }
+
   public get_type_label(): string {
     return this.kind;
   }

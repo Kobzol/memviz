@@ -1,4 +1,4 @@
-import { ValueKind } from "process-def/debugpy";
+import { type PythonId, ValueKind } from "process-def/debugpy";
 import type { DebugpyResolver } from "../../../resolver/adapters/debugpy";
 import { assert } from "../../../utils";
 import {
@@ -43,11 +43,29 @@ class Cache<TValue> {
     }
     this.map.set(key, value);
   }
+
+  public clear(): void {
+    this.map.clear();
+  }
+
+  public values(): IterableIterator<TValue> {
+    return this.map.values();
+  }
 }
 
 abstract class LazyCollectionVal<TValue> extends SizedDescribedRichValue {
   private pendingRequests: Map<BlockIndex, Promise<TValue>> = new Map();
   private blocks: Cache<TValue> = new Cache<TValue>(CACHE_CAPACITY_BLOCKS);
+
+  public setValues(values: TValue): void {
+    this.blocks.clear();
+    this.pendingRequests.clear();
+    this.assignValuesToBlocks(values, 0);
+  }
+
+  protected getFetchedBlockValues(): TValue[] {
+    return Array.from(this.blocks.values());
+  }
 
   protected getBlockIndex(itemIndex: ItemIndex): BlockIndex {
     return Math.floor(itemIndex / COLLECTION_BLOCK_SIZE);
@@ -399,6 +417,12 @@ export abstract class LazyFlatCollectionVal extends LazyCollectionVal<
   protected getItemCount(): number {
     return this.element_count;
   }
+
+  public override getFetchedChildIds(): PythonId[] {
+    return this.getFetchedBlockValues()
+      .flat()
+      .map((element) => element.id);
+  }
 }
 
 export class LazyListVal extends LazyFlatCollectionVal {
@@ -464,6 +488,15 @@ export class LazyDictVal extends LazyCollectionVal<RichKeyValuePair[]> {
   protected getItemCount(): number {
     return this.pair_count;
   }
+
+  public override getFetchedChildIds(): PythonId[] {
+    const childIds: PythonId[] = [];
+    for (const pair of this.getFetchedBlockValues().flat()) {
+      childIds.push(pair.key.id);
+      childIds.push(pair.value.id);
+    }
+    return childIds;
+  }
 }
 
 export class LazyObjectVal extends SizedDescribedRichValue {
@@ -505,5 +538,15 @@ export class LazyObjectVal extends SizedDescribedRichValue {
 
   public getFetchedAttributes(): RichAttribute[] | null {
     return this.attributes;
+  }
+
+  public override getFetchedChildIds(): PythonId[] {
+    const childIds: PythonId[] = [];
+    for (const attribute of this.attributes ?? []) {
+      if (attribute.value !== null) {
+        childIds.push(attribute.value.id);
+      }
+    }
+    return childIds;
   }
 }

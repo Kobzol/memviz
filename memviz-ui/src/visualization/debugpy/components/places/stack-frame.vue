@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { Place } from "process-def/debugpy";
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch, watchEffect } from "vue";
 import type { Ref } from "vue";
 import { processResolver } from "../../../store";
 import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 import { StackFrame } from "process-def";
 import NamedPlace from "./named-place.vue";
 import { formatLocation } from "../../../utils/formatting";
+import { frameVisibilityState } from "../../store";
 
 const props = defineProps<{
   frame: StackFrame;
@@ -60,9 +61,24 @@ const tooltip = computed(() => {
 const isTopFrame = computed(() => props.frame.index === 0);
 const expanded = ref(isTopFrame.value);
 
+watchEffect(() => {
+  if (!expanded.value || places.value === null) {
+    frameVisibilityState.clearFrameSourceObjects(props.frame.id);
+    return;
+  }
+
+  frameVisibilityState.setFrameSourceObjects(
+    props.frame.id,
+    places.value.map((place) => place.id),
+  );
+});
+
 watch(
   () => props.frame,
   (newFrame: StackFrame, oldFrame: StackFrame) => {
+    if (newFrame.id !== oldFrame.id) {
+      frameVisibilityState.clearFrameSourceObjects(oldFrame.id);
+    }
     if (newFrame.index != oldFrame.index || newFrame.name != oldFrame.name) {
       expanded.value = isTopFrame.value;
     }
@@ -86,6 +102,10 @@ watch(
   },
   { immediate: true },
 );
+
+onBeforeUnmount(() => {
+  frameVisibilityState.clearFrameSourceObjects(props.frame.id);
+});
 
 // https://www.color-hex.com/color-palette/24003
 </script>
