@@ -423,6 +423,9 @@ def get_variables(
         place = Place(name=name, id=value_repr.id, kind=kind)
         places.append(place)
 
+    # parameters first, then return value, then other variables
+    places.sort(key=lambda p: (p.kind != "p", p.kind != "r"))
+
     return Variables(places=places, values=list(values.values()))
 
 
