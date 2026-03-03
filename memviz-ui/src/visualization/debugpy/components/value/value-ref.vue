@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  computed,
   onBeforeUnmount,
   onMounted,
   onUpdated,
@@ -7,15 +8,26 @@ import {
   ShallowRef,
   watch,
 } from "vue";
-import { debugpyComponentMap } from "../../store";
+import { debugpyComponentMap, valueState } from "../../store";
 import { LeaderLineWithId } from "../../component-map";
 import { PythonId } from "process-def/debugpy";
 
 const props = defineProps<{
   id: PythonId;
-  showDetachedHeapInfo?: boolean;
-  text?: string;
 }>();
+
+const pythonValue = computed(() => {
+  return valueState.value.getValueOrThrow(props.id);
+});
+
+const displayOnHeapText = computed(() => {
+  const typeLabel = pythonValue.value.get_type_label();
+  if (!typeLabel) {
+    return "value displayed on heap";
+  }
+  return `value of type ${typeLabel} displayed on heap`;
+});
+
 const currentArrowTargetId = shallowRef<PythonId | null>(null);
 function tryRemoveArrow() {
   if (arrow.value !== null && currentArrowTargetId.value !== null) {
@@ -94,7 +106,7 @@ onBeforeUnmount(() => {
   >
     <div class="value-ref">
       <span class="heap-note">
-        value of type {{ text }} displayed on heap
+        {{ displayOnHeapText }}
       </span>
     </div>
   </div>

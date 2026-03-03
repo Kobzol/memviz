@@ -1,38 +1,84 @@
-import type { Place, PythonId, ValueKind } from "process-def/debugpy";
+import { type Place, type PythonId, ValueKind } from "process-def/debugpy";
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
 
 export abstract class RichValue {
   abstract readonly kind: string;
   constructor(public readonly id: PythonId) {}
+  public get_type_label(): string {
+    return this.kind;
+  }
+
+  public get_description(): string {
+    return `Value of type <b>${escapeHtml(this.kind)}</b>, Id: <b>${escapeHtml(this.id)}</b>`;
+  }
 }
 
-export interface RichNoneVal extends RichValue {
-  readonly kind: ValueKind.NONE;
-  readonly size: number;
+export abstract class SizedDescribedRichValue extends RichValue {
+  constructor(
+    id: PythonId,
+    public readonly size: number,
+  ) {
+    super(id);
+  }
+
+  public override get_description(): string {
+    return `Value of type <b>${escapeHtml(this.kind)}</b>, Id: <b>${escapeHtml(this.id)}</b>, size: <b>${this.size} B</b>`;
+  }
 }
 
-export interface RichBoolVal extends RichValue {
-  readonly kind: ValueKind.BOOL;
-  readonly size: number;
-  readonly value: string;
+export class RichNoneVal extends SizedDescribedRichValue {
+  readonly kind = ValueKind.NONE;
+
+  public override get_type_label(): string {
+    return "";
+  }
 }
 
-export interface RichIntVal extends RichValue {
-  readonly kind: ValueKind.INT;
-  readonly size: number;
-  readonly value: number;
+abstract class RichScalarValue<
+  TValue extends string | number,
+> extends SizedDescribedRichValue {
+  constructor(
+    id: PythonId,
+    size: number,
+    public readonly value: TValue,
+  ) {
+    super(id, size);
+  }
 }
 
-export interface RichFloatVal extends RichValue {
-  readonly kind: ValueKind.FLOAT;
-  readonly size: number;
-  readonly value: number;
+export class RichBoolVal extends RichScalarValue<string> {
+  readonly kind = ValueKind.BOOL;
+
+  constructor(id: PythonId, size: number, value: boolean) {
+    super(id, size, value ? "True" : "False");
+  }
 }
 
-export interface RichComplexVal extends RichValue {
-  readonly kind: ValueKind.COMPLEX;
-  readonly size: number;
-  readonly real_value: string;
-  readonly imaginary_value: string;
+export class RichIntVal extends RichScalarValue<number> {
+  readonly kind = ValueKind.INT;
+}
+
+export class RichFloatVal extends RichScalarValue<number> {
+  readonly kind = ValueKind.FLOAT;
+}
+
+export class RichComplexVal extends SizedDescribedRichValue {
+  readonly kind = ValueKind.COMPLEX;
+
+  constructor(
+    id: PythonId,
+    size: number,
+    public readonly real_value: string,
+    public readonly imaginary_value: string,
+  ) {
+    super(id, size);
+  }
 }
 
 export interface RichKeyValuePair {
@@ -40,20 +86,49 @@ export interface RichKeyValuePair {
   readonly value: RichValue;
 }
 
-export interface RichRangeVal extends RichValue {
-  readonly kind: ValueKind.RANGE;
-  readonly size: number;
-  readonly start: number | null;
-  readonly stop: number | null;
-  readonly step: number | null;
+export class RichRangeVal extends SizedDescribedRichValue {
+  readonly kind = ValueKind.RANGE;
+
+  constructor(
+    id: PythonId,
+    size: number,
+    public readonly start: number | null,
+    public readonly stop: number | null,
+    public readonly step: number | null,
+  ) {
+    super(id, size);
+  }
 }
 
-export interface RichFunctionVal extends RichValue {
-  readonly kind: ValueKind.FUNCTION;
-  readonly name: string;
-  readonly qualified_name: string;
-  readonly module: string | null;
-  readonly signature: string | null;
+export class RichFunctionVal extends RichValue {
+  readonly kind = ValueKind.FUNCTION;
+
+  constructor(
+    id: PythonId,
+    public readonly name: string,
+    public readonly qualified_name: string,
+    public readonly module: string | null,
+    public readonly signature: string | null,
+  ) {
+    super(id);
+  }
+
+  public override get_description(): string {
+    const escapedQualifiedName = escapeHtml(this.qualified_name);
+    let result = `Function <b>${escapedQualifiedName}</b>`;
+
+    if (this.module !== null) {
+      result += ` in module <b>${escapeHtml(this.module)}</b>`;
+    }
+
+    result += `, Id: <b>${escapeHtml(this.id)}</b>`;
+
+    if (this.signature !== null) {
+      result += `<b><pre>${escapeHtml(this.name)}${escapeHtml(this.signature)}</pre></b>`;
+    }
+
+    return result;
+  }
 }
 
 export interface RichAttribute {
@@ -62,15 +137,32 @@ export interface RichAttribute {
   readonly is_descriptor: boolean;
 }
 
-export interface RichModuleVal extends RichValue {
-  readonly kind: ValueKind.MODULE;
-  readonly name: string;
+export class RichModuleVal extends RichValue {
+  readonly kind = ValueKind.MODULE;
+
+  constructor(
+    id: PythonId,
+    public readonly name: string,
+  ) {
+    super(id);
+  }
 }
 
-export interface RichTypeVal extends RichValue {
-  readonly kind: ValueKind.TYPE;
-  readonly name: string;
-  readonly module: string;
+export class RichTypeVal extends RichValue {
+  readonly kind = ValueKind.TYPE;
+
+  constructor(
+    id: PythonId,
+    public readonly name: string,
+    public readonly module: string | null,
+  ) {
+    super(id);
+  }
+
+  public override get_description(): string {
+    const moduleName = this.module ? `${escapeHtml(this.module)}.` : "";
+    return `Type <b>${moduleName}${escapeHtml(this.name)}</b>, Id: <b>${escapeHtml(this.id)}</b>`;
+  }
 }
 
 export type RichVariables = {

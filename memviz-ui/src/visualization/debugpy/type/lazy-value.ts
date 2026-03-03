@@ -6,7 +6,12 @@ import {
   COLLECTION_BLOCK_SIZE,
   COLLECTION_PREFETCH_BLOCK_COUNT,
 } from "../value-display-settings";
-import { type RichAttribute, type RichKeyValuePair, RichValue } from "./type";
+import {
+  type RichAttribute,
+  type RichKeyValuePair,
+  type RichValue,
+  SizedDescribedRichValue,
+} from "./type";
 
 type ItemIndex = number;
 type BlockIndex = number;
@@ -40,7 +45,7 @@ class Cache<TValue> {
   }
 }
 
-abstract class LazyCollectionVal<TValue> extends RichValue {
+abstract class LazyCollectionVal<TValue> extends SizedDescribedRichValue {
   private pendingRequests: Map<BlockIndex, Promise<TValue>> = new Map();
   private blocks: Cache<TValue> = new Cache<TValue>(CACHE_CAPACITY_BLOCKS);
 
@@ -311,12 +316,12 @@ export class LazyStrVal extends LazyCollectionVal<string> {
 
   constructor(
     id: string,
-    public readonly size: number,
+    size: number,
     public readonly length: number,
     content: string | null = null,
     content_offset = 0,
   ) {
-    super(id);
+    super(id, size);
     if (content !== null) {
       this.assignValuesToBlocks(content, content_offset);
     }
@@ -357,10 +362,11 @@ export abstract class LazyFlatCollectionVal extends LazyCollectionVal<
   constructor(
     id: string,
     public readonly element_count: number,
+    size: number,
     elements: RichValue[] | null = null,
     element_offset = 0,
   ) {
-    super(id);
+    super(id, size);
     if (elements !== null) {
       this.assignValuesToBlocks(elements, element_offset);
     }
@@ -416,11 +422,12 @@ export class LazyDictVal extends LazyCollectionVal<RichKeyValuePair[]> {
 
   constructor(
     id: string,
+    size: number,
     public readonly pair_count: number,
     pairs: RichKeyValuePair[] | null = null,
     pair_offset = 0,
   ) {
-    super(id);
+    super(id, size);
     if (pairs !== null) {
       this.assignValuesToBlocks(pairs, pair_offset);
     }
@@ -459,16 +466,16 @@ export class LazyDictVal extends LazyCollectionVal<RichKeyValuePair[]> {
   }
 }
 
-export class LazyObjectVal extends RichValue {
+export class LazyObjectVal extends SizedDescribedRichValue {
   readonly kind = ValueKind.OBJECT;
 
   constructor(
     id: string,
-    public readonly size: number,
+    size: number,
     public readonly type_name: string,
     private attributes: RichAttribute[] | null = null,
   ) {
-    super(id);
+    super(id, size);
   }
 
   public isResolved(): boolean {

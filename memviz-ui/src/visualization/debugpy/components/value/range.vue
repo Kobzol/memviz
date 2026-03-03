@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 import { computed } from "vue";
 import { RichRangeVal } from "../../type/type";
 import { assert } from "../../../../utils";
@@ -16,19 +15,14 @@ const pythonValue = computed(() => {
   assert(isRange(val), `Value with id ${props.id} is not a RichRangeVal`);
   return val as RichRangeVal;
 });
-const tooltip = computed(() => {
-  return `Id: <b>${pythonValue.value.id}</b>, size: <b>${pythonValue.value.size} B</b>`;
-});
 </script>
 
 <template>
-  <TooltipContributor :tooltip="tooltip">
-    <div class="range">
-      <span class="string">start: {{ pythonValue.start }}</span>
-      <span class="string">stop: {{ pythonValue.stop }}</span>
-      <span class="string">step: {{ pythonValue.step }}</span>
-    </div>
-  </TooltipContributor>
+  <div class="range">
+    <span class="string">start: {{ pythonValue.start }}</span>
+    <span class="string">stop: {{ pythonValue.stop }}</span>
+    <span class="string">step: {{ pythonValue.step }}</span>
+  </div>
 </template>
 
 <style scoped lang="scss">

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 import { computed } from "vue";
 import { RichModuleVal } from "../../type/type";
 import { assert } from "../../../../utils";
@@ -16,19 +15,14 @@ const pythonValue = computed(() => {
   assert(isModule(val), `Value with id ${props.id} is not a RichModuleVal`);
   return val as RichModuleVal;
 });
-const tooltip = computed(() => {
-  return `Id: <b>${pythonValue.value.id}</b>`;
-});
 </script>
 
 <template>
-  <TooltipContributor :tooltip="tooltip">
-    <div class="module">
-      <code class="string">
-        {{ pythonValue.name }}
-      </code>
-    </div>
-  </TooltipContributor>
+  <div class="module">
+    <code class="string">
+      {{ pythonValue.name }}
+    </code>
+  </div>
 </template>
 
 <style scoped lang="scss">

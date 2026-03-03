@@ -1,5 +1,6 @@
 import {
   type BoolVal,
+  type ComplexVal,
   type DeferredDictVal,
   type DeferredFrozenSetVal,
   type DeferredListVal,
@@ -7,7 +8,14 @@ import {
   type DeferredStrVal,
   type DeferredTupleVal,
   type FlatCollectionVal,
+  type FloatVal,
+  type FunctionVal,
+  type IntVal,
+  type ModuleVal,
+  type NoneVal,
   type ObjectVal,
+  type RangeVal,
+  type TypeVal,
   type Value,
   ValueKind,
 } from "process-def/debugpy";
@@ -22,15 +30,37 @@ import {
   LazyStrVal,
   LazyTupleVal,
 } from "./lazy-value";
-import type {
-  RichAttribute,
+import type { RichAttribute, RichKeyValuePair, RichValue } from "./type";
+import {
   RichBoolVal,
-  RichKeyValuePair,
-  RichValue,
+  RichComplexVal,
+  RichFloatVal,
+  RichFunctionVal,
+  RichIntVal,
+  RichModuleVal,
+  RichNoneVal,
+  RichRangeVal,
+  RichTypeVal,
 } from "./type";
+
+function isRawNoneVal(v: Value): v is NoneVal {
+  return v.kind === ValueKind.NONE;
+}
 
 function isRawBoolVal(v: Value): v is BoolVal {
   return v.kind === ValueKind.BOOL;
+}
+
+function isRawIntVal(v: Value): v is IntVal {
+  return v.kind === ValueKind.INT;
+}
+
+function isRawFloatVal(v: Value): v is FloatVal {
+  return v.kind === ValueKind.FLOAT;
+}
+
+function isRawComplexVal(v: Value): v is ComplexVal {
+  return v.kind === ValueKind.COMPLEX;
 }
 
 function isRawStrVal(v: Value): v is DeferredStrVal {
@@ -66,6 +96,22 @@ function isRawDictVal(v: Value): v is DeferredDictVal {
   return v.kind === ValueKind.DICT;
 }
 
+function isRawRangeVal(v: Value): v is RangeVal {
+  return v.kind === ValueKind.RANGE;
+}
+
+function isRawFunctionVal(v: Value): v is FunctionVal {
+  return v.kind === ValueKind.FUNCTION;
+}
+
+function isRawModuleVal(v: Value): v is ModuleVal {
+  return v.kind === ValueKind.MODULE;
+}
+
+function isRawTypeVal(v: Value): v is TypeVal {
+  return v.kind === ValueKind.TYPE;
+}
+
 function isRawObjectVal(v: Value): v is ObjectVal {
   return v.kind === ValueKind.OBJECT;
 }
@@ -93,11 +139,25 @@ function rawToRichValue(val: Value): RichValue {
 }
 
 function createEmptyValue(val: Value): RichValue {
+  if (isRawNoneVal(val)) {
+    return new RichNoneVal(val.id, val.size);
+  }
   if (isRawBoolVal(val)) {
-    return {
-      ...val,
-      value: val.value ? "True" : "False",
-    } as RichBoolVal;
+    return new RichBoolVal(val.id, val.size, val.value);
+  }
+  if (isRawIntVal(val)) {
+    return new RichIntVal(val.id, val.size, val.value);
+  }
+  if (isRawFloatVal(val)) {
+    return new RichFloatVal(val.id, val.size, val.value);
+  }
+  if (isRawComplexVal(val)) {
+    return new RichComplexVal(
+      val.id,
+      val.size,
+      val.real_value,
+      val.imaginary_value,
+    );
   }
   if (isRawStrVal(val)) {
     return new LazyStrVal(
@@ -109,32 +169,64 @@ function createEmptyValue(val: Value): RichValue {
     );
   }
   if (isRawList(val)) {
-    return new LazyListVal(val.id, val.element_count, null, val.element_offset);
+    return new LazyListVal(
+      val.id,
+      val.element_count,
+      val.size,
+      null,
+      val.element_offset,
+    );
   }
   if (isRawTuple(val)) {
     return new LazyTupleVal(
       val.id,
       val.element_count,
+      val.size,
       null,
       val.element_offset,
     );
   }
   if (isRawSet(val)) {
-    return new LazySetVal(val.id, val.element_count, null, val.element_offset);
+    return new LazySetVal(
+      val.id,
+      val.element_count,
+      val.size,
+      null,
+      val.element_offset,
+    );
   }
   if (isRawFrozenSet(val)) {
     return new LazyFrozenSetVal(
       val.id,
       val.element_count,
+      val.size,
       null,
       val.element_offset,
+    );
+  }
+  if (isRawRangeVal(val)) {
+    return new RichRangeVal(val.id, val.size, val.start, val.stop, val.step);
+  }
+  if (isRawFunctionVal(val)) {
+    return new RichFunctionVal(
+      val.id,
+      val.name,
+      val.qualified_name,
+      val.module,
+      val.signature,
     );
   }
   if (isRawObjectVal(val)) {
     return new LazyObjectVal(val.id, val.size, val.type_name, null);
   }
   if (isRawDictVal(val)) {
-    return new LazyDictVal(val.id, val.pair_count, []);
+    return new LazyDictVal(val.id, val.size, val.pair_count, []);
+  }
+  if (isRawModuleVal(val)) {
+    return new RichModuleVal(val.id, val.name);
+  }
+  if (isRawTypeVal(val)) {
+    return new RichTypeVal(val.id, val.name, val.module);
   }
 
   return val as RichValue;

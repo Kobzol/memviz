@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { processResolver } from "../../../store";
-import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 import { assert } from "../../../../utils";
 import { valueState } from "../../store";
 import { isStr } from "../../utils/types";
@@ -129,11 +128,6 @@ const escapedContent = computed(() => {
   return JSON.stringify(resolvedContent.value).slice(1, -1);
 });
 
-const tooltip = computed(() => {
-  if (!pythonValue.value) return "";
-  return `Id: <b>${props.id}</b>, size: <b>${pythonValue.value.size} B</b>`;
-});
-
 const isLoaded = computed(() => {
   if (!pythonValue.value) return false;
   return resolvedContentLength.value >= pythonValue.value.length;
@@ -141,32 +135,30 @@ const isLoaded = computed(() => {
 </script>
 
 <template>
-  <TooltipContributor :tooltip="tooltip" :key="id">
-    <div class="str">
-      <code class="string"
-        >"{{ escapedContent
-        }}<span v-if="!isLoaded" class="not-resolved" @click="loadMoreData"
-          >...</span
-        >"</code
+  <div class="str">
+    <code class="string"
+      >"{{ escapedContent
+      }}<span v-if="!isLoaded" class="not-resolved" @click="loadMoreData"
+        >...</span
+      >"</code
+    >
+    <div class="counter-row" v-if="!isLoaded">
+      <label class="field-group">
+        <span class="field-label">chunk</span>
+        <input
+          class="counter-input"
+          type="number"
+          :value="batchSize"
+          @input="handleBatchSizeInput"
+          :min="STRING_BATCH_SIZE_MIN"
+          :max="STRING_BATCH_SIZE_MAX"
+        />
+      </label>
+      <span class="counter-info"
+        >{{ resolvedContentLength }} / {{ pythonValue.length }}</span
       >
-      <div class="counter-row" v-if="!isLoaded">
-        <label class="field-group">
-          <span class="field-label">chunk</span>
-          <input
-            class="counter-input"
-            type="number"
-            :value="batchSize"
-            @input="handleBatchSizeInput"
-            :min="STRING_BATCH_SIZE_MIN"
-            :max="STRING_BATCH_SIZE_MAX"
-          />
-        </label>
-        <span class="counter-info"
-          >{{ resolvedContentLength }} / {{ pythonValue.length }}</span
-        >
-      </div>
     </div>
-  </TooltipContributor>
+  </div>
 </template>
 
 <style scoped lang="scss">
