@@ -96,6 +96,7 @@ abstract class LazyCollectionVal<TValue> extends SizedDescribedRichValue {
   protected abstract getEmptyValue(): TValue;
 
   public areItemsFetched(start: ItemIndex, count: number): boolean {
+    if (count <= 0) return true;
     const startBlockIdx = this.getBlockIndex(start);
     const endBlockIdx = this.getBlockIndex(start + count - 1);
 

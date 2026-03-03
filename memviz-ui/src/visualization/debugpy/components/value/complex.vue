@@ -19,7 +19,7 @@ const pythonValue = computed(() => {
 const displayValue = computed(() => {
   const real_value = Number(pythonValue.value.real_value);
   const imaginary_value = Number(pythonValue.value.imaginary_value);
-  return `${real_value} + ${imaginary_value}j`;
+  return `${real_value} ${imaginary_value >= 0 ? "+" : "-"} ${Math.abs(imaginary_value)}j`;
 });
 </script>
 

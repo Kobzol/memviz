@@ -291,8 +291,7 @@ function populateValue(rawVal: Value, richVal: RichValue): void {
           val.element_offset,
         );
       } else {
-        console.error(`Unhandled collection type: ${val.kind}`);
-        richFlatCollectionVal = val as RichValue;
+        throw new Error(`Unhandled flat collection type: ${val.kind}`);
       }
       valueState.value.addValue(richFlatCollectionVal);
       return richFlatCollectionVal;
