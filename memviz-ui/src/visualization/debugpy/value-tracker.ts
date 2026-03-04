@@ -32,4 +32,8 @@ export class ValueTracker {
     }
     return val;
   }
+
+  clear() {
+    this.values.clear();
+  }
 }

@@ -53,7 +53,6 @@ const pythonValue = computed<RichValue>(() => {
 <style scoped lang="scss">
 .place {
   width: 100%;
-  box-sizing: border-box;
   min-width: 0;
 
   box-sizing: border-box;

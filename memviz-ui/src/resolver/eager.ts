@@ -4,6 +4,7 @@ import type {
   FrameIndex,
   ProcessState,
   StackFrame,
+  StoppedPlace,
 } from "process-def";
 import type {
   Place,
@@ -24,6 +25,7 @@ import type {
 } from "../visualization/debugpy/type/type";
 import type { HeapAllocation } from "../visualization/gdb/allocation-tracker";
 import { MemoryMap } from "../visualization/gdb/memory-map";
+import type { TyChar } from "../visualization/gdb/utils/types";
 import type { ProcessResolverCore } from "./core";
 
 export interface FullProcessState extends ProcessState {
@@ -60,7 +62,7 @@ export class EagerResolver implements ProcessResolverCore {
   }
 
   async createVariablesRepresentation(
-    frameIndex: FrameIndex,
+    frame: StoppedPlace,
   ): Promise<RichPythonVariables> {
     console.error(
       "EagerResolver.createVariablesRepresentation not implemented",

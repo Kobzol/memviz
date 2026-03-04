@@ -84,7 +84,7 @@ watch(
   gap: 6px;
 
   box-sizing: border-box;
-  border: 0.5px solid #5f5f5f;
+  border: 1px solid #5f5f5f;
   border-top: none;
 }
 </style>

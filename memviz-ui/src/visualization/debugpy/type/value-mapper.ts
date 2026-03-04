@@ -23,6 +23,7 @@ import { assert } from "../../../utils";
 import { valueState } from "../store";
 import {
   LazyDictVal,
+  type LazyFlatCollectionVal,
   LazyFrozenSetVal,
   LazyListVal,
   LazyObjectVal,
@@ -115,7 +116,6 @@ function isRawTypeVal(v: Value): v is TypeVal {
 function isRawObjectVal(v: Value): v is ObjectVal {
   return v.kind === ValueKind.OBJECT;
 }
-
 export function rawToRichValues(rawValues: Value[]): RichValue[] {
   return rawValues.map(rawToRichValue);
 }
@@ -244,97 +244,27 @@ function populateValue(rawVal: Value, richVal: RichValue): void {
     if (richElements) {
       (richVal as LazyFlatCollectionVal).setValues(richElements);
     }
-
-    if (isRawStrVal(val)) {
-      const richVal = new LazyStrVal(
-        val.id,
-        val.size,
-        val.length,
-        val.content,
-        val.content_offset,
-      );
-      valueState.value.addValue(richVal);
-      return richVal;
+  } else if (isRawObjectVal(rawVal)) {
+    let attributes: RichAttribute[] | null = null;
+    if (rawVal.attributes) {
+      attributes = rawVal.attributes.map((attr) => ({
+        name: attr.name,
+        value: attr.value ? rawToRichValue(attr.value) : null,
+        is_descriptor: attr.is_descriptor,
+      }));
     }
-
-    if (isRawFlatCollectionVal(val)) {
-      const richElements = val.elements
-        ? rawToRichValues(Object.values(val.elements))
-        : null;
-      let richFlatCollectionVal: RichValue;
-      if (isRawList(val)) {
-        richFlatCollectionVal = new LazyListVal(
-          val.id,
-          val.element_count,
-          richElements,
-          val.element_offset,
-        );
-      } else if (isRawTuple(val)) {
-        richFlatCollectionVal = new LazyTupleVal(
-          val.id,
-          val.element_count,
-          richElements,
-          val.element_offset,
-        );
-      } else if (isRawSet(val)) {
-        richFlatCollectionVal = new LazySetVal(
-          val.id,
-          val.element_count,
-          richElements,
-          val.element_offset,
-        );
-      } else if (isRawFrozenSet(val)) {
-        richFlatCollectionVal = new LazyFrozenSetVal(
-          val.id,
-          val.element_count,
-          richElements,
-          val.element_offset,
-        );
-      } else {
-        throw new Error(`Unhandled flat collection type: ${val.kind}`);
+    (richVal as LazyObjectVal).setValues(attributes);
+  } else if (isRawDictVal(rawVal)) {
+    const richPairs: RichKeyValuePair[] = [];
+    if (rawVal.pairs !== null) {
+      for (const [idxStr, pair] of Object.entries(rawVal.pairs)) {
+        const idx = Number(idxStr);
+        richPairs[idx] = {
+          key: rawToRichValue(pair.key),
+          value: rawToRichValue(pair.value),
+        };
       }
-      valueState.value.addValue(richFlatCollectionVal);
-      return richFlatCollectionVal;
     }
-    if (isRawObjectVal(val)) {
-      let attributes: RichAttribute[] | null = null;
-      if (val.attributes !== null) {
-        attributes = val.attributes.map((attr) => {
-          return {
-            name: attr.name,
-            value: attr.value ? rawToRichValues([attr.value])[0] : null,
-            is_descriptor: attr.is_descriptor,
-          };
-        });
-      }
-      const richObjectVal = new LazyObjectVal(
-        val.id,
-        val.size,
-        val.type_name,
-        attributes,
-      );
-      valueState.value.addValue(richObjectVal);
-      return richObjectVal;
-    }
-    if (isRawDictVal(val)) {
-      const richPairs: RichKeyValuePair[] = [];
-      if (val.pairs !== null) {
-        for (const [idxStr, pair] of Object.entries(val.pairs)) {
-          const idx = Number(idxStr);
-          richPairs[idx] = {
-            key: rawToRichValues([pair.key])[0],
-            value: rawToRichValues([pair.value])[0],
-          };
-        }
-      }
-      const richDictVal = new LazyDictVal(val.id, val.pair_count, richPairs);
-      valueState.value.addValue(richDictVal);
-      return richDictVal;
-    }
-    const richVal = val as RichValue;
-    valueState.value.addValue(richVal);
-    return richVal;
-  });
-
-  return richValues;
+    (richVal as LazyDictVal).setValues(richPairs);
+  }
 }

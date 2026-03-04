@@ -550,4 +550,8 @@ export class LazyObjectVal extends SizedDescribedRichValue {
     }
     return childIds;
   }
+
+  public setValues(attributes: RichAttribute[] | null): void {
+    this.attributes = attributes;
+  }
 }
