@@ -46,6 +46,8 @@
   "scripts": {
     "fix": "biome check --write",
     "build": "tsc && node esbuild.js --production",
+    "test": "npm run test:py",
+    "test:py": "bash ./test-debugpy.sh",
     "watch": "node esbuild.js --watch",
     "watch:extension": "npm run watch",
     "package": "vsce package --no-dependencies",
