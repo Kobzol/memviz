@@ -43,6 +43,10 @@ type BuilderFrame = Omit<FullStackFrame, "id" | "index"> & {
   variables: Variables;
 };
 
+function isRawStrVal(v: Value): v is DeferredStrVal {
+  return v.kind === ValueKind.STR;
+}
+
 export class DebugpyProcessBuilder {
   private frames: BuilderFrame[] = [];
   private activeFrame: BuilderFrame | null = null;
@@ -74,6 +78,10 @@ export class DebugpyProcessBuilder {
 
     this.activeFrame.variables.places.push({ name, id: value.id, kind });
     this.activeFrame.variables.values.push(value);
+
+    if (isRawStrVal(value) && value.content) {
+      this.stringContents.set(value.id, value.content);
+    }
 
     return this.configure(value);
   }

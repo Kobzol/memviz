@@ -11,6 +11,7 @@
       ".git",
       ".vscode",
       "extension/dist",
+      "extension/.vscode-test",
       "memviz-ui/dist",
       "process-def/dist",
       "*.vue"

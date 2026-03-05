@@ -8,5 +8,8 @@
     "watch": "npm run watch --workspaces",
     "package": "npm run build && npm run package -w extension",
     "bump-version": "npm version $VERSION -ws && npx biome format --write"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
   }
 }

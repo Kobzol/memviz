@@ -512,6 +512,10 @@ export class LazyObjectVal extends SizedDescribedRichValue {
     super(id, size);
   }
 
+  public override get_type_label(): string {
+    return this.type_name;
+  }
+
   public isResolved(): boolean {
     return this.attributes !== null;
   }

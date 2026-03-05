@@ -6,7 +6,8 @@
     "lib": ["ES2022"],
     "noEmit": true,
     "sourceMap": true,
-    "rootDir": "src"
+    "rootDir": "src",
+    "types": ["node", "vscode"]
   },
   "include": ["src/**/*"],
   "exclude": ["menu-ui/**/*"]

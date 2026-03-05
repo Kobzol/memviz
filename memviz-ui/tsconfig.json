@@ -10,7 +10,8 @@
     "outDir": "dist",
     "emitDeclarationOnly": true,
     "declaration": true,
-    "declarationMap": true
+    "declarationMap": true,
+    "skipLibCheck": true
   },
   "include": ["src/**/*"],
   "exclude": ["jest.config.ts"]

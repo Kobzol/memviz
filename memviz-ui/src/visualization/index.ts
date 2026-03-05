@@ -1,5 +1,5 @@
 import createPanZoom from "panzoom";
-import type { ProcessState, SessionType } from "process-def";
+import { type ProcessState, SessionType } from "process-def";
 import { createApp, triggerRef } from "vue";
 import App from "./app.vue";
 import { appState, processResolver } from "./store";
@@ -87,7 +87,6 @@ export class Memviz {
     resolver: ProcessResolver,
     sessionType: SessionType,
   ) {
-    console.debug("Root state changed");
     valueState.value.clear();
     appState.value = {
       processState,
@@ -95,8 +94,10 @@ export class Memviz {
     };
     processResolver.value = resolver;
 
-    const events = await resolver.gdb.takeAllocEvents();
-    processAllocEvents(events);
+    if (sessionType === SessionType.GDB) {
+      const events = await resolver.gdb.takeAllocEvents();
+      processAllocEvents(events);
+    }
   }
 }
 
