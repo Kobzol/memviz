@@ -1,10 +1,8 @@
-import type {
-  Address,
-  AddressStr,
-  FrameIndex,
-  ProcessState,
-  StackFrame,
-  StoppedPlace,
+import {
+  type Address,
+  type ProcessState,
+  SessionType,
+  type StackFrame,
 } from "process-def";
 import type {
   Place,
@@ -15,20 +13,14 @@ import type {
   Type,
 } from "process-def/gdb";
 import { PlaceKind } from "process-def/gdb";
-import type { MemoryAllocEvent } from "../messages";
-import { assert, addressToStr, strToAddress } from "../utils";
-import type { RichVariables as RichPythonVariables } from "../visualization/debugpy/type/type";
-import type {
-  RichAttribute,
-  RichKeyValuePair,
-  RichValue,
-} from "../visualization/debugpy/type/type";
-import type { HeapAllocation } from "../visualization/gdb/allocation-tracker";
-import { MemoryMap } from "../visualization/gdb/memory-map";
-import type { TyChar } from "../visualization/gdb/utils/types";
-import type { ProcessResolverCore } from "./core";
+import { assert, addressToStr } from "../../../utils";
+import type { HeapAllocation } from "../../../visualization/gdb/allocation-tracker";
+import { MemoryMap } from "../../../visualization/gdb/memory-map";
+import type { TyChar } from "../../../visualization/gdb/utils/types";
+import { EagerResolver } from "../eager";
 
 export interface FullProcessState extends ProcessState {
+  sessionType: SessionType.GDB;
   stackTrace: FullStackTrace;
   memory: MemoryMap;
   heapAllocations: HeapAllocation[];
@@ -42,89 +34,6 @@ interface FullStackFrame extends StackFrame {
   places: Place[];
 }
 
-export class EagerResolver implements ProcessResolverCore {
-  constructor(private state: FullProcessState) {}
-
-  async readMemory(address: AddressStr, size: number): Promise<ArrayBuffer> {
-    console.log(`Resolving address ${address} (${size} bytes)`);
-    const res = this.state.memory.readZeroFilled(
-      strToAddress(address),
-      BigInt(size),
-    );
-    if (res === null) {
-      throw new Error(`Reading invalid memory at ${address} (${size} byte(s))`);
-    }
-    return res;
-  }
-
-  async getPlaces(frameIndex: FrameIndex): Promise<Place[]> {
-    return this.state.stackTrace.frames[frameIndex].places;
-  }
-
-  async createVariablesRepresentation(
-    frame: StoppedPlace,
-  ): Promise<RichPythonVariables> {
-    console.error(
-      "EagerResolver.createVariablesRepresentation not implemented",
-    );
-    return {
-      places: [],
-      values: [],
-    };
-  }
-
-  async getFlatCollectionElements(
-    id: AddressStr,
-    startIndex: number,
-    count: number,
-  ): Promise<RichValue[]> {
-    console.error("EagerResolver.getFlatCollectionElements not implemented");
-    return [];
-  }
-
-  async getStringContents(
-    id: AddressStr,
-    startIndex: number,
-    count: number,
-  ): Promise<string> {
-    console.error("EagerResolver.getStringContents not implemented");
-    return "";
-  }
-
-  async getDictEntries(
-    id: AddressStr,
-    startIndex: number,
-    count: number,
-  ): Promise<RichKeyValuePair[]> {
-    console.error("EagerResolver.getDictEntries not implemented");
-    return [];
-  }
-
-  async getObject(id: AddressStr): Promise<RichAttribute[]> {
-    console.error("EagerResolver.getObject not implemented");
-    return [];
-  }
-
-  async takeAllocEvents(): Promise<MemoryAllocEvent[]> {
-    return this.state.heapAllocations.flatMap(({ address, size, active }) => {
-      const events: MemoryAllocEvent[] = [
-        {
-          kind: "mem-allocated",
-          address: addressToStr(address),
-          size,
-        },
-      ];
-      if (!active) {
-        events.push({
-          kind: "mem-freed",
-          address: addressToStr(address),
-        });
-      }
-      return events;
-    });
-  }
-}
-
 type BuilderFrame = Omit<FullStackFrame, "id" | "index"> & {
   baseAddress: Address;
   topAddress: Address;
@@ -136,7 +45,6 @@ export class ProcessBuilder {
   private activeFrame: BuilderFrame | null = null;
   private heapAllocations: HeapAllocation[] = [];
 
-  // Move stack a bit up to avoid data sitting at address 0
   private baseStackAddress: Address = BigInt(1000);
   private baseHeapAddress: Address = BigInt(100 * 1000 * 1000);
 
@@ -226,6 +134,7 @@ export class ProcessBuilder {
     const frames = this.frames.slice().reverse();
 
     const processState: FullProcessState = {
+      sessionType: SessionType.GDB,
       stackTrace: {
         frames: frames.map((f, index) => ({ ...f, id: index, index })),
       },
@@ -262,6 +171,7 @@ export class PlaceBuilder {
     }
     return this;
   }
+
   setCString(text: string): PlaceBuilder {
     const str = new TextEncoder().encode(text);
     const buffer = new ArrayBuffer(str.byteLength + 1);
@@ -269,14 +179,17 @@ export class PlaceBuilder {
     this.map.set(this.address, buffer);
     return this;
   }
+
   setUint32(value: number): PlaceBuilder {
     this.map.set(this.address, makeUint32(value));
     return this;
   }
+
   setFloat32(value: number): PlaceBuilder {
     this.map.set(this.address, makeFloat32(value));
     return this;
   }
+
   setPtr(value: Address): PlaceBuilder {
     this.map.set(this.address, makeUint64(value));
     return this;

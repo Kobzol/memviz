@@ -1,6 +1,6 @@
 import { type ProcessState, SessionType } from "process-def";
 import { type Ref, type ShallowRef, ref, shallowRef } from "vue";
-import { ProcessBuilder } from "../resolver/eager";
+import { ProcessBuilder } from "../resolver/eager/utils/gdb";
 import { ProcessResolver } from "../resolver/resolver";
 
 interface AppState {
