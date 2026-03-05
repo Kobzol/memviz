@@ -56,22 +56,26 @@ watch(
   <div class="object">
     <div v-if="isResolved && isOpen" class="resolved-object">
       <table v-if="attributes && attributes.length > 0">
-        <tr>
-          <th colspan="2" class="header-cell">
-            <div class="header-content">
-              <span>Attributes</span>
-              <button class="close-btn" @click.stop="closeView">×</button>
-            </div>
-          </th>
-        </tr>
-        <tr v-for="attr in attributes" :key="attr.name">
-          <td v-bind:colspan="attr.value ? 1 : 2" class="attribute-name">
-            <AttributeName :attribute="attr" />
-          </td>
-          <td v-if="attr.value">
-            <MemorySlot :id="attr.value.id" />
-          </td>
-        </tr>
+        <thead>
+          <tr>
+            <th colspan="2" class="header-cell">
+              <div class="header-content">
+                <span>Attributes</span>
+                <button class="close-btn" @click.stop="closeView">×</button>
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="attr in attributes" :key="attr.name">
+            <td v-bind:colspan="attr.value ? 1 : 2" class="attribute-name">
+              <AttributeName :attribute="attr" />
+            </td>
+            <td v-if="attr.value">
+              <MemorySlot :id="attr.value.id" />
+            </td>
+          </tr>
+        </tbody>
       </table>
       <div v-else class="empty-object"></div>
     </div>
