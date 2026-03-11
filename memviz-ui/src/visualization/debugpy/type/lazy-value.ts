@@ -115,10 +115,7 @@ abstract class LazyCollectionVal<TValue> extends SizedDescribedRichValue {
 
     for (let blockIdx = startBlockIdx; blockIdx <= endBlockIdx; blockIdx++) {
       const blockStartItemIdx = this.getStartItemIndexForBlock(blockIdx);
-      const blockEndItemIdx = Math.min(
-        this.getEndItemIndexForBlock(blockIdx),
-        this.getItemCount() - 1,
-      );
+      const blockEndItemIdx = this.getEndItemIndexForBlock(blockIdx) - 1;
 
       // do not assign values into incomplete blocks
       if (blockStartItemIdx < startIdx) continue;
