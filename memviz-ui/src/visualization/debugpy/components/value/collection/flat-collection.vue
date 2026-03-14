@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import SequenceCollection from "./sequence-collection.vue";
 import SetCollection from "./set-collection.vue";
 import {
@@ -9,14 +9,26 @@ import { LazyFlatCollectionVal, LazyFrozenSetVal, LazyListVal, LazySetVal, LazyT
 import { valueState } from "../../../store";
 import { assert } from "../../../../../utils";
 import { isFlatCollection } from "../../../utils/types";
-import { COLLECTION_ITEM_DISPLAY_COUNT } from "../../../value-display-settings";
+import {
+  COLLECTION_ITEM_DISPLAY_COUNT_DEFAULT,
+  COLLECTION_ITEM_DISPLAY_COUNT_MAX,
+  COLLECTION_ITEM_DISPLAY_COUNT_MIN,
+} from "../../../value-display-settings";
 
 const props = defineProps<{
   id: string;
 }>();
 
 const currentIndex = ref(0);
-const visibleElementCount = COLLECTION_ITEM_DISPLAY_COUNT;
+const visibleElementCount = ref(COLLECTION_ITEM_DISPLAY_COUNT_DEFAULT);
+
+function clampVisibleElementCount(count: number): number {
+  return Math.max(
+    COLLECTION_ITEM_DISPLAY_COUNT_MIN,
+    Math.min(COLLECTION_ITEM_DISPLAY_COUNT_MAX, count),
+  );
+}
+
 const pythonValue = computed(() => {
   let val = valueState.value.getValueOrThrow(props.id);
   assert(
@@ -26,14 +38,15 @@ const pythonValue = computed(() => {
   return val as LazyFlatCollectionVal;
 });
 const isFirstViewResolved = computed(() => {
-  return pythonValue.value.areItemsFetched(0, visibleElementCount);
+  return pythonValue.value.areItemsFetched(0, visibleElementCount.value);
 });
-const isShown = ref(isFirstViewResolved.value);
+const hasLoaded = ref(isFirstViewResolved.value);
+const isOpen = ref(isFirstViewResolved.value);
 
 const totalElementCount = computed(() => pythonValue.value.element_count);
 const canGoToPrevious = computed(() => currentIndex.value > 0);
 const canGoToNext = computed(
-  () => currentIndex.value + visibleElementCount < totalElementCount.value
+  () => currentIndex.value + visibleElementCount.value < totalElementCount.value
 );
 
 
@@ -54,9 +67,31 @@ const handleIndexInput = (event: Event) => {
   currentIndex.value = newIndex;
 };
 
+const handleVisibleCountInput = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  let nextCount = parseInt(target.value, 10);
+  if (isNaN(nextCount)) return;
+  nextCount = clampVisibleElementCount(nextCount);
+  visibleElementCount.value = nextCount;
+};
+
 function onClick() {
-  isShown.value = true;
+  isOpen.value = true;
+  hasLoaded.value = true;
 }
+
+function closeView() {
+  isOpen.value = false;
+}
+
+watch(
+  () => props.id,
+  () => {
+    currentIndex.value = 0;
+    hasLoaded.value = isFirstViewResolved.value;
+    isOpen.value = isFirstViewResolved.value;
+  },
+);
 
 function isSequenceCollection(
   value: LazyFlatCollectionVal
@@ -73,7 +108,7 @@ function isSetCollection(
 
 <template>
   <div v-if="pythonValue.element_count > 0" class="collection-wrapper">
-    <div v-if="isShown" class="collection-frame">
+    <div v-if="hasLoaded && isOpen" class="collection-frame">
       <div class="control-bar top">
         <div class="control-wrapper">
           <button
@@ -83,14 +118,25 @@ function isSetCollection(
           >
             &#9650
           </button>
-          <input
-            class="index-input"
-            type="number"
-            :value="currentIndex"
-            @input="handleIndexInput"
-            :min="0"
-            :max="totalElementCount - 1"
-          />
+            <span class="field-label">idx</span>
+            <input
+              class="index-input"
+              type="number"
+              :value="currentIndex"
+              @input="handleIndexInput"
+              :min="0"
+              :max="totalElementCount - 1"
+            />
+            <span class="field-label">count</span>
+            <input
+              class="count-input"
+              type="number"
+              :value="visibleElementCount"
+              @input="handleVisibleCountInput"
+              :min="COLLECTION_ITEM_DISPLAY_COUNT_MIN"
+              :max="COLLECTION_ITEM_DISPLAY_COUNT_MAX"
+            />
+          <button class="close-btn" @click.stop="closeView">×</button>
         </div>
       </div>
       <div class="content-area">
@@ -98,13 +144,13 @@ function isSetCollection(
           v-if="isSequenceCollection(pythonValue)"
           :id="props.id"
           :start-index="currentIndex"
-          :visibleElementCount="visibleElementCount"
+          :visible-element-count="visibleElementCount"
         />
         <SetCollection
           v-else-if="isSetCollection(pythonValue)"
           :id="props.id"
           :start-index="currentIndex"
-          :visibleElementCount="visibleElementCount"
+          :visible-element-count="visibleElementCount"
         />
         <div v-else class="error">Unsupported: {{ pythonValue.kind }}</div>
       </div>
@@ -117,7 +163,7 @@ function isSetCollection(
       
     </div>
 
-    <div v-else @click="onClick" class="not-resolved">
+    <div v-if="!isOpen" @click="onClick" class="not-resolved">
       <code> ... </code>
     </div>
   </div>
@@ -137,24 +183,67 @@ function isSetCollection(
 }
 
 .collection-frame {
-  border: 3px solid black;
-  margin: 5px 5px 0 0;
-  width: 100%;
+  border: 2px solid black;
+  margin-block-start: 5px;
   background: white;
 }
 
 .control-bar {
   background: #f4f4f4;
   display: flex;
-  
-  &.top { border-bottom: 1px solid #858585; }
-  &.bottom { border-top: 1px solid #858585; }
+  min-height: 20px;
+
+  &.top {
+    border-bottom: 1px solid #858585;
+  }
+
+  &.bottom {
+    border-top: 1px solid #858585;
+  }
 }
 
 .control-wrapper {
   display: flex;
-  align-items: stretch;
+
   width: 100%;
+
+  &>* {
+    align-content: center;
+  }
+
+  & * {
+    box-sizing: border-box;
+  }
+
+  & input {
+    padding-inline: 5px;
+    line-height: 1;
+    text-align: center;
+  }
+}
+
+.field-label {
+  font-size: 0.72em;
+  line-height: 1;
+  color: #3f3f3f;
+  background: white;
+  text-align: right;
+  padding-inline: 5px;
+  border-left: 1px solid #858585;
+}
+
+.close-btn {
+  border: none;
+  border-left: 1px solid #858585;
+  background: transparent;
+  cursor: pointer;
+  height: stretch;
+  aspect-ratio: 1/1;
+  padding: 0;
+
+  &:hover {
+    background-color: #e2e2e2;
+  }
 }
 
 .nav-btn {
@@ -162,9 +251,10 @@ function isSetCollection(
   border: none;
   background: transparent;
   cursor: pointer;
-  font-size: 1.1em;
+  font-size: 0.95em;
+  line-height: 1;
   width: 100%;
-  padding: 2px 0;
+  padding: 0;
 
   &:disabled {
     color: #ccc;
@@ -177,11 +267,15 @@ function isSetCollection(
 }
 
 .index-input {
-  width: 60px;
   border: none;
-  border-left: 1px solid #858585;
-  text-align: center;
   background: white;
+  font-size: 0.85em;
+}
+
+.count-input {
+  border: none;
+  background: white;
+  font-size: 0.85em;
 }
 
 .content-area {

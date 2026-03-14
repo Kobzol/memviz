@@ -33,6 +33,9 @@ export abstract class DebuggerSession<TEvaluator extends Evaluator> {
   ): Promise<void> {
     return Promise.resolve();
   }
+  public async handleStoppedEvent(frameId?: FrameId): Promise<void> {
+    return Promise.resolve();
+  }
 
   public getSessionType(): SessionType {
     switch (this.session.configuration.type) {
@@ -47,8 +50,8 @@ export abstract class DebuggerSession<TEvaluator extends Evaluator> {
     }
   }
 
-  public initEvaluator(frameId: FrameId) {
-    return this.evaluator.init(frameId);
+  public async initEvaluator(frameId: FrameId) {
+    return await this.evaluator.init(frameId);
   }
 
   async setBreakpoints(

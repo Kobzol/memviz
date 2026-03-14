@@ -39,33 +39,19 @@ class ArrowMap {
         source.getBoundingClientRect().right <
         target.element.getBoundingClientRect().left;
 
-      const targetX = targetIsRight ? 0 : "100%";
-      const targetY = "50%";
       const targetEndSocket = targetIsRight ? "left" : "right";
 
-      arrow = new LeaderLine(
-        LeaderLine.pointAnchor(source, {
-          x: source.clientWidth + 10,
-          y: "50%",
-        }),
-        LeaderLine.pointAnchor(target.element, { x: targetX, y: targetY }),
-        {
-          path: "fluid",
-          startSocket: "right",
-          endSocket: targetEndSocket,
-          startPlug: "disc",
-          startPlugSize: 1.25,
-          startPlugOutline: true,
-          startPlugOutlineSize: 2,
-          startPlugOutlineColor: "black",
-          endPlug: "arrow2",
-          endPlugSize: 1.25,
-          endPlugColor: this.getColor(),
-          color: this.getColor(),
-          size: 4,
-          dropShadow: { dx: 1, dy: 1, blur: 2 },
-        },
-      );
+      arrow = new LeaderLine(source, target.element, {
+        path: "fluid",
+        startSocket: "right",
+        endSocket: targetEndSocket,
+        endPlug: "arrow2",
+        endPlugSize: 1.25,
+        endPlugColor: this.getColor(),
+        color: this.getColor(),
+        size: 4,
+        dropShadow: { dx: 1, dy: 1, blur: 2 },
+      });
     });
 
     if (!arrow) {
@@ -146,6 +132,18 @@ export class ComponentMap {
   private components: Map<PythonId, ComponentWithId> = new Map();
   private arrows: ArrowMap = new ArrowMap();
 
+  // stack of currently hovered object IDs (with the most recently
+  // hovered ID at the end of the array)
+  // most recently hovered is the innermost value in case of nested
+  // hover (e.g. hovering an object in a list)
+  private hoveredObjectIds: PythonId[] = [];
+
+  private highlightCurrentValue() {
+    const currentId = this.hoveredObjectIds[this.hoveredObjectIds.length - 1];
+    if (!currentId) return;
+    this.arrows.highlight(currentId);
+  }
+
   addComponent(
     component: ComponentWithId,
     ref: ShallowRef<ComponentMap>,
@@ -198,11 +196,35 @@ export class ComponentMap {
   }
 
   public highlightValue(id: PythonId) {
-    this.arrows.highlight(id);
+    const previouslyHighlightedId =
+      this.hoveredObjectIds[this.hoveredObjectIds.length - 1];
+
+    if (previouslyHighlightedId === id) return;
+
+    if (previouslyHighlightedId) {
+      this.arrows.unhighlight(previouslyHighlightedId);
+    }
+
+    const currentObjectIdx = this.hoveredObjectIds.indexOf(id);
+    if (currentObjectIdx !== -1) {
+      this.hoveredObjectIds.splice(currentObjectIdx, 1);
+    }
+
+    this.hoveredObjectIds.push(id);
+    this.highlightCurrentValue();
   }
 
   public unhighlightValue(id: PythonId) {
-    this.arrows.unhighlight(id);
+    const currentObjectIdx = this.hoveredObjectIds.lastIndexOf(id);
+    if (currentObjectIdx === -1) return;
+
+    const currentId = this.hoveredObjectIds[this.hoveredObjectIds.length - 1];
+    if (currentId) {
+      this.arrows.unhighlight(currentId);
+    }
+
+    this.hoveredObjectIds.splice(currentObjectIdx, 1);
+    this.highlightCurrentValue();
   }
   public repositionArrows() {
     this.arrows.repositionAll();

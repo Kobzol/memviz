@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 import { computed } from "vue";
 import { isScalar, RichScalarVal } from "../../utils/types";
 import { valueState } from "../../store";
@@ -15,19 +14,14 @@ const pythonValue = computed(() => {
   assert(isScalar(val), `Value with id ${props.id} is not a RichScalarVal`);
   return val as RichScalarVal;
 });
-const tooltip = computed(() => {
-  return `Id: <b>${pythonValue.value.id}</b>, size: <b>${pythonValue.value.size} B</b>`;
-});
 </script>
 
 <template>
-  <TooltipContributor :tooltip="tooltip">
-    <div class="scalar">
-      <code class="string">
-        {{ pythonValue.value }}
-      </code>
-    </div>
-  </TooltipContributor>
+  <div class="scalar">
+    <code class="string">
+      {{ pythonValue.value }}
+    </code>
+  </div>
 </template>
 
 <style scoped lang="scss">

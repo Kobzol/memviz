@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 import { computed } from "vue";
 import { RichTypeVal } from "../../type/type";
 import { assert } from "../../../../utils";
@@ -16,27 +15,26 @@ const pythonValue = computed(() => {
   assert(isType(val), `Value with id ${props.id} is not a RichTypeVal`);
   return val as RichTypeVal;
 });
-const tooltip = computed(() => {
-  return `Type <b>${pythonValue.value.module}.${pythonValue.value.name}</b>, Id: <b>${pythonValue.value.id}</b>`;
-});
 </script>
 
 <template>
-  <TooltipContributor :tooltip="tooltip">
-    <div class="type">
-      <code class="string">
-        {{ pythonValue.name }}
-      </code>
-    </div>
-  </TooltipContributor>
+  <div class="type">
+    <code class="string">
+      {{ pythonValue.name }}
+    </code>
+  </div>
 </template>
 
 <style scoped lang="scss">
-.scalar {
+.type {
   display: flex;
   justify-content: start;
   font-family: monospace;
   font-size: 1.2em;
+
+  &:hover {
+    cursor: pointer;
+  }
 }
 
 .string {

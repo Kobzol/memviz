@@ -1,4 +1,4 @@
-import { ValueKind } from "process-def/debugpy";
+import { type PythonId, ValueKind } from "process-def/debugpy";
 import type { DebugpyResolver } from "../../../resolver/adapters/debugpy";
 import { assert } from "../../../utils";
 import {
@@ -6,7 +6,12 @@ import {
   COLLECTION_BLOCK_SIZE,
   COLLECTION_PREFETCH_BLOCK_COUNT,
 } from "../value-display-settings";
-import { type RichAttribute, type RichKeyValuePair, RichValue } from "./type";
+import {
+  type RichAttribute,
+  type RichKeyValuePair,
+  type RichValue,
+  SizedDescribedRichValue,
+} from "./type";
 
 type ItemIndex = number;
 type BlockIndex = number;
@@ -38,11 +43,29 @@ class Cache<TValue> {
     }
     this.map.set(key, value);
   }
+
+  public clear(): void {
+    this.map.clear();
+  }
+
+  public values(): IterableIterator<TValue> {
+    return this.map.values();
+  }
 }
 
-abstract class LazyCollectionVal<TValue> extends RichValue {
+abstract class LazyCollectionVal<TValue> extends SizedDescribedRichValue {
   private pendingRequests: Map<BlockIndex, Promise<TValue>> = new Map();
   private blocks: Cache<TValue> = new Cache<TValue>(CACHE_CAPACITY_BLOCKS);
+
+  public setValues(values: TValue): void {
+    this.blocks.clear();
+    this.pendingRequests.clear();
+    this.assignValuesToBlocks(values, 0);
+  }
+
+  protected getFetchedBlockValues(): TValue[] {
+    return Array.from(this.blocks.values());
+  }
 
   protected getBlockIndex(itemIndex: ItemIndex): BlockIndex {
     return Math.floor(itemIndex / COLLECTION_BLOCK_SIZE);
@@ -73,6 +96,7 @@ abstract class LazyCollectionVal<TValue> extends RichValue {
   protected abstract getEmptyValue(): TValue;
 
   public areItemsFetched(start: ItemIndex, count: number): boolean {
+    if (count <= 0) return true;
     const startBlockIdx = this.getBlockIndex(start);
     const endBlockIdx = this.getBlockIndex(start + count - 1);
 
@@ -311,12 +335,12 @@ export class LazyStrVal extends LazyCollectionVal<string> {
 
   constructor(
     id: string,
-    public readonly size: number,
+    size: number,
     public readonly length: number,
     content: string | null = null,
     content_offset = 0,
   ) {
-    super(id);
+    super(id, size);
     if (content !== null) {
       this.assignValuesToBlocks(content, content_offset);
     }
@@ -331,7 +355,7 @@ export class LazyStrVal extends LazyCollectionVal<string> {
   }
 
   protected slice(data: string, start: number, end: number): string {
-    return data.slice(start, end);
+    return Array.from(data).slice(start, end).join("");
   }
 
   protected joinParts(parts: string[]): string {
@@ -339,7 +363,7 @@ export class LazyStrVal extends LazyCollectionVal<string> {
   }
 
   protected getLength(data: string): number {
-    return data.length;
+    return Array.from(data).length;
   }
 
   protected getEmptyValue(): string {
@@ -357,10 +381,11 @@ export abstract class LazyFlatCollectionVal extends LazyCollectionVal<
   constructor(
     id: string,
     public readonly element_count: number,
+    size: number,
     elements: RichValue[] | null = null,
     element_offset = 0,
   ) {
-    super(id);
+    super(id, size);
     if (elements !== null) {
       this.assignValuesToBlocks(elements, element_offset);
     }
@@ -393,6 +418,12 @@ export abstract class LazyFlatCollectionVal extends LazyCollectionVal<
   protected getItemCount(): number {
     return this.element_count;
   }
+
+  public override getFetchedChildIds(): PythonId[] {
+    return this.getFetchedBlockValues()
+      .flat()
+      .map((element) => element.id);
+  }
 }
 
 export class LazyListVal extends LazyFlatCollectionVal {
@@ -416,11 +447,12 @@ export class LazyDictVal extends LazyCollectionVal<RichKeyValuePair[]> {
 
   constructor(
     id: string,
+    size: number,
     public readonly pair_count: number,
     pairs: RichKeyValuePair[] | null = null,
     pair_offset = 0,
   ) {
-    super(id);
+    super(id, size);
     if (pairs !== null) {
       this.assignValuesToBlocks(pairs, pair_offset);
     }
@@ -457,18 +489,31 @@ export class LazyDictVal extends LazyCollectionVal<RichKeyValuePair[]> {
   protected getItemCount(): number {
     return this.pair_count;
   }
+
+  public override getFetchedChildIds(): PythonId[] {
+    const childIds: PythonId[] = [];
+    for (const pair of this.getFetchedBlockValues().flat()) {
+      childIds.push(pair.key.id);
+      childIds.push(pair.value.id);
+    }
+    return childIds;
+  }
 }
 
-export class LazyObjectVal extends RichValue {
+export class LazyObjectVal extends SizedDescribedRichValue {
   readonly kind = ValueKind.OBJECT;
 
   constructor(
     id: string,
-    public readonly size: number,
+    size: number,
     public readonly type_name: string,
     private attributes: RichAttribute[] | null = null,
   ) {
-    super(id);
+    super(id, size);
+  }
+
+  public override get_type_label(): string {
+    return this.type_name;
   }
 
   public isResolved(): boolean {
@@ -498,5 +543,19 @@ export class LazyObjectVal extends RichValue {
 
   public getFetchedAttributes(): RichAttribute[] | null {
     return this.attributes;
+  }
+
+  public override getFetchedChildIds(): PythonId[] {
+    const childIds: PythonId[] = [];
+    for (const attribute of this.attributes ?? []) {
+      if (attribute.value !== null) {
+        childIds.push(attribute.value.id);
+      }
+    }
+    return childIds;
+  }
+
+  public setValues(attributes: RichAttribute[] | null): void {
+    this.attributes = attributes;
   }
 }

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 import { computed } from "vue";
 import { RichComplexVal } from "../../type/type";
 import { isComplex } from "../../utils/types";
@@ -20,22 +19,16 @@ const pythonValue = computed(() => {
 const displayValue = computed(() => {
   const real_value = Number(pythonValue.value.real_value);
   const imaginary_value = Number(pythonValue.value.imaginary_value);
-  return `${real_value} + ${imaginary_value}j`;
-});
-
-const tooltip = computed(() => {
-  return `Id: <b>${props.id}</b>, size: <b>${pythonValue.value.size} B</b>`;
+  return `${real_value} ${imaginary_value >= 0 ? "+" : "-"} ${Math.abs(imaginary_value)}j`;
 });
 </script>
 
 <template>
-  <TooltipContributor :tooltip="tooltip">
-    <div class="complex">
-      <code class="string">
-        {{ displayValue }}
-      </code>
-    </div>
-  </TooltipContributor>
+  <div class="complex">
+    <code class="string">
+      {{ displayValue }}
+    </code>
+  </div>
 </template>
 
 <style scoped lang="scss">

@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { tooltipStack } from "./store";
+import { appState, tooltipStack } from "./store";
 import TooltipContent from "./components/tooltip/tooltip-content.vue";
 import Configuration from "./components/configuration.vue";
 import AddressSpace from "./components/address-space.vue";
+import { SessionType } from "process-def";
+import { computed } from "vue";
 
 // Code for debugging pointer targets
 // watch(componentMap, () => {
@@ -14,11 +16,12 @@ import AddressSpace from "./components/address-space.vue";
 //     component.element.classList.add("ptr-target");
 //   }
 // });
+const sessionType = computed(() => appState.value.sessionType);
 </script>
 
 <template>
   <div class="app">
-    <Configuration />
+    <Configuration v-if="sessionType === SessionType.GDB" />
     <AddressSpace />
     <TooltipContent :tooltips="tooltipStack" />
   </div>
@@ -27,6 +30,9 @@ import AddressSpace from "./components/address-space.vue";
 <style lang="scss">
 @import "normalize.css";
 
+:root {
+  scrollbar-gutter: stable;
+}
 .ptr-target {
   border: 2px solid red;
 }

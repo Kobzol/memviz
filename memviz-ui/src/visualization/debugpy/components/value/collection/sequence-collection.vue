@@ -40,7 +40,7 @@ async function fetchElements() {
   );
 }
 
-watch(() => props.startIndex, fetchElements);
+watch(() => [props.startIndex, props.visibleElementCount], fetchElements);
 
 onMounted(fetchElements);
 </script>
@@ -65,9 +65,12 @@ onMounted(fetchElements);
 
 td {
   border: 1px solid #858585;
+  padding: 0;
+
   &:first-child {
     border-left: none;
   }
+
   &:last-child {
     border-right: none;
   }

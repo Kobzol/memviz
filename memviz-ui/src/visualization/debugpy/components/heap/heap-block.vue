@@ -9,7 +9,7 @@ import {
   watch,
 } from "vue";
 import ValueComponent from "../value/value.vue";
-import { debugpyComponentMap } from "../../../store";
+import { debugpyComponentMap } from "../../store";
 import { assert } from "../../../../utils";
 import { ComponentUnsubscribeFn } from "../../component-map";
 
@@ -78,10 +78,13 @@ watch(
 .heap-block {
   flex: 3;
   min-width: 0;
-  word-break: break-all;
+  word-wrap: break-word;
   background: #ffffff;
-  border-top: solid 1px #000000;
   padding: 5px;
   gap: 6px;
+
+  box-sizing: border-box;
+  border: 1px solid #5f5f5f;
+  border-top: none;
 }
 </style>

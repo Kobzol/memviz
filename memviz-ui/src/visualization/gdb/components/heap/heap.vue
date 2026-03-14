@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ShallowRef, shallowRef, watch } from "vue";
-import { allocationState } from "../../../store";
+import { allocationState } from "../../store";
 import { HeapAllocation } from "../../allocation-tracker";
 import HeapAllocationComponent from "./heap-allocation.vue";
 

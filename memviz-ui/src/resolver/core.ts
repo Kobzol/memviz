@@ -1,4 +1,4 @@
-import type { AddressStr, FrameIndex } from "process-def";
+import type { AddressStr, FrameIndex, StoppedPlace } from "process-def";
 import type { Place as GDBPlace } from "process-def/gdb";
 import type { MemoryAllocEvent } from "../messages";
 import type {
@@ -13,7 +13,7 @@ export interface ProcessResolverCore {
   readMemory(address: AddressStr, size: number): Promise<ArrayBuffer>;
   takeAllocEvents(): Promise<MemoryAllocEvent[]>;
   createVariablesRepresentation(
-    frameIndex: FrameIndex,
+    frame: StoppedPlace,
   ): Promise<RichPythonVariables>;
   getFlatCollectionElements(
     id: AddressStr,

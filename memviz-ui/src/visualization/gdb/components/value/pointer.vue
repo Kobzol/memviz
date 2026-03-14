@@ -10,12 +10,10 @@ import {
 } from "vue";
 import { addressToStr, assert } from "../../../../utils";
 import {
-  allocationState,
   processResolver,
-  gdbComponentMap,
-  pointerMap,
   uiConfiguration,
 } from "../../../store";
+import { gdbComponentMap, pointerMap, allocationState } from "../../store";
 import { bufferAsBigUnsignedInt, formatAddress } from "../../utils/formatting";
 import { Path } from "../../pointers/path";
 import { Address } from "process-def";

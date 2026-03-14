@@ -138,5 +138,5 @@ export interface ModuleVal extends Value {
 export interface TypeVal extends Value {
   kind: ValueKind.TYPE;
   name: string;
-  module: string;
+  module: string | null;
 }

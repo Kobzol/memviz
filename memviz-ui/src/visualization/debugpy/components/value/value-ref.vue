@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  computed,
   onBeforeUnmount,
   onMounted,
   onUpdated,
@@ -7,13 +8,26 @@ import {
   ShallowRef,
   watch,
 } from "vue";
-import { debugpyComponentMap } from "../../../store";
+import { debugpyComponentMap, valueState } from "../../store";
 import { LeaderLineWithId } from "../../component-map";
 import { PythonId } from "process-def/debugpy";
 
 const props = defineProps<{
   id: PythonId;
 }>();
+
+const pythonValue = computed(() => {
+  return valueState.value.getValueOrThrow(props.id);
+});
+
+const displayOnHeapText = computed(() => {
+  const typeLabel = pythonValue.value.get_type_label();
+  if (!typeLabel) {
+    return "value displayed on heap";
+  }
+  return `value of type ${typeLabel} displayed on heap`;
+});
+
 const currentArrowTargetId = shallowRef<PythonId | null>(null);
 function tryRemoveArrow() {
   if (arrow.value !== null && currentArrowTargetId.value !== null) {
@@ -85,17 +99,36 @@ onBeforeUnmount(() => {
 
 <template>
   <div
-    class="value-ref"
+    class="value-ref-wrapper"
     :ref="(el: any) => (elementRef = el)"
     @mouseenter.stop="highlightArrows"
     @mouseleave.stop="unhighlightArrows"
-  ></div>
+  >
+    <div class="value-ref">
+      <span class="heap-note">
+        {{ displayOnHeapText }}
+      </span>
+    </div>
+  </div>
 </template>
 
 <style scoped lang="scss">
+.value-ref-wrapper {
+  position: relative;
+  max-width: 100%;
+  max-height: 100%;
+  height: stretch;
+  align-content: center;
+}
+
 .value-ref {
   display: flex;
-  height: 100%;
-  min-height: 1.5em;
+  padding: 5px;
+}
+
+.heap-note {
+  color: #5f5f5f;
+  font-size: 0.9em;
+  background: #ffffff;
 }
 </style>

@@ -8,7 +8,7 @@ import {
   typeFloat32,
   typePtr,
   typeUint32,
-} from "./resolver/eager";
+} from "./resolver/eager/utils/gdb";
 
 export function buildSimpleProgram(): ProcessBuilder {
   const builder = new ProcessBuilder();

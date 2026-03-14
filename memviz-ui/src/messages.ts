@@ -4,6 +4,7 @@ import type {
   ProcessState,
   SessionType,
   StackTrace,
+  StoppedPlace,
   ThreadId,
 } from "process-def";
 import type {
@@ -153,7 +154,7 @@ export interface GetPlacesReq extends Request {
 
 export interface GetPythonVariablesRepresentationReq extends Request {
   kind: "get-python-variables-representation";
-  frameIndex: FrameIndex;
+  frame: StoppedPlace;
 }
 
 export interface GetFlatCollectionElementsReq extends Request {

@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { Place } from "process-def/debugpy";
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch, watchEffect } from "vue";
 import type { Ref } from "vue";
 import { processResolver } from "../../../store";
 import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 import { StackFrame } from "process-def";
 import NamedPlace from "./named-place.vue";
 import { formatLocation } from "../../../utils/formatting";
+import { frameVisibilityState } from "../../store";
 
 const props = defineProps<{
   frame: StackFrame;
@@ -16,14 +17,36 @@ function toggleExpanded() {
   expanded.value = !expanded.value;
 }
 
-async function maybeLoadPlaces() {
-  if (expanded.value && places.value === null) {
-    const variables =
-      await resolver.value.debugpy.createVariablesRepresentation(
-        props.frame.index,
-      );
+let requestId = 0;
+let isLoadingPlaces = false;
 
+async function maybeLoadPlaces() {
+  if (!expanded.value || places.value !== null || isLoadingPlaces) {
+    return;
+  }
+
+  const currentRequestId = ++requestId;
+  isLoadingPlaces = true;
+
+  try {
+    const frame = {
+      id: props.frame.id,
+      place: {
+        name: props.frame.name,
+        line: props.frame.line,
+      },
+    };
+    const variables =
+      await resolver.value.debugpy.createVariablesRepresentation(frame);
+
+    if (currentRequestId !== requestId) {
+      return;
+    }
     places.value = variables.places;
+  } finally {
+    if (currentRequestId === requestId) {
+      isLoadingPlaces = false;
+    }
   }
 }
 
@@ -38,9 +61,24 @@ const tooltip = computed(() => {
 const isTopFrame = computed(() => props.frame.index === 0);
 const expanded = ref(isTopFrame.value);
 
+watchEffect(() => {
+  if (!expanded.value || places.value === null) {
+    frameVisibilityState.clearFrameSourceObjects(props.frame.id);
+    return;
+  }
+
+  frameVisibilityState.setFrameSourceObjects(
+    props.frame.id,
+    places.value.map((place) => place.id),
+  );
+});
+
 watch(
   () => props.frame,
   (newFrame: StackFrame, oldFrame: StackFrame) => {
+    if (newFrame.id !== oldFrame.id) {
+      frameVisibilityState.clearFrameSourceObjects(oldFrame.id);
+    }
     if (newFrame.index != oldFrame.index || newFrame.name != oldFrame.name) {
       expanded.value = isTopFrame.value;
     }
@@ -48,8 +86,10 @@ watch(
 );
 
 watch(
-  () => [props.frame, resolver],
+  () => [props.frame, resolver.value],
   () => {
+    requestId++;
+    isLoadingPlaces = false;
     places.value = null;
     maybeLoadPlaces();
   },
@@ -62,6 +102,10 @@ watch(
   },
   { immediate: true },
 );
+
+onBeforeUnmount(() => {
+  frameVisibilityState.clearFrameSourceObjects(props.frame.id);
+});
 
 // https://www.color-hex.com/color-palette/24003
 </script>
@@ -129,9 +173,7 @@ watch(
 .inner {
   background: #ffffff;
   border-top: solid 1px #000000;
-  padding: 5px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
 }
 </style>
