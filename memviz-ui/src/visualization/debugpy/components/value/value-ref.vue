@@ -3,7 +3,6 @@ import {
   computed,
   onBeforeUnmount,
   onMounted,
-  onUpdated,
   shallowRef,
   ShallowRef,
   watch,
@@ -48,6 +47,10 @@ function tryAddArrow() {
     return;
   }
 
+  if (arrow.value !== null && currentArrowTargetId.value === props.id) {
+    return;
+  }
+
   if (arrow.value !== null) {
     tryRemoveArrow();
   }
@@ -87,9 +90,6 @@ watch(
   },
 );
 onMounted(() => {
-  tryAddArrow();
-});
-onUpdated(() => {
   tryAddArrow();
 });
 onBeforeUnmount(() => {
