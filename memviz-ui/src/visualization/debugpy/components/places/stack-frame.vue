@@ -74,19 +74,32 @@ watchEffect(() => {
 });
 
 watch(
-  () => props.frame,
-  (newFrame: StackFrame, oldFrame: StackFrame) => {
-    if (newFrame.id !== oldFrame.id) {
-      frameVisibilityState.clearFrameSourceObjects(oldFrame.id);
+  () => props.frame.id,
+  (newFrameId: number, oldFrameId: number) => {
+    if (newFrameId !== oldFrameId) {
+      frameVisibilityState.clearFrameSourceObjects(oldFrameId);
     }
-    if (newFrame.index != oldFrame.index || newFrame.name != oldFrame.name) {
+  },
+);
+
+watch(
+  () => [props.frame.index, props.frame.name],
+  ([newIndex, newName], [oldIndex, oldName]) => {
+    if (newIndex !== oldIndex || newName !== oldName) {
       expanded.value = isTopFrame.value;
     }
   },
 );
 
 watch(
-  () => [props.frame, resolver.value],
+  () => [
+    props.frame.id,
+    props.frame.name,
+    props.frame.file,
+    props.frame.line,
+    props.frame.index,
+    resolver.value,
+  ],
   () => {
     requestId++;
     isLoadingPlaces = false;

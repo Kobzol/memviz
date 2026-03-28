@@ -6,6 +6,7 @@ import {
   valueDisplaySettings,
 } from "../../value-display-settings";
 import { frameVisibilityState, valueState } from "../../store";
+import { appState } from "../../../store";
 import MemorySlot from "../memory-slot.vue";
 import type { RichValue } from "../../type/type";
 
@@ -19,7 +20,7 @@ function isDetachedValue(value: RichValue): boolean {
 function collectReachableIds(
   valuesById: Map<PythonId, RichValue>,
 ): Set<PythonId> {
-  const queue = Array.from(visibleRootIds.value);
+  const queue = [...visibleRootIds.value];
   const reachableIds = new Set(queue);
 
   while (queue.length > 0) {
@@ -40,10 +41,17 @@ function collectReachableIds(
   return reachableIds;
 }
 
-const values = computed(() => valueState.value.getValues());
 const visibleRootIds = computed(() => {
-  return frameVisibilityState.getVisibleSourceObjectIds();
+  const orderedFrameIds = appState.value.processState.stackTrace.frames
+    .slice()
+    .sort((a, b) => b.index - a.index)
+    .map((frame) => frame.id);
+  return frameVisibilityState.getOrderedVisibleSourceObjectIds(orderedFrameIds);
 });
+
+const values = computed(() =>
+  valueState.value.getOrderedValues(visibleRootIds.value),
+);
 
 const visibleValues = computed(() => {
   const valuesById = new Map(values.value.map((value) => [value.id, value]));

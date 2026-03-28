@@ -43,13 +43,21 @@ export class FrameObjectsVisibilityState {
     this.frameSourceObjects.value = nextFrameSourceObjects;
   }
 
-  public getVisibleSourceObjectIds(): Set<PythonId> {
-    const ids = new Set<PythonId>();
-    for (const sourceObjIds of this.frameSourceObjects.value.values()) {
-      for (const id of sourceObjIds) {
-        ids.add(id);
+  public getOrderedVisibleSourceObjectIds(frameIds: number[]): PythonId[] {
+    const orderedIds: PythonId[] = [];
+    const seenIds = new Set<PythonId>();
+
+    for (const frameId of frameIds) {
+      const sourceObjectIds = this.frameSourceObjects.value.get(frameId);
+      if (!sourceObjectIds) continue;
+
+      for (const id of sourceObjectIds) {
+        if (seenIds.has(id)) continue;
+        seenIds.add(id);
+        orderedIds.push(id);
       }
     }
-    return ids;
+
+    return orderedIds;
   }
 }
