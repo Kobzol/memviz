@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import SequenceCollection from "./sequence-collection.vue";
 import SetCollection from "./set-collection.vue";
 import {
   ValueKind,
 } from "process-def/debugpy";
 import { LazyFlatCollectionVal, LazyFrozenSetVal, LazyListVal, LazySetVal, LazyTupleVal } from "../../../type/lazy-value";
-import { valueState } from "../../../store";
+import { objectVisibilityState, valueState } from "../../../store";
 import { assert } from "../../../../../utils";
 import { isFlatCollection } from "../../../utils/types";
 import {
@@ -76,22 +76,42 @@ const handleVisibleCountInput = (event: Event) => {
 };
 
 function onClick() {
+  objectVisibilityState.setSourceObjectAsCollapsed(props.id, false);
   isOpen.value = true;
   hasLoaded.value = true;
 }
 
 function closeView() {
+  objectVisibilityState.setSourceObjectAsCollapsed(props.id, true);
   isOpen.value = false;
 }
 
 watch(
   () => props.id,
-  () => {
+  (newId, oldId) => {
+    if (newId !== oldId) {
+      objectVisibilityState.setSourceObjectAsCollapsed(oldId, false);
+    }
+
     currentIndex.value = 0;
     hasLoaded.value = isFirstViewResolved.value;
     isOpen.value = isFirstViewResolved.value;
+
+    objectVisibilityState.setSourceObjectAsCollapsed(newId, !isOpen.value);
   },
 );
+
+watch(
+  isOpen,
+  (nextIsOpen) => {
+    objectVisibilityState.setSourceObjectAsCollapsed(props.id, !nextIsOpen);
+  },
+  { immediate: true },
+);
+
+onBeforeUnmount(() => {
+  objectVisibilityState.setSourceObjectAsCollapsed(props.id, false);
+});
 
 function isSequenceCollection(
   value: LazyFlatCollectionVal

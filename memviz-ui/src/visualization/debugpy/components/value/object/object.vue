@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { processResolver } from "../../../../store";
 import AttributeName from "./attribute-name.vue";
 import MemorySlot from "../../memory-slot.vue";
 import { LazyObjectVal } from "../../../type/lazy-value";
 import { assert } from "../../../../../utils";
-import { valueState } from "../../../store";
+import { objectVisibilityState, valueState } from "../../../store";
 import { isObject } from "../../../utils/types";
 import { PythonId } from "process-def/debugpy";
 
@@ -37,19 +37,39 @@ async function onClick() {
   if (!isResolved.value) {
     await loadData();
   }
+  objectVisibilityState.setSourceObjectAsCollapsed(props.id, false);
   isOpen.value = true;
 }
 
 function closeView() {
+  objectVisibilityState.setSourceObjectAsCollapsed(props.id, true);
   isOpen.value = false;
 }
 
 watch(
   () => props.id,
-  () => {
+  (newId, oldId) => {
+    if (newId !== oldId) {
+      objectVisibilityState.setSourceObjectAsCollapsed(oldId, false);
+    }
+
     isOpen.value = isResolved.value;
+
+    objectVisibilityState.setSourceObjectAsCollapsed(newId, !isOpen.value);
   },
 );
+
+watch(
+  isOpen,
+  (nextIsOpen) => {
+    objectVisibilityState.setSourceObjectAsCollapsed(props.id, !nextIsOpen);
+  },
+  { immediate: true },
+);
+
+onBeforeUnmount(() => {
+  objectVisibilityState.setSourceObjectAsCollapsed(props.id, false);
+});
 </script>
 
 <template>

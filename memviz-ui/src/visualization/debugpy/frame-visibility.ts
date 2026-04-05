@@ -14,33 +14,68 @@ function equals(a: Set<PythonId>, b: Set<PythonId>): boolean {
   return true;
 }
 
-export class FrameObjectsVisibilityState {
+export class ObjectVisibilityState {
   // frameId -> source object ids
   private frameSourceObjects = ref(new Map<number, Set<PythonId>>());
+  // set of collapsed object ids
+  private collapsedSourceIds = ref(new Set<PythonId>());
 
-  public setFrameSourceObjects(frameId: number, sourceObjIds: PythonId[]) {
-    const nextSourceObjectIds = new Set(sourceObjIds);
-    const currentSourceObjectIds = this.frameSourceObjects.value.get(frameId);
-
-    if (
-      currentSourceObjectIds &&
-      equals(currentSourceObjectIds, nextSourceObjectIds)
-    )
+  public setVisibleSourceObjectsForFrame(
+    frameId: number,
+    sourceIds: PythonId[],
+  ) {
+    const newValue = new Set(sourceIds);
+    const currentValue = this.frameSourceObjects.value.get(frameId);
+    if (currentValue && equals(currentValue, newValue)) {
       return;
-
-    const nextFrameSourceObjects = new Map(this.frameSourceObjects.value);
-    nextFrameSourceObjects.set(frameId, nextSourceObjectIds);
-    this.frameSourceObjects.value = nextFrameSourceObjects;
+    }
+    // create a new map instance to trigger reactivity
+    const newMap = new Map(this.frameSourceObjects.value);
+    newMap.set(frameId, newValue);
+    this.frameSourceObjects.value = newMap;
   }
 
-  public clearFrameSourceObjects(frameId: number) {
+  public clearVisibleSourceObjectsForFrame(frameId: number) {
     if (!this.frameSourceObjects.value.has(frameId)) {
       return;
     }
 
-    const nextFrameSourceObjects = new Map(this.frameSourceObjects.value);
-    nextFrameSourceObjects.delete(frameId);
-    this.frameSourceObjects.value = nextFrameSourceObjects;
+    // create a new map instance to trigger reactivity
+    const newMap = new Map(this.frameSourceObjects.value);
+    newMap.delete(frameId);
+    this.frameSourceObjects.value = newMap;
+  }
+
+  public setSourceObjectAsCollapsed(sourceId: PythonId, isCollapsed: boolean) {
+    if (this.collapsedSourceIds.value.has(sourceId) === isCollapsed) {
+      return;
+    }
+
+    const newSet = new Set(this.collapsedSourceIds.value);
+    if (isCollapsed) {
+      newSet.add(sourceId);
+    } else {
+      newSet.delete(sourceId);
+    }
+    this.collapsedSourceIds.value = newSet;
+  }
+
+  public clearCollapsedSources() {
+    if (this.collapsedSourceIds.value.size === 0) {
+      return;
+    }
+
+    this.collapsedSourceIds.value = new Set();
+  }
+
+  public filterVisibleChildIds(
+    sourceObjectId: PythonId,
+    childIds: PythonId[],
+  ): PythonId[] {
+    if (this.collapsedSourceIds.value.has(sourceObjectId)) {
+      return [];
+    }
+    return childIds;
   }
 
   public getOrderedVisibleSourceObjectIds(frameIds: number[]): PythonId[] {

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { PythonId } from "process-def/debugpy";
+import { type PythonId, ValueKind } from "process-def/debugpy";
 import {
   DisplayMode,
   valueDisplaySettings,
 } from "../../value-display-settings";
-import { frameVisibilityState, valueState } from "../../store";
+import { objectVisibilityState, valueState } from "../../store";
 import { appState } from "../../../store";
 import MemorySlot from "../memory-slot.vue";
 import type { RichValue } from "../../type/type";
@@ -30,7 +30,14 @@ function collectReachableIds(
     const value = valuesById.get(id);
     if (!value) continue;
 
-    for (const childId of value.getFetchedChildIds()) {
+    let childIds = value.getFetchedChildIds();
+    if (childIds)
+      childIds = objectVisibilityState.filterVisibleChildIds(
+        value.id,
+        childIds,
+      );
+
+    for (const childId of childIds) {
       if (reachableIds.has(childId)) continue;
 
       queue.push(childId);
@@ -46,7 +53,9 @@ const visibleRootIds = computed(() => {
     .slice()
     .sort((a, b) => b.index - a.index)
     .map((frame) => frame.id);
-  return frameVisibilityState.getOrderedVisibleSourceObjectIds(orderedFrameIds);
+  return objectVisibilityState.getOrderedVisibleSourceObjectIds(
+    orderedFrameIds,
+  );
 });
 
 const values = computed(() =>

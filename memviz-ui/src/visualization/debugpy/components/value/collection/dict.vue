@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { processResolver } from "../../../../store";
 import { PythonId } from "process-def/debugpy";
 import MemorySlot from "../../memory-slot.vue";
-import { valueState } from "../../../store";
+import { objectVisibilityState, valueState } from "../../../store";
 import { LazyDictVal } from "../../../type/lazy-value";
 import { isDict } from "../../../utils/types";
 import { assert } from "../../../../../utils";
@@ -89,6 +89,7 @@ async function loadData() {
 }
 
 async function onClick() {
+  objectVisibilityState.setSourceObjectAsCollapsed(props.id, false);
   isOpen.value = true;
   if (!hasLoaded.value) {
     await loadData();
@@ -97,6 +98,7 @@ async function onClick() {
 }
 
 function closeView() {
+  objectVisibilityState.setSourceObjectAsCollapsed(props.id, true);
   isOpen.value = false;
 }
 
@@ -104,12 +106,26 @@ watch([currentIndex, visibleElementCount], loadData);
 
 watch(
   () => props.id,
-  () => {
+  (newId, oldId) => {
+    if (newId !== oldId) {
+      objectVisibilityState.setSourceObjectAsCollapsed(oldId, false);
+    }
+
     currentIndex.value = 0;
     visiblePairs.value = [];
     hasLoaded.value = isFirstViewResolved.value;
     isOpen.value = isFirstViewResolved.value;
+
+    objectVisibilityState.setSourceObjectAsCollapsed(newId, !isOpen.value);
   },
+);
+
+watch(
+  isOpen,
+  (nextIsOpen) => {
+    objectVisibilityState.setSourceObjectAsCollapsed(props.id, !nextIsOpen);
+  },
+  { immediate: true },
 );
 
 onMounted(() => {
@@ -117,6 +133,10 @@ onMounted(() => {
     loadData();
     hasLoaded.value = true;
   }
+});
+
+onBeforeUnmount(() => {
+  objectVisibilityState.setSourceObjectAsCollapsed(props.id, false);
 });
 </script>
 
