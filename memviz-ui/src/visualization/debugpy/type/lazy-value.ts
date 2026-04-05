@@ -57,6 +57,10 @@ abstract class LazyCollectionVal<TValue> extends SizedDescribedRichValue {
   private pendingRequests: Map<BlockIndex, Promise<TValue>> = new Map();
   private blocks: Cache<TValue> = new Cache<TValue>(CACHE_CAPACITY_BLOCKS);
 
+  public override get_type_label(): string {
+    return `${this.kind}[${this.getItemCount()}]`;
+  }
+
   public setValues(values: TValue): void {
     this.blocks.clear();
     this.pendingRequests.clear();
@@ -307,7 +311,11 @@ abstract class LazyCollectionVal<TValue> extends SizedDescribedRichValue {
       } else {
         // delay neighbor fetching to avoid blocking rendering
         setTimeout(() => {
-          const delayedFetchPromise = this.fetchItems(resolver, fetchStartIdx, fetchCount);
+          const delayedFetchPromise = this.fetchItems(
+            resolver,
+            fetchStartIdx,
+            fetchCount,
+          );
           delayedFetchPromise.catch((e) =>
             console.error(
               `Background fetch failed for ${this.id}, start=${fetchStartIdx}, count=${fetchCount}:`,
