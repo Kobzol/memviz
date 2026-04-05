@@ -93,10 +93,30 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
       const stackTrace = await this.getCurrentStackTrace(session);
       const selectedFrame = stackTrace.find((frame) => frame.id === frameId);
 
+      const emptyResponse: Omit<
+        GetPythonVariablesRepresentationRes,
+        "requestId" | "resolverId"
+      > = {
+        kind: "get-python-variables-representation",
+        data: {
+          variables: {
+            places: [],
+            values: [],
+          },
+        },
+      } as const;
+
       if (!selectedFrame) {
-        throw new Error(
-          `Could not find stack frame for frame id ${frameId} while resolving debugpy variables`,
+        // fast stepping can cause that the frame for which variables representation
+        // is requested is already gone by the time the request is processed
+        console.debug(
+          `Frame ${frameId} no longer present in the stack trace. Returning empty variables representation.`,
+          {
+            frameId,
+            stoppedPlace,
+          },
         );
+        return emptyResponse;
       }
 
       const matchingPlaces = stackTrace.filter(
@@ -108,9 +128,14 @@ export class DebugpyWebviewMessageHandler extends WebviewMessageHandler<
       );
 
       if (placeOccurrence < 0) {
-        throw new Error(
-          `Could not find frame with id ${frameId} for ${stoppedPlace.name}:${stoppedPlace.line}`,
+        console.debug(
+          `Frame ${frameId} no longer present in the stack trace. Returning empty variables representation.`,
+          {
+            frameId,
+            stoppedPlace,
+          },
         );
+        return emptyResponse;
       }
 
       const variables = await session.createVariablesRepresentation(

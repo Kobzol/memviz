@@ -207,6 +207,10 @@ class Variables:
     values: List[BaseVal]
 
 
+class MissingPlaceOccurrenceError(ValueError):
+    pass
+
+
 def get_str_default_load_content(val: str) -> str:
     count = min(len(val), STR_LOAD_CHAR_COUNT)
     return val[:count]
@@ -307,7 +311,7 @@ def get_frame_by_place(
                 return frame
             occurence_counter += 1
 
-    raise ValueError(
+    raise MissingPlaceOccurrenceError(
         f"Could not find place occurrence {place_occurrence} for function '{frame_name}' at line {frame_line} in file {debugged_file_path}"
     )
 
@@ -365,12 +369,22 @@ def get_variables(
     frame_line: int,
     place_occurrence: int,
 ) -> Variables:
-    frame_info = get_frame_by_place(
-        debugged_file_path,
-        frame_name,
-        frame_line,
-        place_occurrence,
-    )
+    try:
+        frame_info = get_frame_by_place(
+            debugged_file_path,
+            frame_name,
+            frame_line,
+            place_occurrence,
+        )
+    except MissingPlaceOccurrenceError:
+        # In case of fast stepping over it can happen that
+        # the specified place occurrence is already gone
+        # by the time the request is processed.
+        # In that case, empty variables info is returned
+        # TODO: it should be communicated to the frontend
+        # that the place is not accessible anymore instead
+        # of just returning empty variables info
+        return Variables(places=[], values=[])
     arg_names = get_argument_names(frame_info)
     frame = frame_info.frame
 
