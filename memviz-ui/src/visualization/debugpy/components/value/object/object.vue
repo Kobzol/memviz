@@ -75,7 +75,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="object">
     <div v-if="isResolved && isOpen" class="resolved-object">
-      <table v-if="attributes && attributes.length > 0">
+      <table v-if="attributes && attributes.length > 0" class="object-frame">
         <thead>
           <tr>
             <th colspan="2" class="header-cell">
@@ -91,7 +91,7 @@ onBeforeUnmount(() => {
             <td v-bind:colspan="attr.value ? 1 : 2" class="attribute-name">
               <AttributeName :attribute="attr" />
             </td>
-            <td v-if="attr.value">
+            <td v-if="attr.value" class="attribute-value">
               <MemorySlot :id="attr.value.id" />
             </td>
           </tr>
@@ -106,6 +106,12 @@ onBeforeUnmount(() => {
 
 <style scoped lang="scss">
 .object {
+  display: flex;
+  justify-content: start;
+  flex-direction: column;
+  max-width: 100%;
+  min-width: 0;
+
   .not-resolved {
     &:hover {
       cursor: pointer;
@@ -117,6 +123,8 @@ onBeforeUnmount(() => {
   display: flex;
   justify-content: start;
   flex-direction: column;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .empty-object {
@@ -125,16 +133,26 @@ onBeforeUnmount(() => {
   padding: 2px 5px;
 }
 
-table {
+.object-frame {
+  width: 100%;
+  max-width: 100%;
   border-collapse: collapse;
   border: 2px solid black;
-  margin-top: 5px;
+  margin-block-start: 5px;
+  background: white;
+  table-layout: fixed;
 
   .header-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
     width: 100%;
+    padding-left: 5px;
+    box-sizing: border-box;
+  }
+
+  .header-cell {
+    padding: 0;
   }
 
   .close-btn {
@@ -152,12 +170,33 @@ table {
     background-color: #bca9e1;
     text-align: left;
     font-weight: normal;
-    padding-left: 5px;
+    padding-left: 0;
   }
 
   td {
     border-bottom: 1px solid #3f3f3f;
-    padding: 2px 10px;
+    padding: 2px 0px 2px 10px;
+    vertical-align: top;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+
+    > * {
+      max-width: 100%;
+      min-width: 0;
+    }
   }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+.attribute-name {
+  width: 36%;
+}
+
+.attribute-value {
+  width: 64%;
 }
 </style>

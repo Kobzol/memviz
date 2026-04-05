@@ -158,6 +158,7 @@ onBeforeUnmount(() => {
   max-height: 100%;
   height: stretch;
   align-content: center;
+  cursor: pointer;
 }
 
 .value-ref {

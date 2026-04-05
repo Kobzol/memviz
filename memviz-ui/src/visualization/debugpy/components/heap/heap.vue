@@ -86,8 +86,8 @@ const visibleValues = computed(() => {
 
 <style lang="scss" scoped>
 .heap {
-  min-width: 300px;
-  max-width: 500px;
+  min-width: 500px;
+  max-width: 700px;
 }
 
 .header {
