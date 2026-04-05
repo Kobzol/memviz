@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { processResolver } from "../../../../store";
+import { PythonId } from "process-def/debugpy";
 import AttributeName from "./attribute-name.vue";
 import MemorySlot from "../../memory-slot.vue";
 import { LazyObjectVal } from "../../../type/lazy-value";
 import { assert } from "../../../../../utils";
-import { objectVisibilityState, valueState } from "../../../store";
+import {
+  componentState,
+  objectVisibilityState,
+  valueState,
+} from "../../../store";
 import { isObject } from "../../../utils/types";
-import { PythonId } from "process-def/debugpy";
 
 const props = defineProps<{
   id: PythonId;
@@ -18,58 +22,62 @@ const pythonValue = computed(() => {
   assert(isObject(val), `Value with id ${props.id} is not a LazyObjectVal`);
   return val as LazyObjectVal;
 });
+
 const isResolved = computed(() => pythonValue.value.isResolved());
-const attributes = computed(() => {
-  return pythonValue.value.getFetchedAttributes();
-});
+const attributes = computed(() => pythonValue.value.getFetchedAttributes());
 const isOpen = ref(isResolved.value);
 
 async function loadData() {
-  if (isResolved.value) return;
+  if (isResolved.value) {
+    return;
+  }
 
   const resolver = processResolver.value;
-  if (!resolver) return;
+  if (!resolver) {
+    return;
+  }
 
   await pythonValue.value.getAttributes(resolver.debugpy);
 }
+
+function setStateToOpen(value: boolean, persist = false) {
+  isOpen.value = value;
+  objectVisibilityState.setSourceObjectAsCollapsed(props.id, !value);
+
+  if (persist) {
+    componentState.setState(props.id, {
+      kind: pythonValue.value.kind,
+      isOpen: value,
+    });
+  }
+}
+
+function restoreOpenState() {
+  const savedState = componentState.getState(props.id, pythonValue.value.kind);
+  setStateToOpen(savedState ? savedState.isOpen : isResolved.value);
+}
+
+watch(
+  [() => pythonValue.value, () => processResolver.value],
+  () => {
+    restoreOpenState();
+    if (isOpen.value) {
+      void loadData();
+    }
+  },
+  { immediate: true },
+);
 
 async function onClick() {
   if (!isResolved.value) {
     await loadData();
   }
-  objectVisibilityState.setSourceObjectAsCollapsed(props.id, false);
-  isOpen.value = true;
+  setStateToOpen(true, true);
 }
 
 function closeView() {
-  objectVisibilityState.setSourceObjectAsCollapsed(props.id, true);
-  isOpen.value = false;
+  setStateToOpen(false, true);
 }
-
-watch(
-  () => props.id,
-  (newId, oldId) => {
-    if (newId !== oldId) {
-      objectVisibilityState.setSourceObjectAsCollapsed(oldId, false);
-    }
-
-    isOpen.value = isResolved.value;
-
-    objectVisibilityState.setSourceObjectAsCollapsed(newId, !isOpen.value);
-  },
-);
-
-watch(
-  isOpen,
-  (nextIsOpen) => {
-    objectVisibilityState.setSourceObjectAsCollapsed(props.id, !nextIsOpen);
-  },
-  { immediate: true },
-);
-
-onBeforeUnmount(() => {
-  objectVisibilityState.setSourceObjectAsCollapsed(props.id, false);
-});
 </script>
 
 <template>

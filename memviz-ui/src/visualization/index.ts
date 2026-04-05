@@ -7,7 +7,7 @@ import "tippy.js/dist/tippy.css";
 import type { MemoryAllocEvent } from "../messages";
 import type { ProcessResolver } from "../resolver/resolver";
 import { strToAddress } from "../utils";
-import { objectVisibilityState, valueState } from "./debugpy/store";
+import { valueState } from "./debugpy/store";
 import { allocationState } from "./gdb/store";
 
 export class Memviz {
@@ -88,7 +88,6 @@ export class Memviz {
     sessionType: SessionType,
   ) {
     valueState.value.clear();
-    objectVisibilityState.clearCollapsedSources();
     appState.value = {
       processState,
       sessionType,

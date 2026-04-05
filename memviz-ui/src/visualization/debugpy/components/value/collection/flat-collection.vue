@@ -1,12 +1,20 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
+import { ValueKind } from "process-def/debugpy";
 import SequenceCollection from "./sequence-collection.vue";
 import SetCollection from "./set-collection.vue";
 import {
-  ValueKind,
-} from "process-def/debugpy";
-import { LazyFlatCollectionVal, LazyFrozenSetVal, LazyListVal, LazySetVal, LazyTupleVal } from "../../../type/lazy-value";
-import { objectVisibilityState, valueState } from "../../../store";
+  LazyFlatCollectionVal,
+  LazyFrozenSetVal,
+  LazyListVal,
+  LazySetVal,
+  LazyTupleVal,
+} from "../../../type/lazy-value";
+import {
+  componentState,
+  objectVisibilityState,
+  valueState,
+} from "../../../store";
 import { assert } from "../../../../../utils";
 import { isFlatCollection } from "../../../utils/types";
 import {
@@ -22,6 +30,25 @@ const props = defineProps<{
 const currentIndex = ref(0);
 const visibleElementCount = ref(COLLECTION_ITEM_DISPLAY_COUNT_DEFAULT);
 
+const pythonValue = computed(() => {
+  const val = valueState.value.getValueOrThrow(props.id);
+  assert(
+    isFlatCollection(val),
+    `Value with id ${props.id} is not a LazyFlatCollectionVal`,
+  );
+  return val as LazyFlatCollectionVal;
+});
+
+const totalElementCount = computed(() => pythonValue.value.element_count);
+const isFirstViewResolved = computed(() =>
+  pythonValue.value.areItemsFetched(0, visibleElementCount.value),
+);
+const isOpen = ref(isFirstViewResolved.value);
+const canGoToPrevious = computed(() => currentIndex.value > 0);
+const canGoToNext = computed(
+  () => currentIndex.value + visibleElementCount.value < totalElementCount.value,
+);
+
 function clampVisibleElementCount(count: number): number {
   return Math.max(
     COLLECTION_ITEM_DISPLAY_COUNT_MIN,
@@ -29,98 +56,99 @@ function clampVisibleElementCount(count: number): number {
   );
 }
 
-const pythonValue = computed(() => {
-  let val = valueState.value.getValueOrThrow(props.id);
-  assert(
-    isFlatCollection(val),
-    `Value with id ${props.id} is not a LazyFlatCollectionVal`,
+function clampCurrentIndex(index: number): number {
+  return Math.max(0, Math.min(index, Math.max(totalElementCount.value - 1, 0)));
+}
+
+function saveState() {
+  componentState.setState(props.id, {
+    kind: pythonValue.value.kind,
+    isOpen: isOpen.value,
+    collectionPageIndex: currentIndex.value,
+    collectionItemCount: visibleElementCount.value,
+  });
+}
+
+function setStateToOpen(value: boolean) {
+  isOpen.value = value;
+  objectVisibilityState.setSourceObjectAsCollapsed(props.id, !value);
+}
+
+function restoreCollectionState() {
+  const savedValue = componentState.getState(props.id, pythonValue.value.kind);
+  currentIndex.value = clampCurrentIndex(savedValue?.collectionPageIndex ?? 0);
+  visibleElementCount.value = clampVisibleElementCount(
+    savedValue?.collectionItemCount ?? COLLECTION_ITEM_DISPLAY_COUNT_DEFAULT,
   );
-  return val as LazyFlatCollectionVal;
-});
-const isFirstViewResolved = computed(() => {
-  return pythonValue.value.areItemsFetched(0, visibleElementCount.value);
-});
-const hasLoaded = ref(isFirstViewResolved.value);
-const isOpen = ref(isFirstViewResolved.value);
-
-const totalElementCount = computed(() => pythonValue.value.element_count);
-const canGoToPrevious = computed(() => currentIndex.value > 0);
-const canGoToNext = computed(
-  () => currentIndex.value + visibleElementCount.value < totalElementCount.value
-);
-
-
-const goToPrevious = () => {
-  if (canGoToPrevious.value) currentIndex.value--;
-};
-
-const goToNext = () => {
-  if (canGoToNext.value) currentIndex.value++;
-};
-
-const handleIndexInput = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  let newIndex = parseInt(target.value, 10);
-  if (isNaN(newIndex)) return;
-  if (newIndex < 0) newIndex = 0;
-  if (newIndex >= totalElementCount.value) newIndex = totalElementCount.value - 1;
-  currentIndex.value = newIndex;
-};
-
-const handleVisibleCountInput = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  let nextCount = parseInt(target.value, 10);
-  if (isNaN(nextCount)) return;
-  nextCount = clampVisibleElementCount(nextCount);
-  visibleElementCount.value = nextCount;
-};
-
-function onClick() {
-  objectVisibilityState.setSourceObjectAsCollapsed(props.id, false);
-  isOpen.value = true;
-  hasLoaded.value = true;
-}
-
-function closeView() {
-  objectVisibilityState.setSourceObjectAsCollapsed(props.id, true);
-  isOpen.value = false;
+  setStateToOpen(savedValue ? savedValue.isOpen : isFirstViewResolved.value);
 }
 
 watch(
-  () => props.id,
-  (newId, oldId) => {
-    if (newId !== oldId) {
-      objectVisibilityState.setSourceObjectAsCollapsed(oldId, false);
-    }
-
-    currentIndex.value = 0;
-    hasLoaded.value = isFirstViewResolved.value;
-    isOpen.value = isFirstViewResolved.value;
-
-    objectVisibilityState.setSourceObjectAsCollapsed(newId, !isOpen.value);
-  },
-);
-
-watch(
-  isOpen,
-  (nextIsOpen) => {
-    objectVisibilityState.setSourceObjectAsCollapsed(props.id, !nextIsOpen);
+  () => pythonValue.value,
+  () => {
+    restoreCollectionState();
   },
   { immediate: true },
 );
 
-onBeforeUnmount(() => {
-  objectVisibilityState.setSourceObjectAsCollapsed(props.id, false);
-});
+const goToPrevious = () => {
+  if (!canGoToPrevious.value) {
+    return;
+  }
+
+  currentIndex.value--;
+  saveState();
+};
+
+const goToNext = () => {
+  if (!canGoToNext.value) {
+    return;
+  }
+
+  currentIndex.value++;
+  saveState();
+};
+
+const handleIndexInput = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const newIndex = parseInt(target.value, 10);
+  if (Number.isNaN(newIndex)) {
+    return;
+  }
+
+  currentIndex.value = clampCurrentIndex(newIndex);
+  saveState();
+};
+
+const handleVisibleCountInput = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const newCount = parseInt(target.value, 10);
+  if (Number.isNaN(newCount)) {
+    return;
+  }
+
+  visibleElementCount.value = clampVisibleElementCount(newCount);
+  saveState();
+};
+
+function onClick() {
+  setStateToOpen(true);
+  saveState();
+}
+
+function closeView() {
+  setStateToOpen(false);
+  saveState();
+}
 
 function isSequenceCollection(
-  value: LazyFlatCollectionVal
+  value: LazyFlatCollectionVal,
 ): value is LazyListVal | LazyTupleVal {
   return value.kind === ValueKind.LIST || value.kind === ValueKind.TUPLE;
 }
 
 function isSetCollection(
-  value: LazyFlatCollectionVal
+  value: LazyFlatCollectionVal,
 ): value is LazySetVal | LazyFrozenSetVal {
   return value.kind === ValueKind.SET || value.kind === ValueKind.FROZENSET;
 }
@@ -128,7 +156,7 @@ function isSetCollection(
 
 <template>
   <div v-if="pythonValue.element_count > 0" class="collection-wrapper">
-    <div v-if="hasLoaded && isOpen" class="collection-frame">
+    <div v-if="isOpen" class="collection-frame">
       <div class="control-bar top">
         <div class="control-wrapper">
           <button
@@ -138,27 +166,28 @@ function isSetCollection(
           >
             &#9650
           </button>
-            <span class="field-label">idx</span>
-            <input
-              class="index-input"
-              type="number"
-              :value="currentIndex"
-              @input="handleIndexInput"
-              :min="0"
-              :max="totalElementCount - 1"
-            />
-            <span class="field-label">count</span>
-            <input
-              class="count-input"
-              type="number"
-              :value="visibleElementCount"
-              @input="handleVisibleCountInput"
-              :min="COLLECTION_ITEM_DISPLAY_COUNT_MIN"
-              :max="COLLECTION_ITEM_DISPLAY_COUNT_MAX"
-            />
+          <span class="field-label">idx</span>
+          <input
+            class="index-input"
+            type="number"
+            :value="currentIndex"
+            @input="handleIndexInput"
+            :min="0"
+            :max="totalElementCount - 1"
+          />
+          <span class="field-label">count</span>
+          <input
+            class="count-input"
+            type="number"
+            :value="visibleElementCount"
+            @input="handleVisibleCountInput"
+            :min="COLLECTION_ITEM_DISPLAY_COUNT_MIN"
+            :max="COLLECTION_ITEM_DISPLAY_COUNT_MAX"
+          />
           <button class="close-btn" @click.stop="closeView">×</button>
         </div>
       </div>
+
       <div class="content-area">
         <SequenceCollection
           v-if="isSequenceCollection(pythonValue)"
@@ -180,7 +209,6 @@ function isSetCollection(
           &#9660
         </button>
       </div>
-      
     </div>
 
     <div v-if="!isOpen" @click="onClick" class="not-resolved">
@@ -224,21 +252,14 @@ function isSetCollection(
 
 .control-wrapper {
   display: flex;
-
   width: 100%;
 
-  &>* {
+  & > * {
     align-content: center;
   }
 
   & * {
     box-sizing: border-box;
-  }
-
-  & input {
-    padding-inline: 5px;
-    line-height: 1;
-    text-align: center;
   }
 }
 
@@ -258,7 +279,7 @@ function isSetCollection(
   background: transparent;
   cursor: pointer;
   height: stretch;
-  aspect-ratio: 1/1;
+  aspect-ratio: 1 / 1;
   padding: 0;
 
   &:hover {
@@ -301,6 +322,7 @@ function isSetCollection(
 .content-area {
   width: 100%;
 }
+
 .error {
   padding: 5px;
   color: red;
