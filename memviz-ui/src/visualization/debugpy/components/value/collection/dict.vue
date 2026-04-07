@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted } from "vue";
+import { computed, ref, watch } from "vue";
 import { processResolver } from "../../../../store";
 import { PythonId } from "process-def/debugpy";
 import MemorySlot from "../../memory-slot.vue";
-import { valueState } from "../../../store";
+import { componentState, objectVisibilityState, valueState } from "../../../store";
 import { LazyDictVal } from "../../../type/lazy-value";
 import { isDict } from "../../../utils/types";
 import { assert } from "../../../../../utils";
@@ -21,6 +21,7 @@ const props = defineProps<{
 const currentIndex = ref(0);
 const visibleElementCount = ref(COLLECTION_ITEM_DISPLAY_COUNT_DEFAULT);
 const visiblePairs = ref<RichKeyValuePair[]>([]);
+const isOpen = ref(false);
 
 function clampVisibleElementCount(count: number): number {
   return Math.max(
@@ -35,51 +36,58 @@ const pythonValue = computed(() => {
   return val as LazyDictVal;
 });
 
-const isFirstViewResolved = computed(() => {
-  return pythonValue.value.areItemsFetched(0, visibleElementCount.value);
-});
-const hasLoaded = ref(isFirstViewResolved.value);
-const isOpen = ref(isFirstViewResolved.value);
-
 const totalElementCount = computed(() => pythonValue.value.pair_count);
 const canGoToPrevious = computed(() => currentIndex.value > 0);
 const canGoToNext = computed(
-  () => currentIndex.value + visibleElementCount.value < totalElementCount.value
+  () => currentIndex.value + visibleElementCount.value < totalElementCount.value,
+);
+const isFirstViewResolved = computed(() =>
+  pythonValue.value.areItemsFetched(0, visibleElementCount.value),
 );
 
-const goToPrevious = () => {
-  if (canGoToPrevious.value) currentIndex.value--;
-};
+function clampCurrentIndex(index: number): number {
+  return Math.max(0, Math.min(index, Math.max(totalElementCount.value - 1, 0)));
+}
 
-const goToNext = () => {
-  if (canGoToNext.value) currentIndex.value++;
-};
+function saveState() {
+  componentState.setState(props.id, {
+    kind: pythonValue.value.kind,
+    isOpen: isOpen.value,
+    collectionPageIndex: currentIndex.value,
+    collectionItemCount: visibleElementCount.value,
+  });
+}
 
-const handleIndexInput = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  let newIndex = parseInt(target.value, 10);
-  if (isNaN(newIndex)) return;
-  if (newIndex < 0) newIndex = 0;
-  if (newIndex >= totalElementCount.value) newIndex = totalElementCount.value - 1;
-  currentIndex.value = newIndex;
-};
+function setStateToOpen(value: boolean) {
+  isOpen.value = value;
+  objectVisibilityState.setSourceObjectAsCollapsed(props.id, !value);
+}
 
-const handleVisibleCountInput = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  let nextCount = parseInt(target.value, 10);
-  if (isNaN(nextCount)) return;
-  nextCount = clampVisibleElementCount(nextCount);
-  visibleElementCount.value = nextCount;
-};
+function restoreDictState() {
+  const savedState = componentState.getState(props.id, pythonValue.value.kind);
+  currentIndex.value = clampCurrentIndex(savedState?.collectionPageIndex ?? 0);
+  visibleElementCount.value = clampVisibleElementCount(
+    savedState?.collectionItemCount ?? COLLECTION_ITEM_DISPLAY_COUNT_DEFAULT,
+  );
+  setStateToOpen(savedState ? savedState.isOpen : isFirstViewResolved.value);
+  visiblePairs.value = [];
+}
 
 async function loadData() {
   const resolver = processResolver.value;
-  if (!resolver) return;
+  if (!resolver || !isOpen.value) {
+    return;
+  }
 
   const count = Math.min(
     visibleElementCount.value,
     totalElementCount.value - currentIndex.value,
   );
+
+  if (count <= 0) {
+    visiblePairs.value = [];
+    return;
+  }
 
   visiblePairs.value = await pythonValue.value.getElements(
     resolver.debugpy,
@@ -88,41 +96,76 @@ async function loadData() {
   );
 }
 
-async function onClick() {
-  isOpen.value = true;
-  if (!hasLoaded.value) {
-    await loadData();
-    hasLoaded.value = true;
+watch(
+  [() => pythonValue.value, () => processResolver.value],
+  () => {
+    restoreDictState();
+    if (isOpen.value) {
+      void loadData();
+    }
+  },
+  { immediate: true },
+);
+
+const goToPrevious = () => {
+  if (!canGoToPrevious.value) {
+    return;
   }
+
+  currentIndex.value--;
+  saveState();
+  void loadData();
+};
+
+const goToNext = () => {
+  if (!canGoToNext.value) {
+    return;
+  }
+
+  currentIndex.value++;
+  saveState();
+  void loadData();
+};
+
+const handleIndexInput = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const newIndex = parseInt(target.value, 10);
+  if (Number.isNaN(newIndex)) {
+    return;
+  }
+
+  currentIndex.value = clampCurrentIndex(newIndex);
+  saveState();
+  void loadData();
+};
+
+const handleVisibleCountInput = (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const newCount = parseInt(target.value, 10);
+  if (Number.isNaN(newCount)) {
+    return;
+  }
+
+  visibleElementCount.value = clampVisibleElementCount(newCount);
+  saveState();
+  void loadData();
+};
+
+function onClick() {
+  setStateToOpen(true);
+  saveState();
+  void loadData();
 }
 
 function closeView() {
-  isOpen.value = false;
+  setStateToOpen(false);
+  saveState();
 }
-
-watch([currentIndex, visibleElementCount], loadData);
-
-watch(
-  () => props.id,
-  () => {
-    currentIndex.value = 0;
-    visiblePairs.value = [];
-    hasLoaded.value = isFirstViewResolved.value;
-    isOpen.value = isFirstViewResolved.value;
-  },
-);
-
-onMounted(() => {
-  if (isOpen.value) {
-    loadData();
-    hasLoaded.value = true;
-  }
-});
 </script>
 
 <template>
   <div v-if="pythonValue.pair_count > 0" class="dict">
-    <div v-if="hasLoaded && isOpen" class="collection-frame">
+    <div v-if="isOpen" class="collection-frame">
       <div class="control-bar top">
         <div class="control-wrapper">
           <button class="nav-btn" @click="goToPrevious" :disabled="!canGoToPrevious">
@@ -140,7 +183,7 @@ onMounted(() => {
       </div>
 
       <div class="content-area">
-        <div class="pairs">
+        <div v-if="visiblePairs.length > 0" class="pairs">
           <div v-for="(pair, index) in visiblePairs" :key="index" class="pair-row" :style="`view-transition-name: pair-row-${index + currentIndex};`">
             <div class="key-cell" :data-index="index + currentIndex">
               <MemorySlot :id="pair.key.id" />
@@ -149,7 +192,8 @@ onMounted(() => {
             <MemorySlot :id="pair.value.id" />
           </div>
         </div>
-      </div> 
+        <div v-else class="loading">Loading...</div>
+      </div>
 
       <div class="control-bar bottom">
         <button class="nav-btn" @click="goToNext" :disabled="!canGoToNext">
@@ -174,6 +218,12 @@ onMounted(() => {
     &:hover {
       cursor: pointer;
     }
+  }
+
+  .loading {
+    padding: 6px 8px;
+    color: #555;
+    font-style: italic;
   }
 }
 
@@ -216,8 +266,6 @@ onMounted(() => {
     text-align: center;
   }
 }
-
-
 
 .field-label {
   font-size: 0.72em;
@@ -280,19 +328,15 @@ onMounted(() => {
 }
 
 .pairs {
-
-
   .pair-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-
-
 
     &:not(:last-child) {
       border-bottom: 1px solid #858585;
     }
 
-    &>div {
+    & > div {
       position: relative;
       padding: 5px;
 
@@ -305,17 +349,14 @@ onMounted(() => {
         right: -0.5px;
         background: #858585;
       }
-
-
-
     }
   }
-
-
 
   .key-cell {
     background-color: #dae4ef;
     position: relative;
+    display: flex;
+    flex-direction: row;
 
     &::after {
       content: attr(data-index);
@@ -323,11 +364,6 @@ onMounted(() => {
       top: 5px;
       right: 5px;
     }
-
-    display: flex;
-    flex-direction: row;
-
   }
-
 }
 </style>

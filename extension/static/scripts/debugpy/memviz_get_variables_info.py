@@ -12,7 +12,7 @@ PythonId = str
 
 
 RETURN_VALUES_DICT_NAME = "__pydevd_ret_val_dict"
-SEQUENCE_LOAD_ITEM_COUNT = 15
+SEQUENCE_LOAD_ITEM_COUNT = 20
 STR_LOAD_CHAR_COUNT = 100
 
 
@@ -207,6 +207,10 @@ class Variables:
     values: List[BaseVal]
 
 
+class MissingPlaceOccurrenceError(ValueError):
+    pass
+
+
 def get_str_default_load_content(val: str) -> str:
     count = min(len(val), STR_LOAD_CHAR_COUNT)
     return val[:count]
@@ -307,17 +311,21 @@ def get_frame_by_place(
                 return frame
             occurence_counter += 1
 
-    raise ValueError(
+    raise MissingPlaceOccurrenceError(
         f"Could not find place occurrence {place_occurrence} for function '{frame_name}' at line {frame_line} in file {debugged_file_path}"
     )
 
 
-def check_type(value: Any, expected_types: Tuple[str, ...]) -> None:
+def check_type(value: Any, expected_types: Tuple[type, ...]) -> None:
+    # check if value is instance of any of the expected types including subclasses
+    if isinstance(value, expected_types):
+        return
+
     value_type = type(value).__name__
-    if value_type not in expected_types:
-        raise ValueError(
-            f"Value {value} is of type {value_type}, expected one of {expected_types}."
-        )
+    expected_type_names = tuple(t.__name__ for t in expected_types)
+    raise ValueError(
+        f"Value {value} is of type {value_type}, expected one of {expected_type_names}."
+    )
 
 
 def validate_slicing_params(
@@ -361,12 +369,22 @@ def get_variables(
     frame_line: int,
     place_occurrence: int,
 ) -> Variables:
-    frame_info = get_frame_by_place(
-        debugged_file_path,
-        frame_name,
-        frame_line,
-        place_occurrence,
-    )
+    try:
+        frame_info = get_frame_by_place(
+            debugged_file_path,
+            frame_name,
+            frame_line,
+            place_occurrence,
+        )
+    except MissingPlaceOccurrenceError:
+        # In case of fast stepping over it can happen that
+        # the specified place occurrence is already gone
+        # by the time the request is processed.
+        # In that case, empty variables info is returned
+        # TODO: it should be communicated to the frontend
+        # that the place is not accessible anymore instead
+        # of just returning empty variables info
+        return Variables(places=[], values=[])
     arg_names = get_argument_names(frame_info)
     frame = frame_info.frame
 
@@ -436,7 +454,7 @@ def get_flat_collection_elements(
 ) -> List[BaseVal]:
     value = IdMap.get(collection_id)
 
-    allowed_types = ("list", "tuple", "set", "frozenset")
+    allowed_types = (list, tuple, set, frozenset)
     check_type(value, allowed_types)
     validate_slicing_params(value, start_index, element_count)
 
@@ -455,7 +473,7 @@ def get_dict_entries(
     pair_count: int,
 ) -> List[KeyValuePair]:
     value = IdMap.get(dict_id)
-    check_type(value, ("dict",))
+    check_type(value, (dict,))
     validate_slicing_params(value, start_index, pair_count)
 
     entries = []
@@ -479,7 +497,7 @@ def get_string_contents(
 
     value = IdMap.get(str_id)
 
-    check_type(value, ("str",))
+    check_type(value, (str,))
     validate_slicing_params(value, start_index, length)
 
     return value[start_index : start_index + length]
@@ -507,8 +525,15 @@ def get_object(object_id: PythonId) -> ObjectVal:
                 inspect.isdatadescriptor(static_attr_value)
                 or inspect.isgetsetdescriptor(static_attr_value)
                 or inspect.ismemberdescriptor(static_attr_value)
+                or hasattr(static_attr_value, "__get__")
             ):
                 attr.is_descriptor = True
+                # only return the value if it's defined in the instance's __dict__
+                # to avoid dynamic resolution of descriptors
+                if attr_name in getattr(obj, "__dict__", {}):
+                    dict_value = obj.__dict__[attr_name]
+                    attr.value = make_value(dict_value)
+                    IdMap.register(attr.value.id, dict_value)
 
             else:
                 # need to get the attribute value dynamically to check if it's a method

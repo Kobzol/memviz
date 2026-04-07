@@ -57,6 +57,10 @@ abstract class LazyCollectionVal<TValue> extends SizedDescribedRichValue {
   private pendingRequests: Map<BlockIndex, Promise<TValue>> = new Map();
   private blocks: Cache<TValue> = new Cache<TValue>(CACHE_CAPACITY_BLOCKS);
 
+  public override get_type_label(): string {
+    return `${this.kind}[${this.getItemCount()}]`;
+  }
+
   public setValues(values: TValue): void {
     this.blocks.clear();
     this.pendingRequests.clear();
@@ -115,10 +119,7 @@ abstract class LazyCollectionVal<TValue> extends SizedDescribedRichValue {
 
     for (let blockIdx = startBlockIdx; blockIdx <= endBlockIdx; blockIdx++) {
       const blockStartItemIdx = this.getStartItemIndexForBlock(blockIdx);
-      const blockEndItemIdx = Math.min(
-        this.getEndItemIndexForBlock(blockIdx),
-        this.getItemCount() - 1,
-      );
+      const blockEndItemIdx = this.getEndItemIndexForBlock(blockIdx) - 1;
 
       // do not assign values into incomplete blocks
       if (blockStartItemIdx < startIdx) continue;
@@ -296,12 +297,10 @@ abstract class LazyCollectionVal<TValue> extends SizedDescribedRichValue {
       const fetchEndIdx = this.getEndItemIndexForBlock(maxFetchBlockIdx);
       const fetchCount = fetchEndIdx - fetchStartIdx;
 
-      const fetchPromise = this.fetchItems(resolver, fetchStartIdx, fetchCount);
-
       if (!isCriticalPartFetched) {
         try {
           // await if critical part was missing
-          await fetchPromise;
+          await this.fetchItems(resolver, fetchStartIdx, fetchCount);
         } catch (e) {
           console.error(
             `Failed to fetch items for ${this.id}, start=${fetchStartIdx}, count=${fetchCount}:`,
@@ -310,12 +309,20 @@ abstract class LazyCollectionVal<TValue> extends SizedDescribedRichValue {
           return this.getEmptyValue();
         }
       } else {
-        fetchPromise.catch((e) =>
-          console.error(
-            `Background fetch failed for ${this.id}, start=${fetchStartIdx}, count=${fetchCount}:`,
-            e,
-          ),
-        );
+        // delay neighbor fetching to avoid blocking rendering
+        setTimeout(() => {
+          const delayedFetchPromise = this.fetchItems(
+            resolver,
+            fetchStartIdx,
+            fetchCount,
+          );
+          delayedFetchPromise.catch((e) =>
+            console.error(
+              `Background fetch failed for ${this.id}, start=${fetchStartIdx}, count=${fetchCount}:`,
+              e,
+            ),
+          );
+        }, 300);
       }
     }
 

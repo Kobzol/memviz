@@ -1,6 +1,8 @@
-import { type ShallowRef, shallowRef } from "vue";
+import type { PythonId } from "process-def/debugpy";
+import { type Ref, type ShallowRef, ref, shallowRef } from "vue";
 import { ComponentMap as DebugpyComponentMap } from "./component-map";
-import { FrameObjectsVisibilityState } from "./frame-visibility";
+import { ComponentState } from "./component-state";
+import { ObjectVisibilityState } from "./frame-visibility";
 import { ValueTracker } from "./value-tracker";
 
 export const valueState: ShallowRef<ValueTracker> = shallowRef(
@@ -11,4 +13,7 @@ export const debugpyComponentMap: ShallowRef<DebugpyComponentMap> = shallowRef(
   new DebugpyComponentMap(),
 );
 
-export const frameVisibilityState = new FrameObjectsVisibilityState();
+export const objectVisibilityState = new ObjectVisibilityState();
+export const componentState = new ComponentState();
+
+export const highlightedId: Ref<PythonId | null> = ref(null);

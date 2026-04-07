@@ -1,13 +1,20 @@
 <script setup lang="ts">
 import { Place } from "process-def/debugpy";
-import { computed, onBeforeUnmount, ref, watch, watchEffect } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  ref,
+  watch,
+  watchEffect,
+} from "vue";
 import type { Ref } from "vue";
 import { processResolver } from "../../../store";
 import TooltipContributor from "../../../components/tooltip/tooltip-contributor.vue";
 import { StackFrame } from "process-def";
 import NamedPlace from "./named-place.vue";
 import { formatLocation } from "../../../utils/formatting";
-import { frameVisibilityState } from "../../store";
+import { objectVisibilityState } from "../../store";
 
 const props = defineProps<{
   frame: StackFrame;
@@ -63,30 +70,43 @@ const expanded = ref(isTopFrame.value);
 
 watchEffect(() => {
   if (!expanded.value || places.value === null) {
-    frameVisibilityState.clearFrameSourceObjects(props.frame.id);
+    objectVisibilityState.clearVisibleSourceObjectsForFrame(props.frame.id);
     return;
   }
 
-  frameVisibilityState.setFrameSourceObjects(
+  objectVisibilityState.setVisibleSourceObjectsForFrame(
     props.frame.id,
     places.value.map((place) => place.id),
   );
 });
 
 watch(
-  () => props.frame,
-  (newFrame: StackFrame, oldFrame: StackFrame) => {
-    if (newFrame.id !== oldFrame.id) {
-      frameVisibilityState.clearFrameSourceObjects(oldFrame.id);
+  () => props.frame.id,
+  (newFrameId: number, oldFrameId: number) => {
+    if (newFrameId !== oldFrameId) {
+      objectVisibilityState.clearVisibleSourceObjectsForFrame(oldFrameId);
     }
-    if (newFrame.index != oldFrame.index || newFrame.name != oldFrame.name) {
+  },
+);
+
+watch(
+  () => [props.frame.index, props.frame.name],
+  ([newIndex, newName], [oldIndex, oldName]) => {
+    if (newIndex !== oldIndex || newName !== oldName) {
       expanded.value = isTopFrame.value;
     }
   },
 );
 
 watch(
-  () => [props.frame, resolver.value],
+  () => [
+    props.frame.id,
+    props.frame.name,
+    props.frame.file,
+    props.frame.line,
+    props.frame.index,
+    resolver.value,
+  ],
   () => {
     requestId++;
     isLoadingPlaces = false;
@@ -104,7 +124,7 @@ watch(
 );
 
 onBeforeUnmount(() => {
-  frameVisibilityState.clearFrameSourceObjects(props.frame.id);
+  objectVisibilityState.clearVisibleSourceObjectsForFrame(props.frame.id);
 });
 
 // https://www.color-hex.com/color-palette/24003

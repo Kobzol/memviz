@@ -5,8 +5,37 @@ import type { RichValue } from "./type/type";
 export class ValueTracker {
   private values = reactive(new Map<PythonId, RichValue>());
 
-  getValues(): RichValue[] {
-    return Array.from(this.values.values());
+  getOrderedValues(rootValueIds: PythonId[]): RichValue[] {
+    // pre-order DFS so parent values come before their children
+    const ordered: RichValue[] = [];
+    const visited = new Set<PythonId>();
+
+    const dfs = (id: PythonId) => {
+      if (visited.has(id)) return;
+      visited.add(id);
+
+      const val = this.values.get(id);
+      if (!val) return;
+
+      ordered.push(val);
+
+      const innerIds = val.getFetchedChildIds() ?? [];
+      for (const innerId of innerIds) {
+        dfs(innerId);
+      }
+    };
+
+    for (const rootId of rootValueIds) {
+      dfs(rootId);
+    }
+
+    for (const val of this.values.values()) {
+      if (!visited.has(val.id)) {
+        dfs(val.id);
+      }
+    }
+
+    return ordered;
   }
 
   addValues(values: RichValue[]) {

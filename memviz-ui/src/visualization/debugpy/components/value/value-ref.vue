@@ -3,14 +3,14 @@ import {
   computed,
   onBeforeUnmount,
   onMounted,
-  onUpdated,
   shallowRef,
   ShallowRef,
   watch,
 } from "vue";
-import { debugpyComponentMap, valueState } from "../../store";
+import { debugpyComponentMap, highlightedId, valueState } from "../../store";
 import { LeaderLineWithId } from "../../component-map";
 import { PythonId } from "process-def/debugpy";
+import { nextTick } from "vue";
 
 const props = defineProps<{
   id: PythonId;
@@ -48,6 +48,10 @@ function tryAddArrow() {
     return;
   }
 
+  if (arrow.value !== null && currentArrowTargetId.value === props.id) {
+    return;
+  }
+
   if (arrow.value !== null) {
     tryRemoveArrow();
   }
@@ -71,8 +75,41 @@ function unhighlightArrows() {
   debugpyComponentMap.value.unhighlightValue(props.id);
 }
 
+function scrollToValueOnHeap() {
+  const target = debugpyComponentMap.value.getComponent(props.id);
+  if (!target) return;
+
+  target.element.scrollIntoView({
+    behavior: "smooth",
+    block: "center",
+    inline: "nearest",
+  });
+
+  triggerHighlight(props.id);
+}
+
 const elementRef: ShallowRef<HTMLDivElement | null> = shallowRef(null);
 const arrow: ShallowRef<LeaderLineWithId | null> = shallowRef(null);
+let highlightTimeoutId: number | null = null;
+
+async function triggerHighlight(id: PythonId) {
+  highlightedId.value = null;
+
+  await nextTick();
+
+  highlightedId.value = id;
+
+  if (highlightTimeoutId !== null) {
+    window.clearTimeout(highlightTimeoutId);
+  }
+
+  highlightTimeoutId = window.setTimeout(() => {
+    if (highlightedId.value === id) {
+      highlightedId.value = null;
+    }
+    highlightTimeoutId = null;
+  }, 1200);
+}
 
 watch(debugpyComponentMap, () => {
   tryAddArrow();
@@ -89,11 +126,12 @@ watch(
 onMounted(() => {
   tryAddArrow();
 });
-onUpdated(() => {
-  tryAddArrow();
-});
 onBeforeUnmount(() => {
   tryRemoveArrow();
+
+  if (highlightTimeoutId !== null) {
+    window.clearTimeout(highlightTimeoutId);
+  }
 });
 </script>
 
@@ -101,6 +139,7 @@ onBeforeUnmount(() => {
   <div
     class="value-ref-wrapper"
     :ref="(el: any) => (elementRef = el)"
+    @click.stop="scrollToValueOnHeap"
     @mouseenter.stop="highlightArrows"
     @mouseleave.stop="unhighlightArrows"
   >
@@ -119,6 +158,7 @@ onBeforeUnmount(() => {
   max-height: 100%;
   height: stretch;
   align-content: center;
+  cursor: pointer;
 }
 
 .value-ref {

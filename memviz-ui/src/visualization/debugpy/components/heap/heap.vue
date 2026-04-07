@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { PythonId } from "process-def/debugpy";
+import { type PythonId, ValueKind } from "process-def/debugpy";
 import {
   DisplayMode,
   valueDisplaySettings,
 } from "../../value-display-settings";
-import { frameVisibilityState, valueState } from "../../store";
+import { objectVisibilityState, valueState } from "../../store";
+import { appState } from "../../../store";
 import MemorySlot from "../memory-slot.vue";
 import type { RichValue } from "../../type/type";
 
@@ -19,7 +20,7 @@ function isDetachedValue(value: RichValue): boolean {
 function collectReachableIds(
   valuesById: Map<PythonId, RichValue>,
 ): Set<PythonId> {
-  const queue = Array.from(visibleRootIds.value);
+  const queue = [...visibleRootIds.value];
   const reachableIds = new Set(queue);
 
   while (queue.length > 0) {
@@ -29,7 +30,14 @@ function collectReachableIds(
     const value = valuesById.get(id);
     if (!value) continue;
 
-    for (const childId of value.getFetchedChildIds()) {
+    let childIds = value.getFetchedChildIds();
+    if (childIds)
+      childIds = objectVisibilityState.filterVisibleChildIds(
+        value.id,
+        childIds,
+      );
+
+    for (const childId of childIds) {
       if (reachableIds.has(childId)) continue;
 
       queue.push(childId);
@@ -40,10 +48,19 @@ function collectReachableIds(
   return reachableIds;
 }
 
-const values = computed(() => valueState.value.getValues());
 const visibleRootIds = computed(() => {
-  return frameVisibilityState.getVisibleSourceObjectIds();
+  const orderedFrameIds = appState.value.processState.stackTrace.frames
+    .slice()
+    .sort((a, b) => b.index - a.index)
+    .map((frame) => frame.id);
+  return objectVisibilityState.getOrderedVisibleSourceObjectIds(
+    orderedFrameIds,
+  );
 });
+
+const values = computed(() =>
+  valueState.value.getOrderedValues(visibleRootIds.value),
+);
 
 const visibleValues = computed(() => {
   const valuesById = new Map(values.value.map((value) => [value.id, value]));
@@ -69,8 +86,8 @@ const visibleValues = computed(() => {
 
 <style lang="scss" scoped>
 .heap {
-  min-width: 300px;
-  max-width: 500px;
+  min-width: 500px;
+  max-width: 700px;
 }
 
 .header {

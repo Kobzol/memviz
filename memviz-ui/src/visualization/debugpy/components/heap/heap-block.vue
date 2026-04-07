@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { PythonId } from "process-def/debugpy";
 import {
+  computed,
   onBeforeUnmount,
   onMounted,
   onUpdated,
@@ -9,7 +10,7 @@ import {
   watch,
 } from "vue";
 import ValueComponent from "../value/value.vue";
-import { debugpyComponentMap } from "../../store";
+import { debugpyComponentMap, highlightedId } from "../../store";
 import { assert } from "../../../../utils";
 import { ComponentUnsubscribeFn } from "../../component-map";
 
@@ -17,12 +18,17 @@ const props = defineProps<{
   id: PythonId;
 }>();
 
+const isHighlighted = computed(() => highlightedId.value === props.id);
+
 async function updateComponentInMap() {
   assert(elementRef.value !== null, "component has not been mounted yet");
 
-  // This is required to wait for browser relayout, to make sure
-  // that the element has the final layout before it is registered
   window.requestAnimationFrame(() => {
+    const currentComponent = debugpyComponentMap.value.getComponent(props.id);
+    if (currentComponent?.element === elementRef.value) {
+      return;
+    }
+
     removeComponentFromMap();
 
     if (elementRef.value !== null) {
@@ -66,6 +72,7 @@ watch(
 <template>
   <div
     class="heap-block"
+    :class="{ highlight: isHighlighted }"
     :ref="(el: any) => (elementRef = el)"
     @mouseenter.stop="highlightArrows"
     @mouseleave.stop="unhighlightArrows"
@@ -86,5 +93,30 @@ watch(
   box-sizing: border-box;
   border: 1px solid #5f5f5f;
   border-top: none;
+}
+
+.highlight {
+  backface-visibility: hidden;
+  animation: ripple-out-large 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes ripple-out-large {
+  0% {
+    box-shadow:
+      0 0 0 0 rgba(255, 121, 73, 0),
+      0 0 0 0 rgba(255, 121, 73, 0);
+  }
+
+  20% {
+    box-shadow:
+      0 0 0 6px rgba(255, 121, 73, 0.8),
+      0 0 20px 6px rgba(255, 121, 73, 0.4);
+  }
+
+  100% {
+    box-shadow:
+      0 0 0 12px rgba(255, 121, 73, 0),
+      0 0 50px 35px rgba(255, 121, 73, 0);
+  }
 }
 </style>
